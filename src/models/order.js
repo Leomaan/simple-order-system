@@ -6,15 +6,8 @@ const Order = sequelize.define('Order',{
         type: DataTypes.INTEGER,
         allowNull: false
     },
-
-    total:{
-        type: DataTypes.DECIMAL(10,2),
-        allowNull: false,
-        defaultValue: 0
-    },
-
     status:{
-        type: DataTypes.ENUM('OPEN', 'IN PREPARATION', 'COMPLETED'),
+        type: DataTypes.ENUM('OPEN', 'PAID', 'CLOSED'),
         allowNull: false,
         defaultValue: 'OPEN'
     },

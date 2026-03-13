@@ -3,7 +3,7 @@ import Order from './order.js';
 import Product from './product.js';
 import OrderItem from './orderItem.js';
 
-Order.hasMany(OrderItem);
+Order.hasMany(OrderItem, { foreignKey: 'OrderId', onDelete: 'CASCADE' });
 OrderItem.belongsTo(Order);
 
 Product.hasMany(OrderItem);

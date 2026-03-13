@@ -11,6 +11,5 @@ app.use('/product', productRoutes)
 app.use('/order', orderRoutes)
 app.use('/order-item', orderItemRoutes)
 
-
 export default app;
 
