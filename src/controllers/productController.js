@@ -1,78 +1,27 @@
-import Product from "../models/product.js";
+import { asyncHandler } from '../middleware/asyncHandler.js';
+import * as productService from '../services/productService.js';
 
-export async function create(req, res) {
-  try {
-    const { name } = req.body;
+export const create = asyncHandler(async (req, res) => {
+  const product = await productService.createProduct(req.body);
+  res.status(201).json({ success: true, data: product });
+});
 
-    if (!name) {
-      return res.status(400).json({ success: false, message: "no data provided" });
-    }
+export const getAll = asyncHandler(async (req, res) => {
+  const products = await productService.findAll();
+  res.status(200).json({ success: true, data: products });
+});
 
-    const productExists = await Product.findOne({ where: { name } });
-    if (productExists) {
-      return res.status(400).json({ success: false, message: "product already exists" });
-    }
+export const getById = asyncHandler(async (req, res) => {
+  const product = await productService.findById(req.params.id);
+  res.status(200).json({ success: true, data: product });
+});
 
-    const product = await Product.create(req.body);
-    return res.status(201).json({ success: true, data: product });
-  } catch (err) {
-    return res.status(500).json({ success: false, message: "error" });
-  }
-}
+export const update = asyncHandler(async (req, res) => {
+  const product = await productService.updateProduct(req.params.id, req.body);
+  res.status(200).json({ success: true, data: product });
+});
 
-export async function getAll(req, res) {
-  try {
-    const products = await Product.findAll();
-    return res.status(200).json({ success: true, data: products });
-  } catch (err) {
-    return res.status(500).json({ success: false, message: "error" });
-  }
-}
-
-export async function getById(req, res) {
-  try {
-    const id = req.params.id;
-    const product = await Product.findByPk(id);
-
-    if (!product) {
-      return res.status(404).json({ success: false, message: "product not found" });
-    }
-    return res.status(200).json({ success: true, data: product });
-  } catch (err) {
-    return res.status(500).json({ success: false, message: "internal server error" });
-  }
-}
-
-export async function remove(req, res) {
-  try {
-    const id = req.params.id;
-    const removed = await Product.destroy({ where: { id } });
-
-    if (!removed) {
-      return res.status(404).json({ success: false, message: "product not found" });
-    }
-    return res.status(200).json({ success: true, message: "product removed" });
-  } catch (err) {
-    return res.status(500).json({ success: false, message: "internal server error" });
-  }
-}
-
-export async function update(req, res) {
-  try {
-    const id = req.params.id;
-
-    if (!req.body || Object.keys(req.body).length === 0) {
-      return res.status(400).json({ success: false, message: "no data provided" });
-    }
-
-    const product = await Product.findByPk(id);
-    if (!product) {
-      return res.status(404).json({ success: false, message: "product not found" });
-    }
-
-    await product.update(req.body);
-    return res.status(200).json({ success: true, data: product });
-  } catch (err) {
-    return res.status(500).json({ success: false, message: "internal server error" });
-  }
-}
+export const remove = asyncHandler(async (req, res) => {
+  await productService.deleteProduct(req.params.id);
+  res.status(200).json({ success: true, message: 'product removed' });
+});
