@@ -1,7 +1,16 @@
 import Product from '../models/product.js';
 import { AppError } from '../middleware/appError.js';
 
-export async function findAll() {
+const VALID_CATEGORIES = ['FOOD', 'DRINK', 'SNACK', 'DESSERT', 'SIDE'];
+
+export async function findAll(category) {
+  if (category) {
+    if (!VALID_CATEGORIES.includes(category))
+      throw new AppError(`categoria inválida. Use: ${VALID_CATEGORIES.join(', ')}`);
+
+    return Product.findAll({ where: { category } });
+  }
+
   return Product.findAll();
 }
 
@@ -25,7 +34,7 @@ export async function updateProduct(id, data) {
   if (!data || Object.keys(data).length === 0)
     throw new AppError('no data provided');
 
-  const product = await findById(id); 
+  const product = await findById(id);
   await product.update(data);
   return product;
 }
