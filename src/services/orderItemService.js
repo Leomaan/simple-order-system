@@ -25,7 +25,6 @@ export async function addItem(data) {
   if (order.status !== 'OPEN') throw new AppError('order is not open');
   if (!product.available) throw new AppError('product not available');
 
-  // Regra: se o item já existe, soma a quantidade
   const existing = await OrderItem.findOne({
     where: { OrderId: orderId, ProductId: productId },
   });
@@ -55,7 +54,6 @@ export async function changeQuantity(id, quantity) {
   const orderItem = await OrderItem.findByPk(id, { include: [Order, Product] });
   if (!orderItem) throw new AppError('order item not found', 404);
 
-  // Regra: não pode alterar item de pedido fechado
   if (orderItem.Order?.status === 'CLOSED')
     throw new AppError('cannot change item of a closed order');
 

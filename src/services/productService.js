@@ -25,7 +25,7 @@ export async function updateProduct(id, data) {
   if (!data || Object.keys(data).length === 0)
     throw new AppError('no data provided');
 
-  const product = await findById(id); // já lança 404 se não existir
+  const product = await findById(id); 
   await product.update(data);
   return product;
 }
