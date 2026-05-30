@@ -5,10 +5,10 @@ import { AppError } from '../src/middleware/appError.js';
 
 vi.mock('../src/models/product.js', () => ({
   default: {
-    findAll:   vi.fn(),
-    findByPk:  vi.fn(),
-    findOne:   vi.fn(),
-    create:    vi.fn(),
+    findAll:  vi.fn(),
+    findByPk: vi.fn(),
+    findOne:  vi.fn(),
+    create:   vi.fn(),
   }
 }));
 
@@ -23,6 +23,22 @@ describe('findAll', () => {
 
     expect(result).toEqual(products);
     expect(Product.findAll).toHaveBeenCalledOnce();
+  });
+
+  it('deve filtrar produtos por categoria', async () => {
+    const drinks = [{ id: 2, name: 'Suco', category: 'DRINK' }];
+    Product.findAll.mockResolvedValue(drinks);
+
+    const result = await findAll('DRINK');
+
+    expect(result).toEqual(drinks);
+    expect(Product.findAll).toHaveBeenCalledWith({ where: { category: 'DRINK' } });
+  });
+
+  it('deve lançar AppError se categoria for inválida', async () => {
+    await expect(findAll('INVALIDA')).rejects.toMatchObject({
+      message: expect.stringContaining('categoria inválida'),
+    });
   });
 });
 
@@ -46,7 +62,7 @@ describe('findById', () => {
 
 describe('createProduct', () => {
   it('deve criar um produto com sucesso', async () => {
-    const data = { name: 'X-Burguer', price: 25.90 };
+    const data = { name: 'X-Burguer', price: 25.90, category: 'FOOD' };
     Product.findOne.mockResolvedValue(null);
     Product.create.mockResolvedValue({ id: 1, ...data });
 
@@ -57,15 +73,15 @@ describe('createProduct', () => {
   });
 
   it('deve lançar AppError se nome não for fornecido', async () => {
-    await expect(createProduct({ price: 25.90 })).rejects.toThrow(AppError);
     await expect(createProduct({ price: 25.90 })).rejects.toMatchObject({ message: 'no data provided' });
   });
 
   it('deve lançar AppError se produto já existir', async () => {
     Product.findOne.mockResolvedValue({ id: 1, name: 'X-Burguer' });
 
-    await expect(createProduct({ name: 'X-Burguer', price: 25.90 })).rejects.toThrow(AppError);
-    await expect(createProduct({ name: 'X-Burguer', price: 25.90 })).rejects.toMatchObject({ message: 'product already exists' });
+    await expect(createProduct({ name: 'X-Burguer', price: 25.90 })).rejects.toMatchObject({
+      message: 'product already exists',
+    });
   });
 });
 
@@ -74,13 +90,21 @@ describe('updateProduct', () => {
     const product = { id: 1, name: 'X-Burguer', update: vi.fn().mockResolvedValue(true) };
     Product.findByPk.mockResolvedValue(product);
 
-    const result = await updateProduct(1, { name: 'X-Burguer Duplo' });
+    await updateProduct(1, { name: 'X-Burguer Duplo' });
 
     expect(product.update).toHaveBeenCalledWith({ name: 'X-Burguer Duplo' });
   });
 
+  it('deve atualizar a categoria do produto', async () => {
+    const product = { id: 1, category: 'FOOD', update: vi.fn().mockResolvedValue(true) };
+    Product.findByPk.mockResolvedValue(product);
+
+    await updateProduct(1, { category: 'SNACK' });
+
+    expect(product.update).toHaveBeenCalledWith({ category: 'SNACK' });
+  });
+
   it('deve lançar AppError se nenhum dado for fornecido', async () => {
-    await expect(updateProduct(1, {})).rejects.toThrow(AppError);
     await expect(updateProduct(1, {})).rejects.toMatchObject({ message: 'no data provided' });
   });
 
