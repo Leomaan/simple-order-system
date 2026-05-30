@@ -1,12 +1,16 @@
-import { create, getAll, getById, remove, update } from "../controllers/orderControllers.js";
 import { Router } from "express";
+import { create, getAll, getById, update, close, remove, } from "../controllers/orderController.js";
+import { validate } from "../middleware/validate.js";
+import { createOrderSchema, updateOrderSchema } from "../schemas/schemas.js";
+import { requireAdmin, requireWaiter } from '../middleware/authtenticate.js';
 
 const routes = Router();
 
-routes.post('/', create);
-routes.get('/', getAll);
-routes.get('/:id', getById);
-routes.delete('/:id', remove);
-routes.put('/:id', update);
+routes.post("/", requireWaiter, validate(createOrderSchema), create);
+routes.get("/",  requireWaiter, getAll);
+routes.get("/:id", requireWaiter, getById);
+routes.put("/:id", requireWaiter, validate(updateOrderSchema), update);
+routes.patch("/:id/close", requireWaiter, close);
+routes.delete("/:id", requireAdmin, remove);
 
 export default routes;
