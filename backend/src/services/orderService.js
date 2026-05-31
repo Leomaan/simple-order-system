@@ -4,9 +4,19 @@ import Product from '../models/product.js';
 import { AppError } from '../middleware/appError.js';
 import { updateTotal } from '../util/updateTotalOrder.js';
 
-export async function findAll() {
+const VALID_STATUSES = ['OPEN', 'PAID', 'CLOSED'];
+ 
+export async function findAll(status) {
+  if (status) {
+    if (!VALID_STATUSES.includes(status))
+      throw new AppError(`status inválido. Use: ${VALID_STATUSES.join(', ')}`);
+ 
+    return Order.findAll({ where: { status } });
+  }
+ 
   return Order.findAll();
 }
+
 
 export async function findById(id) {
   const order = await Order.findByPk(id, {

@@ -7,7 +7,8 @@ export const create = asyncHandler(async (req, res) => {
 });
 
 export const getAll = asyncHandler(async (req, res) => {
-  const orders = await orderService.findAll();
+  const { status } = req.query;
+  const orders = await orderService.findAll(status);
   res.status(200).json({ success: true, data: orders });
 });
 

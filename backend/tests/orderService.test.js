@@ -29,6 +29,23 @@ describe('findAll', () => {
     const result = await findAll();
 
     expect(result).toEqual(orders);
+    expect(Order.findAll).toHaveBeenCalledOnce();
+  });
+
+  it('deve filtrar pedidos por status', async () => {
+    const openOrders = [{ id: 1, table: 3, status: 'OPEN' }];
+    Order.findAll.mockResolvedValue(openOrders);
+
+    const result = await findAll('OPEN');
+
+    expect(result).toEqual(openOrders);
+    expect(Order.findAll).toHaveBeenCalledWith({ where: { status: 'OPEN' } });
+  });
+
+  it('deve lançar AppError se status for inválido', async () => {
+    await expect(findAll('INVALIDO')).rejects.toMatchObject({
+      message: expect.stringContaining('status inválido'),
+    });
   });
 });
 
