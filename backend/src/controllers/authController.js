@@ -1,27 +1,20 @@
-import jwt from 'jsonwebtoken';
-import { AppError } from '../middleware/appError.js';
 import { asyncHandler } from '../middleware/asyncHandler.js';
+import * as authService from '../services/authService.js';
 
 export const login = asyncHandler(async (req, res) => {
-  const { code } = req.body;
+  const { email, password } = req.body;
+  const result = await authService.login(email, password);
+  res.status(200).json({ success: true, data: result });
+});
 
-  if (!code) throw new AppError('código de acesso é obrigatório');
+export const refresh = asyncHandler(async (req, res) => {
+  const { refreshToken } = req.body;
+  const result = await authService.refresh(refreshToken);
+  res.status(200).json({ success: true, data: result });
+});
 
-  let role;
-
-  if (code === process.env.ADMIN_CODE) {
-    role = 'admin';
-  } else if (code === process.env.WAITER_CODE) {
-    role = 'waiter';
-  } else {
-    throw new AppError('código de acesso inválido', 401);
-  }
-
-  const token = jwt.sign(
-    { role },
-    process.env.JWT_SECRET,
-    { expiresIn: role === 'admin' ? '8h' : '12h' }
-  );
-
-  return res.status(200).json({ success: true, role, token });
+export const logout = asyncHandler(async (req, res) => {
+  const { refreshToken } = req.body;
+  await authService.logout(refreshToken);
+  res.status(200).json({ success: true, message: 'logout realizado com sucesso' });
 });

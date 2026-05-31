@@ -5,7 +5,7 @@ export function authenticate(req, res, next) {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer '))
-    throw new AppError('token não fornecido', 401);
+    return next(new AppError('token não fornecido', 401));
 
   const token = authHeader.split(' ')[1];
 
@@ -14,22 +14,22 @@ export function authenticate(req, res, next) {
     req.user = decoded;
     next();
   } catch (err) {
-    throw new AppError('token inválido ou expirado', 401);
+    return next(new AppError('token inválido ou expirado', 401));
   }
 }
 
 export function requireWaiter(req, res, next) {
   authenticate(req, res, () => {
-    if (req.user.role !== 'waiter' && req.user.role !== 'admin')
-      throw new AppError('acesso não autorizado', 403);
+    if (req.user.role !== 'WAITER' && req.user.role !== 'ADMIN')
+      return next(new AppError('acesso não autorizado', 403));
     next();
   });
 }
 
 export function requireAdmin(req, res, next) {
   authenticate(req, res, () => {
-    if (req.user.role !== 'admin')
-      throw new AppError('acesso restrito ao administrador', 403);
+    if (req.user.role !== 'ADMIN')
+      return next(new AppError('acesso restrito ao administrador', 403));
     next();
   });
 }
