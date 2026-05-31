@@ -3,11 +3,12 @@ import {create, remove, changeQuantity,} from "../controllers/orderItemControlle
 import { validate } from "../middleware/validate.js";
 import { createOrderItemSchema,changeQuantitySchema, } from "../schemas/schemas.js";
 import { requireWaiter } from '../middleware/authtenticate.js';
+import { validateId } from "../middleware/validateId.js";
 
 const routes = Router();
 
 routes.post("/",  requireWaiter, validate(createOrderItemSchema), create);
-routes.patch("/:id", requireWaiter, validate(changeQuantitySchema), changeQuantity);
-routes.delete("/:id", requireWaiter, remove);
+routes.patch("/:id", validateId, requireWaiter, validate(changeQuantitySchema), changeQuantity);
+routes.delete("/:id", validateId, requireWaiter, remove);
 
 export default routes;
