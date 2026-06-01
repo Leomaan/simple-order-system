@@ -11,6 +11,11 @@ const Order = sequelize.define('Order',{
         allowNull: false,
         defaultValue: 'OPEN'
     },
+    deletedAt: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    defaultValue: null,
+  },
 })
 
 export default Order;

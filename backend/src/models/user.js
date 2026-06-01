@@ -25,6 +25,11 @@ const User = sequelize.define('User', {
     allowNull: false,
     defaultValue: true,
   },
+  deletedAt: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    defaultValue: null,
+  },
 });
 
 export default User;

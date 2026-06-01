@@ -1,21 +1,23 @@
+import { Op } from 'sequelize';
 import Product from '../models/product.js';
 import { AppError } from '../middleware/appError.js';
 
 const VALID_CATEGORIES = ['FOOD', 'DRINK', 'SNACK', 'DESSERT', 'SIDE'];
 
 export async function findAll(category) {
+  const where = { deletedAt: null }; 
+
   if (category) {
     if (!VALID_CATEGORIES.includes(category))
       throw new AppError(`categoria inválida. Use: ${VALID_CATEGORIES.join(', ')}`);
-
-    return Product.findAll({ where: { category } });
+    where.category = category;
   }
 
-  return Product.findAll();
+  return Product.findAll({ where });
 }
 
 export async function findById(id) {
-  const product = await Product.findByPk(id);
+  const product = await Product.findOne({ where: { id, deletedAt: null } });
   if (!product) throw new AppError('product not found', 404);
   return product;
 }
@@ -24,7 +26,7 @@ export async function createProduct(data) {
   const { name } = data;
   if (!name) throw new AppError('no data provided');
 
-  const exists = await Product.findOne({ where: { name } });
+  const exists = await Product.findOne({ where: { name, deletedAt: null } });
   if (exists) throw new AppError('product already exists');
 
   return Product.create(data);
@@ -41,5 +43,18 @@ export async function updateProduct(id, data) {
 
 export async function deleteProduct(id) {
   const product = await findById(id);
-  await product.destroy();
+  await product.update({ deletedAt: new Date() });
+}
+
+export async function restoreProduct(id) {
+  const product = await Product.findOne({ where: { id, deletedAt: { [Op.not]: null } } });
+  if (!product) throw new AppError('product not found or not deleted', 404);
+  await product.update({ deletedAt: null });
+  return product;
+}
+
+export async function permanentDeleteProduct(id) {
+  const product = await Product.findByPk(id);
+  if (!product) throw new AppError('product not found', 404);
+  await product.destroy(); 
 }

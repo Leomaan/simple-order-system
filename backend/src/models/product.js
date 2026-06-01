@@ -24,7 +24,12 @@ const Product = sequelize.define('Product',{
     category:{
         type: DataTypes.ENUM('FOOD', 'DRINK', 'SNACK', 'DESSERT', 'SIDE'),
         aLLOWNULL: false,
-    }
+    },
+    deletedAt: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    defaultValue: null,
+  },
 })
 
 export default Product;
