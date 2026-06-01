@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { findAll, findById, createOrder, updateOrder, closeOrder, deleteOrder } from '../src/services/orderService.js';
+import { findAll, findById, createOrder, updateOrder, closeOrder, deleteOrder, restoreOrder, permanentDeleteOrder } from '../src/services/orderService.js';
 import Order from '../src/models/order.js';
 import OrderItem from '../src/models/orderItem.js';
 import { AppError } from '../src/middleware/appError.js';
@@ -39,7 +39,7 @@ describe('findAll', () => {
     const result = await findAll('OPEN');
 
     expect(result).toEqual(openOrders);
-    expect(Order.findAll).toHaveBeenCalledWith({ where: { status: 'OPEN' } });
+    expect(Order.findAll).toHaveBeenCalledWith({ where: { deletedAt: null, status: 'OPEN' } });
   });
 
   it('deve lançar AppError se status for inválido', async () => {
@@ -76,7 +76,7 @@ describe('createOrder', () => {
 describe('updateOrder', () => {
   it('deve atualizar um pedido com sucesso', async () => {
     const order = { id: 1, status: 'OPEN', update: vi.fn().mockResolvedValue(true) };
-    Order.findByPk.mockResolvedValue(order);
+    Order.findOne.mockResolvedValue(order);
 
     await updateOrder(1, { status: 'PAID' });
 
@@ -89,7 +89,7 @@ describe('updateOrder', () => {
 
   it('deve lançar AppError ao tentar reabrir pedido', async () => {
     const order = { id: 1, status: 'PAID' };
-    Order.findByPk.mockResolvedValue(order);
+    Order.findOne.mockResolvedValue(order);
 
     await expect(updateOrder(1, { status: 'OPEN' })).rejects.toMatchObject({
       message: 'cannot reopen a closed order'
@@ -105,7 +105,7 @@ describe('closeOrder', () => {
       OrderItems: [{ id: 1 }],
       update: vi.fn().mockResolvedValue(true)
     };
-    Order.findByPk.mockResolvedValue(order);
+    Order.findOne.mockResolvedValue(order);
 
     await closeOrder(1);
 
@@ -113,13 +113,13 @@ describe('closeOrder', () => {
   });
 
   it('deve lançar AppError se pedido já estiver fechado', async () => {
-    Order.findByPk.mockResolvedValue({ id: 1, status: 'CLOSED', OrderItems: [] });
+    Order.findOne.mockResolvedValue({ id: 1, status: 'CLOSED', OrderItems: [] });
 
     await expect(closeOrder(1)).rejects.toMatchObject({ message: 'order is already closed' });
   });
 
   it('deve lançar AppError se pedido estiver vazio', async () => {
-    Order.findByPk.mockResolvedValue({ id: 1, status: 'OPEN', OrderItems: [] });
+    Order.findOne.mockResolvedValue({ id: 1, status: 'OPEN', OrderItems: [] });
 
     await expect(closeOrder(1)).rejects.toMatchObject({ message: 'cannot close an empty order' });
   });
@@ -127,23 +127,50 @@ describe('closeOrder', () => {
 
 describe('deleteOrder', () => {
   it('deve deletar um pedido com sucesso', async () => {
-    const order = { id: 1, status: 'OPEN', destroy: vi.fn().mockResolvedValue(true) };
-    Order.findByPk.mockResolvedValue(order);
+    const order = { 
+      id: 1, 
+      status: 'OPEN', 
+      update: vi.fn().mockResolvedValue(true) 
+    };
+    Order.findOne.mockResolvedValue(order);
 
     await deleteOrder(1);
 
-    expect(order.destroy).toHaveBeenCalledOnce();
+    expect(order.update).toHaveBeenCalledWith(expect.objectContaining({
+      deletedAt: expect.any(Date)
+    }));
   });
-
   it('deve lançar AppError se pedido não existir', async () => {
-    Order.findByPk.mockResolvedValue(null);
+    Order.findOne.mockResolvedValue(null);
 
     await expect(deleteOrder(99)).rejects.toMatchObject({ status: 404 });
   });
 
   it('deve lançar AppError se pedido estiver fechado', async () => {
-    Order.findByPk.mockResolvedValue({ id: 1, status: 'CLOSED' });
+    Order.findOne.mockResolvedValue({ id: 1, status: 'CLOSED' });
 
     await expect(deleteOrder(1)).rejects.toMatchObject({ message: 'cannot delete a closed order' });
+  });
+});
+
+describe('restoreOrder', () => {
+  it('deve restaurar um pedido com sucesso', async () => {
+    const order = { id: 1, update: vi.fn().mockResolvedValue(true) };
+    Order.findOne.mockResolvedValue(order);
+
+    await restoreOrder(1);
+
+    expect(order.update).toHaveBeenCalledWith({ deletedAt: null });
+  });
+});
+
+describe('permanentDeleteOrder', () => {
+  it('deve deletar permanentemente um pedido', async () => {
+    const order = { id: 1, destroy: vi.fn().mockResolvedValue(true) };
+    Order.findByPk.mockResolvedValue(order);
+
+    await permanentDeleteOrder(1);
+
+    expect(order.destroy).toHaveBeenCalledOnce();
   });
 });

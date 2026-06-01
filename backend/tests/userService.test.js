@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { findAll, findById, createUser, updateUser, deleteUser } from '../src/services/userService.js';
+import { findAll, findById, createUser, updateUser, deleteUser, permanentDeleteUser, restoreUser } from '../src/services/userService.js';
 import User from '../src/models/user.js';
 import { AppError } from '../src/middleware/appError.js';
 import bcrypt from 'bcryptjs';
@@ -37,7 +37,7 @@ describe('findAll', () => {
 describe('findById', () => {
   it('deve retornar o usuário pelo id', async () => {
     const user = { id: 1, name: 'Admin' };
-    User.findByPk.mockResolvedValue(user);
+    User.findOne.mockResolvedValue(user);
 
     const result = await findById(1);
 
@@ -45,7 +45,7 @@ describe('findById', () => {
   });
 
   it('deve lançar AppError 404 se usuário não existir', async () => {
-    User.findByPk.mockResolvedValue(null);
+    User.findOne.mockResolvedValue(null);
 
     await expect(findById(99)).rejects.toMatchObject({ status: 404, message: 'user not found' });
   });
@@ -86,7 +86,7 @@ describe('createUser', () => {
 describe('updateUser', () => {
   it('deve atualizar um usuário com sucesso', async () => {
     const user = { id: 2, name: 'João', update: vi.fn().mockResolvedValue(true) };
-    User.findByPk.mockResolvedValue(user);
+    User.findOne.mockResolvedValue(user);
 
     await updateUser(2, { name: 'João Silva' }, 1);
 
@@ -95,7 +95,7 @@ describe('updateUser', () => {
 
   it('deve lançar AppError se admin tentar desativar a si mesmo', async () => {
     const user = { id: 1, name: 'Admin', update: vi.fn() };
-    User.findByPk.mockResolvedValue(user);
+    User.findOne.mockResolvedValue(user);
 
     await expect(updateUser(1, { active: false }, 1))
       .rejects.toMatchObject({ message: 'você não pode desativar sua própria conta' });
@@ -103,7 +103,7 @@ describe('updateUser', () => {
 
   it('deve lançar AppError se admin tentar alterar a própria role', async () => {
     const user = { id: 1, name: 'Admin', update: vi.fn() };
-    User.findByPk.mockResolvedValue(user);
+    User.findOne.mockResolvedValue(user);
 
     await expect(updateUser(1, { role: 'WAITER' }, 1))
       .rejects.toMatchObject({ message: 'você não pode alterar sua própria role' });
@@ -112,22 +112,53 @@ describe('updateUser', () => {
 
 describe('deleteUser', () => {
   it('deve deletar um usuário com sucesso', async () => {
-    const user = { id: 2, destroy: vi.fn().mockResolvedValue(true) };
-    User.findByPk.mockResolvedValue(user);
+    const user = { 
+      id: 2, 
+      update: vi.fn().mockResolvedValue(true) 
+    };
+    User.findOne.mockResolvedValue(user);
 
     await deleteUser(2, 1);
 
-    expect(user.destroy).toHaveBeenCalledOnce();
+    expect(user.update).toHaveBeenCalledWith(expect.objectContaining({
+      deletedAt: expect.any(Date)
+    }));
   });
-
-  it('deve lançar AppError se admin tentar deletar a si mesmo', async () => {
+ it('deve lançar AppError se admin tentar deletar a si mesmo', async () => {
     await expect(deleteUser(1, 1))
       .rejects.toMatchObject({ message: 'você não pode deletar sua própria conta' });
   });
 
   it('deve lançar AppError se usuário não existir', async () => {
-    User.findByPk.mockResolvedValue(null);
+    User.findOne.mockResolvedValue(null);
 
     await expect(deleteUser(99, 1)).rejects.toMatchObject({ status: 404 });
+  });
+});
+
+describe('restoreUser', () => {
+  it('deve restaurar um usuário com sucesso', async () => {
+    const user = { id: 1, update: vi.fn().mockResolvedValue(true) };
+    User.findOne.mockResolvedValue(user);
+
+    await restoreUser(1);
+
+    expect(user.update).toHaveBeenCalledWith({ deletedAt: null, active: true });
+  });
+
+  it('deve lançar erro se usuário não for encontrado ou não estiver deletado', async () => {
+    User.findOne.mockResolvedValue(null);
+    await expect(restoreUser(99)).rejects.toThrow(AppError);
+  });
+});
+
+describe('permanentDeleteUser', () => {
+  it('deve deletar permanentemente um usuário', async () => {
+    const user = { id: 2, destroy: vi.fn().mockResolvedValue(true) };
+    User.findByPk.mockResolvedValue(user);
+
+    await permanentDeleteUser(2, 1); // id 2, requester 1
+
+    expect(user.destroy).toHaveBeenCalledOnce();
   });
 });
