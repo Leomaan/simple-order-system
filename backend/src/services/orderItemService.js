@@ -30,21 +30,23 @@ export async function addItem(data) {
   });
 
   if (existing) {
-    const newQty = existing.quantity + quantity;
-    await existing.update({
-      quantity: newQty,
-      totalPrice: product.price * newQty,
-    });
-    return existing;
-  }
-
-  return OrderItem.create({
-    OrderId: orderId,
-    ProductId: productId,
-    quantity,
-    unitPrice: product.price,
-    totalPrice: product.price * quantity,
+  const newQty = existing.quantity + quantity;
+  await existing.update({
+    quantity: newQty,
+    totalPrice: product.price * newQty,
   });
+  return { item: existing, created: false };
+}
+
+const item = await OrderItem.create({
+  OrderId: orderId,
+  ProductId: productId,
+  quantity,
+  unitPrice: product.price,
+  totalPrice: product.price * quantity,
+});
+
+return { item, created: true };
 }
 
 export async function changeQuantity(id, quantity) {

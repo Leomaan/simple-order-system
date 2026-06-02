@@ -3,9 +3,9 @@ import * as orderItemService from '../services/orderItemService.js';
 import { log } from '../services/auditLogService.js';
  
 export const create = asyncHandler(async (req, res) => {
-  const item = await orderItemService.addItem(req.body);
+  const { item, created } = await orderItemService.addItem(req.body);
   await log({ user: req.user, action: 'ADD_ORDER_ITEM', entity: 'OrderItem', entityId: item.id, details: { orderId: item.OrderId, productId: item.ProductId, quantity: item.quantity } });
-  res.status(201).json({ success: true, data: item });
+  res.status(created ? 201 : 200).json({ success: true, data: item });
 });
  
 export const changeQuantity = asyncHandler(async (req, res) => {

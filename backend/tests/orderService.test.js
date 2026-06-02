@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { findAll, findById, createOrder, updateOrder, closeOrder, deleteOrder, restoreOrder, permanentDeleteOrder } from '../src/services/orderService.js';
 import Order from '../src/models/order.js';
 import OrderItem from '../src/models/orderItem.js';
-import { AppError } from '../src/middleware/appError.js';
 
 vi.mock('../src/models/order.js', () => ({
   default: {

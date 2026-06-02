@@ -3,7 +3,6 @@ import { addItem, changeQuantity, removeItem } from '../src/services/orderItemSe
 import OrderItem from '../src/models/orderItem.js';
 import Order from '../src/models/order.js';
 import Product from '../src/models/product.js';
-import { AppError } from '../src/middleware/appError.js';
 
 vi.mock('../src/models/orderItem.js', () => ({
   default: {
@@ -25,28 +24,30 @@ beforeEach(() => vi.clearAllMocks());
 
 describe('addItem', () => {
   it('deve adicionar um item ao pedido com sucesso', async () => {
-    Order.findByPk.mockResolvedValue({ id: 1, status: 'OPEN' });
-    Product.findByPk.mockResolvedValue({ id: 1, price: 25.90, available: true });
-    OrderItem.findOne.mockResolvedValue(null);
-    OrderItem.create.mockResolvedValue({ id: 1, OrderId: 1, ProductId: 1, quantity: 2 });
+  Order.findByPk.mockResolvedValue({ id: 1, status: 'OPEN' });
+  Product.findByPk.mockResolvedValue({ id: 1, price: 25.90, available: true });
+  OrderItem.findOne.mockResolvedValue(null);
+  OrderItem.create.mockResolvedValue({ id: 1, OrderId: 1, ProductId: 1, quantity: 2 });
 
-    const result = await addItem({ orderId: 1, productId: 1, quantity: 2 });
+  const result = await addItem({ orderId: 1, productId: 1, quantity: 2 });
 
-    expect(OrderItem.create).toHaveBeenCalledOnce();
-    expect(result).toMatchObject({ quantity: 2 });
-  });
+  expect(OrderItem.create).toHaveBeenCalledOnce();
+  expect(result.item).toMatchObject({ quantity: 2 }); 
+  expect(result.created).toBe(true);                  
+});
 
   it('deve somar a quantidade se item já existir', async () => {
-    Order.findByPk.mockResolvedValue({ id: 1, status: 'OPEN' });
-    Product.findByPk.mockResolvedValue({ id: 1, price: 25.90, available: true });
+  Order.findByPk.mockResolvedValue({ id: 1, status: 'OPEN' });
+  Product.findByPk.mockResolvedValue({ id: 1, price: 25.90, available: true });
 
-    const existing = { quantity: 2, update: vi.fn().mockResolvedValue(true) };
-    OrderItem.findOne.mockResolvedValue(existing);
+  const existing = { quantity: 2, update: vi.fn().mockResolvedValue(true) };
+  OrderItem.findOne.mockResolvedValue(existing);
 
-    await addItem({ orderId: 1, productId: 1, quantity: 3 });
+  const result = await addItem({ orderId: 1, productId: 1, quantity: 3 });
 
-    expect(existing.update).toHaveBeenCalledWith({ quantity: 5, totalPrice: 25.90 * 5 });
-  });
+  expect(existing.update).toHaveBeenCalledWith({ quantity: 5, totalPrice: 25.90 * 5 });
+  expect(result.created).toBe(false); 
+});
 
   it('deve lançar AppError se dados não forem fornecidos', async () => {
     await expect(addItem({ orderId: 1 })).rejects.toMatchObject({ message: 'no data provided' });
