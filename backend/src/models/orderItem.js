@@ -1,7 +1,7 @@
-import { DataTypes } from "sequelize";
-import {sequelize} from "../db/conn.js";
+import { DataTypes } from 'sequelize';
+import {sequelize} from '../db/conn.js';
 
-const OrderItem = sequelize.define("OrderItem", {
+const OrderItem = sequelize.define('OrderItem', {
   quantity: {
     type: DataTypes.INTEGER,
     allowNull: false

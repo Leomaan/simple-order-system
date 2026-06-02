@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import app from './src/app.js';
-import { sequelize } from "./src/models/index.js"
+import { sequelize } from './src/models/index.js'
 
 const PORT = process.env.PORT || 3000;
 const force = process.argv.includes('--force');

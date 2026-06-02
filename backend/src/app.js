@@ -1,11 +1,11 @@
-import e from "express";
-import productRoutes from "./routes/produtctRoutes.js";
-import orderRoutes from "./routes/orderRoutes.js";
-import orderItemRoutes from "./routes/orderItemRoutes.js";
-import { errorHandler } from "./middleware/errorHandler.js";
-import authRoutes from "./routes/authRoutes.js";
-import userRoutes from "./routes/userRoutes.js";
-import auditLogRoutes from "./routes/auditlogsRoutes.js";
+import e from 'express';
+import productRoutes from './routes/produtctRoutes.js';
+import orderRoutes from './routes/orderRoutes.js';
+import orderItemRoutes from './routes/orderItemRoutes.js';
+import { errorHandler } from './middleware/errorHandler.js';
+import authRoutes from './routes/authRoutes.js';
+import userRoutes from './routes/userRoutes.js';
+import auditLogRoutes from './routes/auditlogsRoutes.js';
 
 const app = e();
 

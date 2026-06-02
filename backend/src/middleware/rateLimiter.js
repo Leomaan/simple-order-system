@@ -1,5 +1,7 @@
 import rateLimit from 'express-rate-limit';
 
+const skipIfTest = () => process.env.NODE_ENV === 'test';
+
 export const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, 
   max: 5,
@@ -9,9 +11,10 @@ export const loginLimiter = rateLimit({
   },
   standardHeaders: true, 
   legacyHeaders: false,
+  skip: skipIfTest, 
 });
 
-export const generalLimiter = rateLimit({ //Futuro
+export const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
   message: {
@@ -20,4 +23,5 @@ export const generalLimiter = rateLimit({ //Futuro
   },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: skipIfTest,
 });

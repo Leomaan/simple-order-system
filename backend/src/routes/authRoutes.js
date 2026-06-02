@@ -1,9 +1,7 @@
 import { Router } from 'express';
 import { login, refresh, logout } from '../controllers/authController.js';
 import { validate } from '../middleware/validate.js';
-import { z } from 'zod';
-import { asyncHandler } from '../middleware/asyncHandler.js';
-import { loginSchema, refreshSchema } from '../schemas/schemas.js';
+import { loginSchema, refreshSchema } from '../schemas/authSchema.js';
 import { loginLimiter } from '../middleware/rateLimiter.js';
 
 const routes = Router();

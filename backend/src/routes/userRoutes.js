@@ -4,7 +4,7 @@ import { validate } from '../middleware/validate.js';
 import { requireAdmin } from '../middleware/authtenticate.js';
 import { validateId } from '../middleware/validateId.js';
 import { z } from 'zod';
-import { createUserSchema, updateUserSchema } from '../schemas/schemas.js';
+import { createUserSchema, updateUserSchema } from '../schemas/userSchema.js';
 
 const routes = Router();
  
