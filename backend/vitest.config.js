@@ -7,15 +7,10 @@ dotenv.config({ path: path.resolve(__dirname, '.env.test') });
 export default defineConfig({
   test: {
     include: [
-      'tests/**/*.test.js',           
-      'tests/**/*.integration.test.js' 
+      'tests/**/*.test.js',
+      'tests/**/*.integration.test.js',
     ],
-    pool: 'forks',
-    poolOptions: {
-      forks: {
-        singleFork: true,
-      },
-    },
-    globals: true, 
+    globals: true,
+    fileParallelism: false,
   },
 });

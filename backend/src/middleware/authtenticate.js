@@ -19,7 +19,8 @@ export function authenticate(req, res, next) {
 }
 
 export function requireWaiter(req, res, next) {
-  authenticate(req, res, () => {
+  authenticate(req, res, (err) => {
+    if (err) return next(err); 
     if (req.user.role !== 'WAITER' && req.user.role !== 'ADMIN')
       return next(new AppError('acesso não autorizado', 403));
     next();
@@ -27,8 +28,9 @@ export function requireWaiter(req, res, next) {
 }
 
 export function requireAdmin(req, res, next) {
-  authenticate(req, res, () => {
-    if (req.user.role !== 'ADMIN')
+  authenticate(req, res, (err) => {
+    if (err) return next(err); 
+    if (req.user?.role !== 'ADMIN')
       return next(new AppError('acesso restrito ao administrador', 403));
     next();
   });
