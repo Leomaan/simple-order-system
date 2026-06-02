@@ -1,0 +1,100 @@
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, example: admin@restaurant.com }
+        password: { type: string, example: admin123 }
+
+    AuthResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        data:
+          type: object
+          properties:
+            accessToken: { type: string }
+            refreshToken: { type: string }
+            role: { type: string, enum: [ADMIN, WAITER] }
+            name: { type: string }
+
+    User:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        email: { type: string }
+        role: { type: string, enum: [ADMIN, WAITER] }
+        active: { type: boolean }
+
+    Product:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        category: { type: string, enum: [FOOD, DRINK, SNACK, DESSERT, SIDE] }
+        price: { type: number }
+        description: { type: string }
+        available: { type: boolean }
+
+    Order:
+      type: object
+      properties:
+        id: { type: integer }
+        table: { type: integer }
+        status: { type: string, enum: [OPEN, PAID, CLOSED] }
+        total: { type: number }
+
+    OrderItem:
+      type: object
+      properties:
+        id: { type: integer }
+        orderId: { type: integer }
+        productId: { type: integer }
+        quantity: { type: integer }
+        unitPrice: { type: number }
+        totalPrice: { type: number }
+
+    AuditLog:
+      type: object
+      properties:
+        id: { type: integer }
+        userId: { type: integer }
+        userName: { type: string }
+        userRole: { type: string }
+        action: { type: string }
+        entity: { type: string }
+        entityId: { type: integer }
+        details: { type: object }
+        ip: { type: string }
+        createdAt: { type: string, format: date-time }
+
+    ErrorResponse:
+      type: object
+      properties:
+        success: { type: boolean, example: false }
+        message: { type: string }
+
+  responses:
+    Unauthorized:
+      description: Não autorizado
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    BadRequest:
+      description: Erro na requisição
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    NotFound:
+      description: Recurso não encontrado
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }

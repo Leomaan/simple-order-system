@@ -1,0 +1,52 @@
+paths:
+  /order-item:
+    post:
+      summary: Adiciona um produto ao pedido (Garçom+)
+      tags: [Itens do Pedido]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [orderId, productId, quantity]
+              properties:
+                orderId: { type: integer, example: 1 }
+                productId: { type: integer, example: 2 }
+                quantity: { type: integer, example: 2 }
+      responses:
+        201: { description: Item adicionado }
+        400: { description: Pedido fechado ou produto indisponível }
+
+  /order-item/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+
+    patch:
+      summary: Altera a quantidade do item (Garçom+)
+      tags: [Itens do Pedido]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [quantity]
+              properties:
+                quantity: { type: integer, example: 5 }
+      responses:
+        200: { description: Quantidade alterada }
+        400: { description: Pedido fechado }
+
+    delete:
+      summary: Remove o item do pedido (Garçom+)
+      tags: [Itens do Pedido]
+      security: [{ bearerAuth: [] }]
+      responses:
+        200: { description: Item removido }
+        400: { description: Pedido fechado }

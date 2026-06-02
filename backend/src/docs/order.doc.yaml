@@ -1,0 +1,111 @@
+paths:
+  /order:
+    get:
+      summary: Lista todos os pedidos (Garçom+)
+      tags: [Pedido]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: status
+          required: false
+          schema:
+            type: string
+            enum: [OPEN, PAID, CLOSED]
+      responses:
+        200: { description: OK }
+
+    post:
+      summary: Abre um novo pedido (Garçom+)
+      tags: [Pedido]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [table]
+              properties:
+                table: { type: integer, example: 10 }
+      responses:
+        201: { description: Pedido aberto }
+
+  /order/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+
+    get:
+      summary: Detalhes do pedido com itens e total (Garçom+)
+      tags: [Pedido]
+      security: [{ bearerAuth: [] }]
+      responses:
+        200: { description: OK }
+        404: { description: Pedido não encontrado }
+
+    put:
+      summary: Atualiza dados do pedido como mesa (Garçom+)
+      tags: [Pedido]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                table: { type: integer, example: 5 }
+                status: { type: string, enum: [OPEN, PAID, CLOSED] }
+      responses:
+        200: { description: Pedido atualizado }
+
+    delete:
+      summary: Soft delete do pedido (Admin)
+      tags: [Pedido]
+      security: [{ bearerAuth: [] }]
+      responses:
+        200: { description: Pedido removido }
+        403: { description: Acesso restrito ao administrador }
+
+  /order/{id}/close:
+    patch:
+      summary: Fecha o pedido — status CLOSED (Garçom+)
+      tags: [Pedido]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        200: { description: Pedido fechado }
+        400: { description: Pedido vazio ou já fechado }
+
+  /order/{id}/restore:
+    patch:
+      summary: Restaura pedido deletado (Admin)
+      tags: [Pedido]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        200: { description: Pedido restaurado }
+        404: { description: Pedido não encontrado ou não deletado }
+
+  /order/{id}/permanent:
+    delete:
+      summary: Delete permanente do pedido (Admin)
+      tags: [Pedido]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        200: { description: Pedido permanentemente deletado }
+        403: { description: Acesso restrito ao administrador }

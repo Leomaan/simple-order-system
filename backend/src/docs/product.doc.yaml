@@ -1,0 +1,106 @@
+paths:
+  /product:
+    get:
+      summary: Lista todos os produtos
+      tags: [Produto]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: category
+          required: false
+          schema:
+            type: string
+            enum: [FOOD, DRINK, SNACK, DESSERT, SIDE]
+      responses:
+        200: { description: OK }
+
+    post:
+      summary: Cria um novo produto (Admin)
+      tags: [Produto]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, category, price]
+              properties:
+                name: { type: string, example: Pizza de Calabresa }
+                category: { type: string, enum: [FOOD, DRINK, SNACK, DESSERT, SIDE], example: FOOD }
+                price: { type: number, example: 45.90 }
+                description: { type: string, example: Pizza com molho e calabresa }
+                available: { type: boolean, example: true }
+      responses:
+        201: { description: Produto criado }
+        401: { $ref: '#/components/responses/Unauthorized' }
+        403: { description: Acesso restrito ao administrador }
+
+  /product/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+    get:
+      summary: Busca produto por ID
+      tags: [Produto]
+      security: [{ bearerAuth: [] }]
+      responses:
+        200: { description: OK }
+        404: { description: Produto não encontrado }
+
+    put:
+      summary: Edita produto (Admin)
+      tags: [Produto]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                category: { type: string, enum: [FOOD, DRINK, SNACK, DESSERT, SIDE] }
+                price: { type: number }
+                description: { type: string }
+                available: { type: boolean }
+      responses:
+        200: { description: Produto atualizado }
+        403: { description: Acesso restrito ao administrador }
+
+    delete:
+      summary: Soft delete do produto (Admin)
+      tags: [Produto]
+      security: [{ bearerAuth: [] }]
+      responses:
+        200: { description: Produto removido }
+        403: { description: Acesso restrito ao administrador }
+
+  /product/{id}/restore:
+    patch:
+      summary: Restaura produto deletado (Admin)
+      tags: [Produto]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        200: { description: Produto restaurado }
+        404: { description: Produto não encontrado ou não deletado }
+
+  /product/{id}/permanent:
+    delete:
+      summary: Delete permanente do produto (Admin)
+      tags: [Produto]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        200: { description: Produto permanentemente deletado }
+        403: { description: Acesso restrito ao administrador }

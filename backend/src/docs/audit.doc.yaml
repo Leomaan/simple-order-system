@@ -1,0 +1,32 @@
+paths:
+  /audit:
+    get:
+      summary: Listar logs de auditoria (Admin)
+      tags: [Auditoria]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: userId
+          required: false
+          schema: { type: integer }
+        - in: query
+          name: action
+          required: false
+          schema:
+            type: string
+            enum: [LOGIN, LOGOUT, CREATE_PRODUCT, UPDATE_PRODUCT, DELETE_PRODUCT, RESTORE_PRODUCT, PERMANENT_DELETE_PRODUCT, CREATE_ORDER, CLOSE_ORDER, DELETE_ORDER, UPDATE_ORDER, RESTORE_ORDER, PERMANENT_DELETE_ORDER, CREATE_USER, UPDATE_USER, DELETE_USER, RESTORE_USER, PERMANENT_DELETE_USER, ADD_ORDER_ITEM, UPDATE_ORDER_ITEM, REMOVE_ORDER_ITEM]
+        - in: query
+          name: entity
+          required: false
+          schema: { type: string, enum: [Product, Order, User, OrderItem] }
+        - in: query
+          name: from
+          required: false
+          schema: { type: string, format: date, example: '2026-01-01' }
+        - in: query
+          name: to
+          required: false
+          schema: { type: string, format: date, example: '2026-12-31' }
+      responses:
+        200: { description: OK }
+        403: { description: Acesso restrito ao administrador }

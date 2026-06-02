@@ -1,0 +1,56 @@
+paths:
+  /auth/login:
+    post:
+      summary: Realiza login
+      tags: [Autenticação]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+      responses:
+        200:
+          description: Login realizado com sucesso
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthResponse' }
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        429:
+          description: Muitas tentativas de login
+
+  /auth/refresh:
+    post:
+      summary: Atualiza access token
+      tags: [Autenticação]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken: { type: string }
+      responses:
+        200:
+          description: Novo access token gerado
+        401:
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/logout:
+    post:
+      summary: Logout do sistema
+      tags: [Autenticação]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken: { type: string }
+      responses:
+        200: { description: Logout realizado com sucesso }

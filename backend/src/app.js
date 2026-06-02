@@ -1,15 +1,19 @@
 import e from 'express';
-import productRoutes from './routes/produtctRoutes.js';
+import productRoutes from './routes/productRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
 import orderItemRoutes from './routes/orderItemRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import auditLogRoutes from './routes/auditlogsRoutes.js';
+import { swaggerSpec } from './config/swagger.js';
+import swaggerUi from 'swagger-ui-express';
 
 const app = e();
 
 app.use(e.json());
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use('/product', productRoutes);
 app.use('/order', orderRoutes);

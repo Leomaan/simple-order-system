@@ -5,11 +5,12 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "vitest --config vitest.config.js",
-    "test:coverage": "vitest --coverage",
-    "start": "nodemon ./server.js",
-    "db:reset": "node scripts/reset.js",
-    "test:integration": "vitest --config vitest.config.js tests/integration"
+  "start": "nodemon ./server.js",
+  "db:seed": "node scripts/seed.js",
+  "db:reset": "node scripts/reset.js",
+  "test": "cross-env NODE_ENV=test vitest --config vitest.config.js",
+  "test:coverage": "cross-env NODE_ENV=test vitest run --coverage",
+  "test:integration": "cross-env NODE_ENV=test vitest --config vitest.config.js tests/integrations --threads false"
   },
   "keywords": [],
   "author": "",
@@ -23,6 +24,8 @@
     "mysql2": "^3.19.0",
     "nodemon": "^3.1.14",
     "sequelize": "^6.37.7",
+    "swagger-jsdoc": "^6.3.0",
+    "swagger-ui-express": "^5.0.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {
