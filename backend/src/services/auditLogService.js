@@ -1,16 +1,16 @@
 import AuditLog from '../models/auditLog.js';
 
-export async function log({ user, action, entity, entityId, details, ip }) {
+export async function log({ user, action, entity = null, entityId = null, details = null, ip = null }) {
   try {
     await AuditLog.create({
-      userId:   user?.userId || null,
-      userName: user?.name   || 'system',
-      userRole: user?.role   || 'system',
+      userId:   user?.userId ?? null,
+      userName: user?.name   ?? 'system',
+      userRole: user?.role   ?? 'system',
       action,
-      entity:   entity   || null,
-      entityId: entityId || null,
-      details:  details  ? JSON.stringify(details) : null,
-      ip:       ip       || null,
+      entity,
+      entityId,
+      details: details ? JSON.stringify(details) : null,
+      ip,
     });
   } catch (err) {
     console.error('Erro ao salvar log:', err.message);
