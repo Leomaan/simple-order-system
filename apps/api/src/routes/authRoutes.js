@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { login, refresh, logout } from '../controllers/authController.js';
 import { validate } from '../middleware/validate.js';
-import { loginSchema, refreshSchema } from '../schemas/authSchema.js';
+import { loginSchema, refreshSchema } from '@simple-order/schemas';
 import { loginLimiter } from '../middleware/rateLimiter.js';
 
 const routes = Router();
