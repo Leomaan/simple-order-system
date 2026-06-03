@@ -8,6 +8,7 @@ import userRoutes from './routes/userRoutes.js';
 import auditLogRoutes from './routes/auditlogsRoutes.js';
 import { swaggerSpec } from './config/swagger.js';
 import swaggerUi from 'swagger-ui-express';
+import reportRoutes from './routes/reportRoutes.js';
 
 const app = e();
 
@@ -21,6 +22,7 @@ app.use('/order-item', orderItemRoutes);
 app.use('/auth', authRoutes);
 app.use('/user', userRoutes);
 app.use('/audit', auditLogRoutes);
+app.use('/report', reportRoutes);
 
 app.use(errorHandler);
 
