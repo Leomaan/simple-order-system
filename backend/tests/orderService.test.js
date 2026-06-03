@@ -32,14 +32,16 @@ describe('findAll', () => {
   });
 
   it('deve filtrar pedidos por status', async () => {
-    const openOrders = [{ id: 1, table: 3, status: 'OPEN' }];
-    Order.findAll.mockResolvedValue(openOrders);
-
-    const result = await findAll('OPEN');
-
-    expect(result).toEqual(openOrders);
-    expect(Order.findAll).toHaveBeenCalledWith({ where: { deletedAt: null, status: 'OPEN' } });
-  });
+  const openOrders = [{ id: 1, table: 3, status: 'OPEN' }];
+  Order.findAll.mockResolvedValue(openOrders);
+  const result = await findAll('OPEN');
+  expect(result).toEqual(openOrders);
+  expect(Order.findAll).toHaveBeenCalledWith(
+    expect.objectContaining({
+      where: { deletedAt: null, status: 'OPEN' },
+    })
+  );
+});
 
   it('deve lançar AppError se status for inválido', async () => {
     await expect(findAll('INVALIDO')).rejects.toMatchObject({

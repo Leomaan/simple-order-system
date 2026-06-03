@@ -16,7 +16,20 @@ export async function findAll(status) {
     where.status = status;
   }
 
-  return Order.findAll({ where });
+   return Order.findAll({
+    where,
+    include: [
+      {
+        model: OrderItem,
+        include: [
+          {
+            model: Product,
+            attributes: ['id', 'name', 'price'], 
+          },
+        ],
+      },
+    ],
+  });
 }
 
 export async function findById(id) {
