@@ -1,4 +1,5 @@
 import e from 'express';
+import cookieParser from 'cookie-parser';
 import productRoutes from './routes/productRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
 import orderItemRoutes from './routes/orderItemRoutes.js';
@@ -9,10 +10,17 @@ import auditLogRoutes from './routes/auditlogsRoutes.js';
 import { swaggerSpec } from './config/swagger.js';
 import swaggerUi from 'swagger-ui-express';
 import reportRoutes from './routes/reportRoutes.js';
+import cors from 'cors';
 
 const app = e();
 
+app.use(cookieParser());
 app.use(e.json());
+
+app.use(cors({
+  origin: 'http://localhost:5173', 
+  credentials: true,
+}));
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
