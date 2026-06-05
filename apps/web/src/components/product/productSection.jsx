@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useProducts } from '../../hooks/useProduct';
+import confirmModal from '../ui/confirmModal';
 
 const CATEGORIES = ['FOOD', 'DRINK', 'SNACK', 'DESSERT', 'SIDE'];
 
@@ -11,35 +12,91 @@ const categoryLabel = {
   SIDE: 'Acompanhamento',
 };
 
+const emptyForm = { name: '', price: '', category: 'FOOD', description: '' };
+
 export default function productsSection() {
-  const { products, loading, createProduct } = useProducts();
+  const { products, loading, createProduct, updateProduct, deleteProduct } = useProducts();
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: '', price: '', category: 'FOOD', description: '' });
+  const [editing, setEditing] = useState(null);
+  const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [deleting, setDeleting] = useState(null); 
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
-  async function handleCreate(e) {
+  function openCreate() {
+    setEditing(null);
+    setForm(emptyForm);
+    setError('');
+    setShowForm(true);
+  }
+
+  function openEdit(product) {
+    setEditing(product);
+    setForm({
+      name: product.name,
+      price: product.price,
+      category: product.category,
+      description: product.description || '',
+    });
+    setError('');
+    setShowForm(true);
+  }
+
+  function closeForm() {
+    setShowForm(false);
+    setEditing(null);
+    setForm(emptyForm);
+    setError('');
+  }
+
+  async function handleSubmit(e) {
     e.preventDefault();
     setSaving(true);
     setError('');
     try {
-      await createProduct({ ...form, price: Number(form.price) });
-      setForm({ name: '', price: '', category: 'FOOD', description: '' });
-      setShowForm(false);
+      const data = { ...form, price: Number(form.price) };
+      if (editing) {
+        await updateProduct(editing.id, data);
+      } else {
+        await createProduct(data);
+      }
+      closeForm();
     } catch (err) {
-      setError(err.response?.data?.message || 'Erro ao criar produto');
+      const msg = err.response?.data?.message;
+      setError(Array.isArray(msg) ? msg.join(', ') : msg || 'Erro ao salvar produto');
     } finally {
       setSaving(false);
     }
   }
 
+  async function handleDelete() {
+    setDeleteLoading(true);
+    try {
+      await deleteProduct(deleting);
+      setDeleting(null);
+    } catch (err) {
+      setDeleting(null);
+    } finally {
+      setDeleteLoading(false);
+    }
+  }
+
   return (
     <div className="p-8">
+      {/* Confirm modal */}
+      {deleting && confirmModal({
+        message: 'Tem certeza que deseja excluir este produto?',
+        onConfirm: handleDelete,
+        onCancel: () => setDeleting(null),
+        loading: deleteLoading,
+      })}
+
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-white text-xl font-bold">Produtos</h2>
         <button
-          onClick={() => setShowForm(!showForm)}
+          onClick={showForm ? closeForm : openCreate}
           className="bg-orange-500 hover:bg-orange-400 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
         >
           {showForm ? 'Cancelar' : '+ Novo produto'}
@@ -48,8 +105,8 @@ export default function productsSection() {
 
       {/* Formulário */}
       {showForm && (
-        <form onSubmit={handleCreate} className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 mb-6 flex flex-col gap-4">
-          <h3 className="text-white font-medium">Novo produto</h3>
+        <form onSubmit={handleSubmit} className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 mb-6 flex flex-col gap-4">
+          <h3 className="text-white font-medium">{editing ? 'Editar produto' : 'Novo produto'}</h3>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1">
@@ -101,9 +158,7 @@ export default function productsSection() {
           </div>
 
           {error && (
-            <p className="text-red-400 text-sm bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2">
-              {Array.isArray(error) ? error.join(', ') : error}
-            </p>
+            <p className="text-red-400 text-sm bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2">{error}</p>
           )}
 
           <button
@@ -111,7 +166,7 @@ export default function productsSection() {
             disabled={saving}
             className="bg-orange-500 hover:bg-orange-400 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors self-end"
           >
-            {saving ? 'Salvando...' : 'Salvar produto'}
+            {saving ? 'Salvando...' : editing ? 'Salvar alterações' : 'Criar produto'}
           </button>
         </form>
       )}
@@ -122,16 +177,28 @@ export default function productsSection() {
       ) : products.length === 0 ? (
         <p className="text-neutral-500 text-sm">Nenhum produto cadastrado.</p>
       ) : (
-        <div className="grid grid-cols-1 gap-3">
+        <div className="flex flex-col gap-3">
           {products.map((p) => (
             <div key={p.id} className="bg-neutral-900 border border-neutral-800 rounded-xl px-5 py-4 flex items-center justify-between">
               <div>
                 <p className="text-white font-medium">{p.name}</p>
                 <p className="text-neutral-500 text-xs mt-0.5">{categoryLabel[p.category]} · {p.available ? 'Disponível' : 'Indisponível'}</p>
               </div>
-              <span className="text-orange-400 font-semibold text-sm">
-                R$ {Number(p.price).toFixed(2)}
-              </span>
+              <div className="flex items-center gap-4">
+                <span className="text-orange-400 font-semibold text-sm">R$ {Number(p.price).toFixed(2)}</span>
+                <button
+                  onClick={() => openEdit(p)}
+                  className="text-neutral-400 hover:text-white text-xs transition-colors"
+                >
+                  Editar
+                </button>
+                <button
+                  onClick={() => setDeleting(p.id)}
+                  className="text-red-400 hover:text-red-300 text-xs transition-colors"
+                >
+                  Excluir
+                </button>
+              </div>
             </div>
           ))}
         </div>

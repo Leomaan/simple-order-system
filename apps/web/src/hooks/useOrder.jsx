@@ -25,9 +25,20 @@ export function useOrders() {
     return res.data.data;
   }
 
+  async function updateOrder(id, data) {
+    const res = await api.put(`/order/${id}`, data);
+    setOrders((prev) => prev.map((o) => (o.id === id ? res.data.data : o)));
+    return res.data.data;
+  }
+
+  async function deleteOrder(id) {
+    await api.delete(`/order/${id}`);
+    setOrders((prev) => prev.filter((o) => o.id !== id));
+  }
+
   useEffect(() => {
     fetchOrders();
   }, []);
 
-  return { orders, loading, error, fetchOrders, createOrder };
+  return { orders, loading, error, fetchOrders, createOrder, updateOrder, deleteOrder };
 }

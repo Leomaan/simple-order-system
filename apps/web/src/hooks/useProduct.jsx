@@ -25,9 +25,20 @@ export function useProducts() {
     return res.data.data;
   }
 
+  async function updateProduct(id, data) {
+    const res = await api.put(`/product/${id}`, data);
+    setProducts((prev) => prev.map((p) => (p.id === id ? res.data.data : p)));
+    return res.data.data;
+  }
+
+  async function deleteProduct(id) {
+    await api.delete(`/product/${id}`);
+    setProducts((prev) => prev.filter((p) => p.id !== id));
+  }
+
   useEffect(() => {
     fetchProducts();
   }, []);
 
-  return { products, loading, error, fetchProducts, createProduct };
+  return { products, loading, error, fetchProducts, createProduct, updateProduct, deleteProduct };
 }
