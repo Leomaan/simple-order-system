@@ -4,7 +4,7 @@ const skipIfTest = () => process.env.NODE_ENV === 'test';
 
 export const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, 
-  max: 5,
+  max: 10,
   message: {
     success: false,
     message: 'Muitas tentativas de login. Tente novamente em 15 minutos.',
