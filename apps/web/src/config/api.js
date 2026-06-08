@@ -1,5 +1,7 @@
 import axios from 'axios';
 
+const SKIP_REFRESH_ROUTES = ['/auth/login', '/auth/refresh', '/auth/logout'];
+
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
   withCredentials: true,
@@ -9,12 +11,13 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const original = error.config;
+    const isSkipped = SKIP_REFRESH_ROUTES.some((route) => original.url?.includes(route));
 
-    if (error.response?.status === 401 && !original._retry) {
+    if (error.response?.status === 401 && !original._retry && !isSkipped) {
       original._retry = true;
       try {
         await api.post('/auth/refresh');
-        return api(original); 
+        return api(original);
       } catch {
         window.location.href = '/login';
       }
