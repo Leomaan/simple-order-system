@@ -4,7 +4,7 @@ import { log } from '../services/auditLogService.js';
  
 export const create = asyncHandler(async (req, res) => {
   const order = await orderService.createOrder(req.body);
-  await log({ user: req.user, action: 'CREATE_ORDER', entity: 'Order', entityId: order.id, details: { table: order.table } });
+  await log({ user: req.user, action: 'CREATE_ORDER', entity: 'Order', entityId: order.id, details: { table: order.table, order: order.id } });
   res.status(201).json({ success: true, data: order });
 });
  
@@ -27,13 +27,13 @@ export const update = asyncHandler(async (req, res) => {
  
 export const close = asyncHandler(async (req, res) => {
   const order = await orderService.closeOrder(req.params.id);
-  await log({ user: req.user, action: 'CLOSE_ORDER', entity: 'Order', entityId: order.id });
+  await log({ user: req.user, action: 'CLOSE_ORDER', entity: 'Order', entityId: order.id, details: { table: order.table, order: order.id, total: order.total } });
   res.status(200).json({ success: true, data: order });
 });
  
 export const remove = asyncHandler(async (req, res) => {
   await orderService.deleteOrder(req.params.id);
-  await log({ user: req.user, action: 'DELETE_ORDER', entity: 'Order', entityId: Number(req.params.id) });
+  await log({ user: req.user, action: 'DELETE_ORDER', entity: 'Order', entityId: Number(req.params.id)});
   res.status(200).json({ success: true, message: 'order removed' });
 });
  
