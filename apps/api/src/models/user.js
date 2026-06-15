@@ -25,6 +25,11 @@ const User = sequelize.define('User', {
     allowNull: false,
     defaultValue: true,
   },
+  isSuperAdmin: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
+  },
   deletedAt: {
     type: DataTypes.DATE,
     allowNull: true,

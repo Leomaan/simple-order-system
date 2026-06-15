@@ -6,14 +6,14 @@ import { AppError } from '../middleware/appError.js';
 export async function findAll() {
   return User.findAll({
     where: { deletedAt: null },
-    attributes: ['id', 'name', 'email', 'role', 'active', 'createdAt'],
+    attributes: ['id', 'name', 'email', 'role', 'active', 'isSuperAdmin', 'createdAt'],
   });
 }
 
 export async function findById(id) {
   const user = await User.findOne({
     where: { id, deletedAt: null },
-    attributes: ['id', 'name', 'email', 'role', 'active', 'createdAt'],
+    attributes: ['id', 'name', 'email', 'role', 'active', 'isSuperAdmin', 'createdAt'],
   });
   if (!user) throw new AppError('user not found', 404);
   return user;
@@ -33,13 +33,28 @@ export async function createUser(data) {
 }
 
 export async function updateUser(id, data, requesterId) {
+  const requester = await User.findByPk(requesterId);
   const user = await findById(id);
 
+  // SUPERADMIN não pode ser alterado por ninguém exceto ele mesmo (e mesmo assim com restrições)
+  if (user.isSuperAdmin && requesterId !== id)
+    throw new AppError('não é possível alterar o superadmin');
+
+  // ninguém pode remover o isSuperAdmin
+  if ('isSuperAdmin' in data)
+    throw new AppError('não é possível alterar o status de superadmin');
+
+  // admin não pode se desativar
   if (id === requesterId && data.active === false)
     throw new AppError('você não pode desativar sua própria conta');
 
+  // admin não pode rebaixar a si mesmo
   if (id === requesterId && data.role && data.role !== 'ADMIN')
     throw new AppError('você não pode alterar sua própria role');
+
+  // só superadmin pode alterar role de outros admins
+  if (user.role === 'ADMIN' && data.role && !requester.isSuperAdmin)
+    throw new AppError('apenas o superadmin pode alterar a role de um admin');
 
   await user.update(data);
   return user;
@@ -50,6 +65,15 @@ export async function deleteUser(id, requesterId) {
     throw new AppError('você não pode deletar sua própria conta');
 
   const user = await findById(id);
+
+  if (user.isSuperAdmin)
+    throw new AppError('o superadmin não pode ser deletado');
+
+  // só superadmin pode fazer soft delete de outros admins
+  const requester = await User.findByPk(requesterId);
+  if (user.role === 'ADMIN' && !requester.isSuperAdmin)
+    throw new AppError('apenas o superadmin pode deletar um admin');
+
   await user.update({ deletedAt: new Date() });
 }
 
@@ -66,5 +90,13 @@ export async function permanentDeleteUser(id, requesterId) {
 
   const user = await User.findByPk(id);
   if (!user) throw new AppError('user not found', 404);
+
+  if (user.isSuperAdmin)
+    throw new AppError('o superadmin não pode ser deletado');
+
+  const requester = await User.findByPk(requesterId);
+  if (user.role === 'ADMIN' && !requester.isSuperAdmin)
+    throw new AppError('apenas o superadmin pode deletar permanentemente um admin');
+
   await user.destroy();
 }

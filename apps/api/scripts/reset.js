@@ -7,15 +7,17 @@ await sequelize.sync({ force: true });
 console.log('⚠️  Banco resetado!');
 
 const password = await bcrypt.hash('admin123', 10);
+
 await User.create({
   name: 'Admin',
   email: 'admin@restaurant.com',
   password,
   role: 'ADMIN',
   active: true,
+  isSuperAdmin: true,
 });
 
-console.log('✅ Admin criado!');
+console.log('✅ SuperAdmin criado!');
 console.log('   Email: admin@restaurant.com');
 console.log('   Senha: admin123');
 
