@@ -1,22 +1,30 @@
 import { useAuth } from '../../context/AuthContext';
 
-const navItems = [
+const adminNavItems = [
+  { label: 'Produtos', key: 'products' },
+  { label: 'Pedidos', key: 'orders' },
+  { label: 'Usuários', key: 'users' },
+  { label: 'Relatórios', key: 'reports' },
+  { label: 'Logs', key: 'logs' },
+];
+
+const waiterNavItems = [
   { label: 'Produtos', key: 'products' },
   { label: 'Pedidos', key: 'orders' },
 ];
 
-export default function sidebar({ active, onNavigate }) {
+export default function Sidebar({ active, onNavigate, role }) {
   const { user, logout } = useAuth();
+  const navItems = role === 'ADMIN' ? adminNavItems : waiterNavItems;
+  const panelLabel = role === 'ADMIN' ? 'Painel Admin' : 'Painel Garçom';
 
   return (
     <aside className="w-56 min-h-screen bg-neutral-900 border-r border-neutral-800 flex flex-col">
-      {/* Logo */}
       <div className="p-6 border-b border-neutral-800">
         <h1 className="text-white font-bold text-lg tracking-tight">Simple Order</h1>
-        <p className="text-neutral-500 text-xs mt-0.5">Painel Admin</p>
+        <p className="text-neutral-500 text-xs mt-0.5">{panelLabel}</p>
       </div>
 
-      {/* Nav */}
       <nav className="flex-1 p-3 flex flex-col gap-1">
         {navItems.map((item) => (
           <button
@@ -33,7 +41,6 @@ export default function sidebar({ active, onNavigate }) {
         ))}
       </nav>
 
-      {/* User */}
       <div className="p-4 border-t border-neutral-800">
         <p className="text-neutral-400 text-xs mb-2 truncate">{user?.name}</p>
         <button

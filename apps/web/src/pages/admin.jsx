@@ -1,21 +1,28 @@
 import { useState } from 'react';
-import sidebar from '../components/layout/sidebar';
-import productsSection from '../components/product/productSection';
-import ordersSection from '../components/order/orderSection';
+import { useAuth } from '../context/AuthContext';
+import Sidebar from '../components/layout/sidebar';
+import ProductsSection from '../components/product/productSection';
+import OrdersSection from '../components/order/orderSection';
+import UsersSection from '../components/user/userSection';
+import ReportsSection from '../components/report/reportSection';
+import LogsSection from '../components/log/logSection';
 
 const sections = {
-  products: productsSection,
-  orders: ordersSection,
+  products: ProductsSection,
+  orders: OrdersSection,
+  users: UsersSection,
+  reports: ReportsSection,
+  logs: LogsSection,
 };
 
-export default function admin() {
+export default function Admin() {
+  const { user } = useAuth();
   const [active, setActive] = useState('products');
-
   const Section = sections[active];
 
   return (
     <div className="min-h-screen bg-neutral-950 flex">
-      {sidebar({ active, onNavigate: setActive })}
+      <Sidebar active={active} onNavigate={setActive} role={user?.role} />
       <main className="flex-1 overflow-y-auto">
         <Section />
       </main>

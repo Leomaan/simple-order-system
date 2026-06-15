@@ -1,23 +1,25 @@
+import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import Sidebar from '../components/layout/sidebar';
+import ProductsView from '../components/product/productView';
+import WaiterOrdersSection from '../components/order/waiterOrderSection';
+
+const sections = {
+  products: ProductsView,
+  orders: WaiterOrdersSection,
+};
 
 export default function Waiter() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
+  const [active, setActive] = useState('orders');
+  const Section = sections[active];
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-white p-8">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-2xl font-bold">Painel Garçom</h1>
-        <div className="flex items-center gap-4">
-          <span className="text-neutral-400 text-sm">Olá, {user?.name}</span>
-          <button
-            onClick={logout}
-            className="text-sm text-red-400 hover:text-red-300 transition-colors"
-          >
-            Sair
-          </button>
-        </div>
-      </div>
-      <p className="text-neutral-500">Em construção...</p>
+    <div className="min-h-screen bg-neutral-950 flex">
+      <Sidebar active={active} onNavigate={setActive} role={user?.role} />
+      <main className="flex-1 overflow-y-auto">
+        <Section />
+      </main>
     </div>
   );
 }
