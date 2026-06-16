@@ -76,3 +76,9 @@ export async function removeItem(id) {
 
   await orderItem.destroy();
 }
+
+export async function findById(id) {
+  const item = await OrderItem.findByPk(id, { include: [Order, Product] });
+  if (!item) throw new AppError('order item not found', 404);
+  return item;
+}

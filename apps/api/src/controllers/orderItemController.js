@@ -11,12 +11,9 @@ export const create = asyncHandler(async (req, res) => {
 });
  
 export const changeQuantity = asyncHandler(async (req, res) => {
-  const item = await orderItemService.findById(req.params.id); // quantidade antiga
+  const item = await orderItemService.findById(req.params.id);
   const oldQty = item.quantity;
-  const itemUpdated = await orderItemService.changeQuantity(
-    req.params.id,
-    req.body.quantity,
-  );
+  const itemUpdated = await orderItemService.changeQuantity(req.params.id, req.body.quantity,);
   const diff = req.body.quantity - oldQty; 
   const change = diff > 0 ? `Adicionou ${diff}` : `Reduziu ${Math.abs(diff)}`;
   await log({ user: req.user, action: 'UPDATE_ORDER_ITEM', entity: 'OrderItem', entityId: itemUpdated.id, details: { table: item.Order.table, order: item.Order.id, product: item.Product.name, quantity: req.body.quantity, change: change } });

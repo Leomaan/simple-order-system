@@ -3,11 +3,12 @@ import { login, refresh, logout } from '../controllers/authController.js';
 import { validate } from '../middleware/validate.js';
 import { loginSchema, refreshSchema } from '@simple-order/schemas';
 import { loginLimiter } from '../middleware/rateLimiter.js';
+import { authenticate } from '../middleware/authtenticate.js';
 
 const routes = Router();
  
 routes.post('/login', loginLimiter, validate(loginSchema),   login);
 routes.post('/refresh', validate(refreshSchema), refresh);
-routes.post('/logout', logout);
+routes.post('/logout', authenticate, logout);
  
 export default routes;

@@ -80,12 +80,22 @@ export async function closeOrder(id) {
     where: { id, deletedAt: null },
     include: [OrderItem],
   });
+
   if (!order) throw new AppError('order not found', 404);
   if (order.status === 'CLOSED') throw new AppError('order is already closed');
   if (!order.OrderItems?.length) throw new AppError('cannot close an empty order');
 
+  const total = order.OrderItems.reduce(
+    (sum, item) => sum + Number(item.totalPrice),
+    0
+  );
+
   await order.update({ status: 'CLOSED' });
-  return order;
+
+  return {
+    ...order.toJSON(),
+    total,
+  };
 }
 
 export async function deleteOrder(id) {
