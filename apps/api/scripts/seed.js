@@ -1,4 +1,3 @@
-// scripts/seed.js
 import 'dotenv/config';
 import bcrypt from 'bcryptjs';
 import { sequelize } from '../src/models/index.js';
@@ -21,7 +20,7 @@ await User.create({
   password,
   role: 'ADMIN',
   active: true,
-  isSuperAdmin: true, // ← primeiro admin sempre é superadmin
+  isSuperAdmin: true, 
 });
 
 console.log('✅ SuperAdmin criado com sucesso!');
