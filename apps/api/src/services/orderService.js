@@ -98,10 +98,20 @@ export async function closeOrder(id) {
   };
 }
 
-export async function deleteOrder(id) {
-  const order = await Order.findOne({ where: { id, deletedAt: null } });
+export async function deleteOrder(id, userRole) {
+  const order = await Order.findOne({
+    where: { id, deletedAt: null },
+    include: [OrderItem],
+  });
+
   if (!order) throw new AppError('order not found', 404);
   if (order.status === 'CLOSED') throw new AppError('cannot delete a closed order');
+
+  const hasItems = order.OrderItems?.length > 0;
+
+  if (hasItems && userRole !== 'ADMIN') {
+    throw new AppError('only an admin can delete an order that already has items', 403);
+  }
 
   await order.update({ deletedAt: new Date() });
 }

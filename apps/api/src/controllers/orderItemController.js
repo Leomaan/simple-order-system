@@ -5,8 +5,7 @@ import { log } from '../services/auditLogService.js';
 export const create = asyncHandler(async (req, res) => {
   const { item, created } = await orderItemService.addItem(req.body);
   const itemCompleto = await orderItemService.findById(item.id); 
-
-  await log({ user: req.user, action: 'ADD_ORDER_ITEM', entity: 'OrderItem', entityId: item.id, details: { table: itemCompleto.Order.table, order: itemCompleto.OrderId, product: itemCompleto.Product.name, quantity: itemCompleto.quantity } });
+  await log({ user: req.user, action: 'ADD_ORDER_ITEM', entity: 'OrderItem', entityId: item.id, details: { table: itemCompleto.Order.table, order: itemCompleto.OrderId, product: itemCompleto.Product.name, quantity: req.body.quantity } });
   res.status(created ? 201 : 200).json({ success: true, data: item });
 });
  
@@ -17,7 +16,7 @@ export const changeQuantity = asyncHandler(async (req, res) => {
   const diff = req.body.quantity - oldQty; 
   const change = diff > 0 ? `Adicionou ${diff}` : `Reduziu ${Math.abs(diff)}`;
   await log({ user: req.user, action: 'UPDATE_ORDER_ITEM', entity: 'OrderItem', entityId: itemUpdated.id, details: { table: item.Order.table, order: item.Order.id, product: item.Product.name, quantity: req.body.quantity, change: change } });
-  res.status(200).json({ success: true, data: item });
+  res.status(200).json({ success: true, data: itemUpdated });
 });
  
 export const remove = asyncHandler(async (req, res) => {
