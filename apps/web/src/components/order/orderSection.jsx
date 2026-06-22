@@ -3,73 +3,54 @@ import { useOrders } from '../../hooks/useOrder';
 import { useProducts } from '../../hooks/useProduct';
 import ConfirmModal from '../ui/confirmModal';
 import OrderDetailsModal from './orderDetailModal';
-
-const statusLabel = {
-  OPEN:   { label: 'Aberto',  color: 'text-green-400 bg-green-400/10 border-green-400/20' },
-  PAID:   { label: 'Pago',    color: 'text-blue-400 bg-blue-400/10 border-blue-400/20' },
-  CLOSED: { label: 'Fechado', color: 'text-neutral-400 bg-neutral-400/10 border-neutral-400/20' },
-};
-
-const STATUSES = ['', 'OPEN', 'PAID', 'CLOSED'];
+import OrderCard from './orderCard';
+import { STATUS_MAP } from '../constants/orderConstants';
 
 export default function OrdersSection() {
   const { orders, loading, fetchOrders, createOrder, deleteOrder, updateOrder } = useOrders();
-  const { products } = useProducts(); // carrega uma vez aqui e passa como prop
-  const [showForm, setShowForm] = useState(false);
-  const [table, setTable] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
+  const { products } = useProducts();
+  
   const [filter, setFilter] = useState('');
+  const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [editTable, setEditTable] = useState('');
   const [deleting, setDeleting] = useState(null);
-  const [deleteLoading, setDeleteLoading] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [tableValue, setTableValue] = useState('');
 
-  async function handleCreate(e) {
+  const handleOpenForm = (order = null) => {
+    if (order) {
+      setEditing(order);
+      setTableValue(order.table);
+    } else {
+      setTableValue('');
+      setShowForm(true);
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setSaving(true);
-    setError('');
     try {
-      await createOrder({ table: Number(table) });
-      setTable('');
-      setShowForm(false);
+      if (editing) {
+        await updateOrder(editing.id, { table: Number(tableValue) });
+        setEditing(null);
+      } else {
+        await createOrder({ table: Number(tableValue) });
+        setShowForm(false);
+      }
+      setTableValue('');
     } catch (err) {
-      const msg = err.response?.data?.message;
-      setError(Array.isArray(msg) ? msg.join(', ') : msg || 'Erro ao criar pedido');
-    } finally {
-      setSaving(false);
+      alert(err.response?.data?.message || "Erro na operação");
     }
-  }
-
-  async function handleDelete() {
-    setDeleteLoading(true);
-    try {
-      await deleteOrder(deleting);
-      setDeleting(null);
-    } catch (err) {
-      const msg = err.response?.data?.message;
-      setError(Array.isArray(msg) ? msg.join(', ') : msg || 'Erro ao excluir pedido');
-      setDeleting(null);
-    } finally {
-      setDeleteLoading(false);
-    }
-  }
-
-  function handleFilter(status) {
-    setFilter(status);
-    fetchOrders(status || undefined);
-  }
+  };
 
   return (
-    <div className="p-8">
+    <div className="p-8 max-w-5xl mx-auto">
+      {/* Modais de Controle */}
       {deleting && (
         <ConfirmModal
           title="Excluir pedido?"
-          message="Tem certeza que deseja excluir este pedido?"
-          onConfirm={handleDelete}
+          onConfirm={async () => { await deleteOrder(deleting); setDeleting(null); }}
           onCancel={() => setDeleting(null)}
-          loading={deleteLoading}
         />
       )}
 
@@ -82,135 +63,81 @@ export default function OrdersSection() {
         />
       )}
 
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-white text-xl font-bold">Pedidos</h2>
+      {/* Header Profissional */}
+      <header className="flex items-center justify-between mb-8">
+        <div>
+          <h2 className="text-2xl font-bold text-white tracking-tight">Pedidos</h2>
+          <p className="text-neutral-500 text-sm">Gerencie as mesas e consumos em tempo real</p>
+        </div>
         <button
-          onClick={() => setShowForm(!showForm)}
-          className="bg-orange-500 hover:bg-orange-400 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+          onClick={() => handleOpenForm()}
+          className="bg-orange-500 hover:bg-orange-400 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-orange-500/20 flex items-center gap-2"
         >
-          {showForm ? 'Cancelar' : '+ Novo pedido'}
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+          </svg>
+          Novo Pedido
         </button>
-      </div>
+      </header>
 
-      {/* Editar mesa */}
-      {editing && (
-        <form onSubmit={async (e) => {
-          e.preventDefault();
-          try {
-            await updateOrder(editing.id, { table: Number(editTable) });
-            setEditing(null);
-          } catch (err) {
-            const msg = err.response?.data?.message;
-            setError(Array.isArray(msg) ? msg.join(', ') : msg || 'Erro ao editar pedido');
-          }
-        }} className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 mb-6 flex flex-col gap-4">
-          <h3 className="text-white font-medium">Editar mesa {editing.table}</h3>
-          <div className="flex flex-col gap-1">
-            <label className="text-neutral-400 text-sm">Novo número da mesa</label>
+      {/* Form Unificado (Criar/Editar) */}
+      {(showForm || editing) && (
+        <form onSubmit={handleSubmit} className="bg-orange-500/5 border border-orange-500/20 rounded-2xl p-6 mb-8 flex items-end gap-4 animate-in fade-in slide-in-from-top-4">
+          <div className="flex-1">
+            <label className="text-orange-500/70 text-xs font-bold uppercase tracking-widest mb-2 block">
+              {editing ? `Editando Mesa ${editing.table}` : 'Número da Mesa'}
+            </label>
             <input
+              autoFocus
               type="number"
-              value={editTable}
-              onChange={(e) => setEditTable(e.target.value)}
-              required
-              placeholder={editing.table}
-              className="bg-neutral-800 border border-neutral-700 text-white rounded-lg px-3 py-2 text-sm outline-none focus:border-orange-500 transition-colors placeholder:text-neutral-600 w-40"
+              value={tableValue}
+              onChange={(e) => setTableValue(e.target.value)}
+              className="w-full bg-neutral-900 border border-neutral-700 text-white rounded-xl px-4 py-3 outline-none focus:border-orange-500 transition-all"
+              placeholder="Ex: 12"
             />
           </div>
-          <div className="flex gap-2 self-end">
-            <button type="button" onClick={() => setEditing(null)} className="text-neutral-400 hover:text-white text-sm px-4 py-2 rounded-lg hover:bg-neutral-800 transition-colors">
-              Cancelar
-            </button>
-            <button type="submit" className="bg-orange-500 hover:bg-orange-400 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
-              Salvar
-            </button>
-          </div>
-        </form>
-      )}
-
-      {/* Criar pedido */}
-      {showForm && (
-        <form onSubmit={handleCreate} className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 mb-6 flex flex-col gap-4">
-          <h3 className="text-white font-medium">Novo pedido</h3>
-          <div className="flex flex-col gap-1">
-            <label className="text-neutral-400 text-sm">Número da mesa</label>
-            <input
-              type="number"
-              value={table}
-              onChange={(e) => setTable(e.target.value)}
-              required
-              placeholder="Ex: 5"
-              className="bg-neutral-800 border border-neutral-700 text-white rounded-lg px-3 py-2 text-sm outline-none focus:border-orange-500 transition-colors placeholder:text-neutral-600 w-40"
-            />
-          </div>
-          {error && (
-            <p className="text-red-400 text-sm bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2">{error}</p>
-          )}
-          <button type="submit" disabled={saving} className="bg-orange-500 hover:bg-orange-400 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors self-end">
-            {saving ? 'Abrindo...' : 'Abrir pedido'}
+          <button type="button" onClick={() => { setShowForm(false); setEditing(null); }} className="px-6 py-3 text-neutral-400 hover:text-white font-medium">Cancelar</button>
+          <button type="submit" className="bg-orange-500 text-white px-8 py-3 rounded-xl font-bold hover:bg-orange-400 transition-all">
+            {editing ? 'Atualizar' : 'Abrir Pedido'}
           </button>
         </form>
       )}
 
-      {/* Filtros */}
-      <div className="flex gap-2 mb-4">
-        {STATUSES.map((s) => (
+      {/* Filtros Estilizados */}
+      <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+        {['', 'OPEN', 'PAID', 'CLOSED'].map((s) => (
           <button
             key={s}
-            onClick={() => handleFilter(s)}
-            className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
-              filter === s ? 'bg-orange-500 border-orange-500 text-white' : 'border-neutral-700 text-neutral-400 hover:border-neutral-500'
+            onClick={() => { setFilter(s); fetchOrders(s || undefined); }}
+            className={`text-[11px] uppercase tracking-widest font-bold px-4 py-2 rounded-xl border transition-all whitespace-nowrap ${
+              filter === s ? 'bg-white border-white text-black' : 'border-neutral-800 text-neutral-500 hover:border-neutral-600'
             }`}
           >
-            {s === '' ? 'Todos' : statusLabel[s].label}
+            {s === '' ? 'Todos' : STATUS_MAP[s].label}
           </button>
         ))}
       </div>
 
-      {/* Lista */}
-      {loading ? (
-        <p className="text-neutral-500 text-sm">Carregando...</p>
-      ) : orders.length === 0 ? (
-        <p className="text-neutral-500 text-sm">Nenhum pedido encontrado.</p>
-      ) : (
-        <div className="flex flex-col gap-3">
-          {orders.map((o) => (
-            <div
-              key={o.id}
-              onClick={() => setSelectedOrder(o)}
-              className="bg-neutral-900 border border-neutral-800 rounded-xl px-5 py-4 flex items-center justify-between cursor-pointer hover:border-neutral-600 transition-colors"
-            >
-              <div>
-                <p className="text-white font-medium">Mesa {o.table}</p>
-                <p className="text-neutral-500 text-xs mt-0.5">
-                  {new Date(o.createdAt).toLocaleString('pt-BR')}
-                </p>
-              </div>
-              <div className="flex items-center gap-4">
-                <span className={`text-xs font-medium px-2 py-1 rounded-md border ${statusLabel[o.status].color}`}>
-                  {statusLabel[o.status].label}
-                </span>
-                {o.status === 'OPEN' && (
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setEditing(o); setEditTable(o.table); }}
-                    className="text-neutral-400 hover:text-white text-xs transition-colors"
-                  >
-                    Editar
-                  </button>
-                )}
-                {o.status !== 'CLOSED' && (
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setDeleting(o.id); }}
-                    className="text-red-400 hover:text-red-300 text-xs transition-colors"
-                  >
-                    Excluir
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      {/* Lista com Estados */}
+      <div className="space-y-3">
+        {loading ? (
+          [1,2,3].map(i => <div key={i} className="h-20 bg-neutral-900/50 border border-neutral-800 rounded-2xl animate-pulse" />)
+        ) : orders.length === 0 ? (
+          <div className="text-center py-20 bg-neutral-900/10 rounded-3xl border border-dashed border-neutral-800">
+            <p className="text-neutral-600 font-medium">Nenhum pedido encontrado nesta categoria.</p>
+          </div>
+        ) : (
+          orders.map(o => (
+            <OrderCard 
+              key={o.id} 
+              order={o} 
+              onClick={setSelectedOrder} 
+              onEdit={handleOpenForm}
+              onDelete={setDeleting}
+            />
+          ))
+        )}
+      </div>
     </div>
   );
 }
