@@ -9,24 +9,24 @@ async function bootstrap() {
   try {
     await sequelize.sync({ force });
 
-    if (force) console.log('⚠️  Banco resetado com sucesso!');
-    console.log('✅ Banco conectado com sucesso!');
+    if (force) console.log('Banco resetado com sucesso!');
+    console.log('Banco conectado com sucesso!');
 
     const server = app.listen(PORT, () =>
-      console.log(`🚀 Servidor rodando na porta ${PORT}`)
+      console.log(`Servidor rodando na porta ${PORT}`)
     );
 
     process.on('SIGTERM', async () => {
-      console.log('⚠️  Encerrando servidor...');
+      console.log(' Encerrando servidor...');
       server.close(async () => {
         await sequelize.close();
-        console.log('✅ Servidor encerrado com sucesso!');
+        console.log('Servidor encerrado com sucesso!');
         process.exit(0);
       });
     });
 
   } catch (err) {
-    console.error('❌ Erro ao iniciar o servidor:', err.message);
+    console.error('Erro ao iniciar o servidor:', err.message);
     process.exit(1);
   }
 }

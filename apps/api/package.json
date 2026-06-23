@@ -7,9 +7,9 @@
     "start": "node ./server.js",
     "db:seed": "node scripts/seed.js",
     "db:reset": "node scripts/reset.js",
-    "test": "cross-env NODE_ENV=test vitest --config vitest.config.js",
-    "test:coverage": "cross-env NODE_ENV=test vitest run --coverage"
+    "test": "cross-env NODE_ENV=test vitest --config vitest.config.js"
   },
+
   "dependencies": {
     "@simple-order/schemas": "*",
     "bcryptjs": "^3.0.3",
