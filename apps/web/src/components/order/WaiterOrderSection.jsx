@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useOrders } from '../../hooks/useOrder';
 import { useProducts } from '../../hooks/useProduct';
-import ConfirmModal from '../ui/confirmModal';
-import OrderDetailsModal from '../order/orderDetailModal';
+import ConfirmModal from '../ui/ConfirmModal';
+import OrderDetailModal from './OrderDetailModal';
+import Button from '../ui/Button';
+import Input from '../ui/Input';
 
 const statusLabel = {
   OPEN:   { label: 'Aberto',  color: 'text-green-400 bg-green-400/10 border-green-400/20' },
@@ -12,7 +14,7 @@ const statusLabel = {
 
 const STATUSES = ['', 'OPEN', 'PAID', 'CLOSED'];
 
-export default function WaiterOrdersSection() {
+export default function WaiterOrderSection() {
   const { orders, loading, fetchOrders, createOrder, deleteOrder } = useOrders();
   const { products } = useProducts();
   const [showForm, setShowForm] = useState(false);
@@ -60,11 +62,11 @@ export default function WaiterOrdersSection() {
   }
 
   return (
-    <div className="p-8">
+    <div className="p-8 max-w-5xl mx-auto animate-in fade-in duration-300">
       {deleting && (
         <ConfirmModal
           title="Excluir pedido vazio?"
-          message="A mesa não possui itens. Deseja excluir este pedido?"
+          message="Esta mesa não possui nenhum consumo adicionado. Deseja realmente excluí-la?"
           onConfirm={handleDelete}
           onCancel={() => setDeleting(null)}
           loading={deleteLoading}
@@ -72,7 +74,7 @@ export default function WaiterOrdersSection() {
       )}
 
       {selectedOrder && (
-        <OrderDetailsModal
+        <OrderDetailModal
           order={selectedOrder}
           products={products}
           onClose={() => setSelectedOrder(null)}
@@ -81,48 +83,58 @@ export default function WaiterOrdersSection() {
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-white text-xl font-bold">Pedidos</h2>
-        <button
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h2 className="text-2xl font-bold text-white tracking-tight">Mesas & Pedidos</h2>
+          <p className="text-neutral-500 text-sm">Abra novas mesas e adicione consumos</p>
+        </div>
+        <Button
           onClick={() => setShowForm(!showForm)}
-          className="bg-orange-500 hover:bg-orange-400 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+          variant={showForm ? 'secondary' : 'primary'}
         >
           {showForm ? 'Cancelar' : '+ Abrir mesa'}
-        </button>
+        </Button>
       </div>
 
       {/* Criar pedido */}
       {showForm && (
-        <form onSubmit={handleCreate} className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 mb-6 flex flex-col gap-4">
-          <h3 className="text-white font-medium">Abrir mesa</h3>
-          <div className="flex flex-col gap-1">
-            <label className="text-neutral-400 text-sm">Número da mesa</label>
-            <input
+        <form 
+          onSubmit={handleCreate} 
+          className="glass-panel border border-neutral-800 rounded-2xl p-6 mb-8 flex flex-col md:flex-row items-end gap-4 animate-in slide-in-from-top-4 duration-300"
+        >
+          <div className="flex-1 w-full md:max-w-xs">
+            <Input
               type="number"
+              label="Número da mesa"
               value={table}
               onChange={(e) => setTable(e.target.value)}
               required
               placeholder="Ex: 5"
-              className="bg-neutral-800 border border-neutral-700 text-white rounded-lg px-3 py-2 text-sm outline-none focus:border-orange-500 transition-colors placeholder:text-neutral-600 w-40"
             />
           </div>
           {error && (
-            <p className="text-red-400 text-sm bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2">{error}</p>
+            <p className="text-red-400 text-xs bg-red-400/10 border border-red-400/20 rounded-xl px-3 py-2 shrink-0">{error}</p>
           )}
-          <button type="submit" disabled={saving} className="bg-orange-500 hover:bg-orange-400 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors self-end">
-            {saving ? 'Abrindo...' : 'Abrir mesa'}
-          </button>
+          <Button 
+            type="submit" 
+            loading={saving}
+            className="w-full md:w-auto mt-2 md:mt-0"
+          >
+            Abrir mesa
+          </Button>
         </form>
       )}
 
       {/* Filtros */}
-      <div className="flex gap-2 mb-4">
+      <div className="flex gap-2.5 mb-6 overflow-x-auto pb-2 select-none">
         {STATUSES.map((s) => (
           <button
             key={s}
             onClick={() => handleFilter(s)}
-            className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
-              filter === s ? 'bg-orange-500 border-orange-500 text-white' : 'border-neutral-700 text-neutral-400 hover:border-neutral-500'
+            className={`text-[10px] uppercase tracking-wider font-bold px-4 py-2.5 rounded-xl border transition-all duration-200 cursor-pointer whitespace-nowrap active:scale-95 ${
+              filter === s 
+                ? 'bg-white border-white text-black shadow-lg shadow-white/5' 
+                : 'bg-neutral-900 border-neutral-800 text-neutral-400 hover:border-neutral-700 hover:text-neutral-200'
             }`}
           >
             {s === '' ? 'Todos' : statusLabel[s].label}
@@ -132,38 +144,46 @@ export default function WaiterOrdersSection() {
 
       {/* Lista */}
       {loading ? (
-        <p className="text-neutral-500 text-sm">Carregando...</p>
+        <div className="space-y-3">
+          {[1, 2, 3].map(i => <div key={i} className="h-20 bg-neutral-900/50 border border-neutral-800 rounded-2xl animate-pulse" />)}
+        </div>
       ) : orders.length === 0 ? (
-        <p className="text-neutral-500 text-sm">Nenhum pedido encontrado.</p>
+        <div className="text-center py-20 bg-neutral-900/10 rounded-3xl border border-dashed border-neutral-800">
+          <p className="text-neutral-500 font-medium">Nenhum pedido encontrado nesta categoria.</p>
+        </div>
       ) : (
         <div className="flex flex-col gap-3">
           {orders.map((o) => (
             <div
               key={o.id}
               onClick={() => o.status === 'OPEN' ? setSelectedOrder(o) : null}
-              className={`bg-neutral-900 border border-neutral-800 rounded-xl px-5 py-4 flex items-center justify-between ${o.status === 'OPEN' ? 'cursor-pointer hover:border-neutral-600' : 'opacity-75'} transition-colors`}
+              className={`glass-card glass-card-hover rounded-2xl px-5 py-4 flex items-center justify-between transition-all ${
+                o.status === 'OPEN' ? 'cursor-pointer hover:border-neutral-600' : 'opacity-70'
+              }`}
             >
               <div>
-                <p className="text-white font-medium">Mesa {o.table}</p>
-                <p className="text-neutral-500 text-xs mt-0.5">
-                  {new Date(o.createdAt).toLocaleString('pt-BR')}
+                <p className="text-white font-semibold">Mesa {o.table}</p>
+                <p className="text-neutral-550 text-[10px] uppercase tracking-wider mt-1">
+                  {new Date(o.createdAt).toLocaleDateString('pt-BR')} ·{' '}
+                  {new Date(o.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                 </p>
                 {o.status === 'OPEN' && (
-                  <p className="text-orange-400 text-xs mt-1">Clique para gerenciar</p>
+                  <p className="text-orange-400 text-[10px] font-semibold mt-1">Clique para gerenciar itens</p>
                 )}
               </div>
-              <div className="flex items-center gap-3">
-                <span className={`text-xs font-medium px-2 py-1 rounded-md border ${statusLabel[o.status].color}`}>
+              <div className="flex items-center gap-4">
+                <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${statusLabel[o.status].color}`}>
                   {statusLabel[o.status].label}
                 </span>
                 {o.status === 'OPEN' && (
-                  <button
+                  <Button
+                    variant="ghost"
                     onClick={(e) => { e.stopPropagation(); setDeleting(o.id); }}
-                    className="text-red-400 hover:text-red-300 text-xs transition-colors"
+                    className="text-xs py-1.5 px-3 text-red-400 hover:text-red-300 hover:bg-red-500/5"
                     title="Excluir mesa vazia"
                   >
                     Excluir
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>

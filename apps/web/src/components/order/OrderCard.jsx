@@ -1,3 +1,4 @@
+import React from 'react';
 import { STATUS_MAP } from '../constants/orderConstants';
 
 export default function OrderCard({ order, onClick, onEdit, onDelete }) {
@@ -6,31 +7,31 @@ export default function OrderCard({ order, onClick, onEdit, onDelete }) {
   return (
     <div
       onClick={() => onClick(order)}
-      className="group bg-neutral-900/40 border border-neutral-800 rounded-2xl px-5 py-4 flex items-center justify-between cursor-pointer hover:border-neutral-700 hover:bg-neutral-900/60 transition-all"
+      className="group glass-card glass-card-hover rounded-2xl px-5 py-4 flex items-center justify-between cursor-pointer"
     >
       <div className="flex items-center gap-4">
-        <div className="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-500 font-bold">
+        <div className="w-11 h-11 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-500 font-extrabold text-sm select-none">
           {order.table}
         </div>
         <div>
           <p className="text-white font-semibold">Mesa {order.table}</p>
-          <p className="text-neutral-500 text-[10px] uppercase tracking-wider mt-0.5">
-            {new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} • 
+          <p className="text-neutral-550 text-[10px] uppercase tracking-wider mt-1">
+            {new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} •{' '}
             {new Date(order.createdAt).toLocaleDateString('pt-BR')}
           </p>
         </div>
       </div>
 
       <div className="flex items-center gap-4">
-        <span className={`text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-lg border ${status.color}`}>
+        <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${status.color}`}>
           {status.label}
         </span>
         
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200">
           {order.status === 'OPEN' && (
             <button
               onClick={(e) => { e.stopPropagation(); onEdit(order); }}
-              className="p-2 text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-lg transition-all"
+              className="p-2 text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-xl transition-all cursor-pointer active:scale-95"
               title="Editar Mesa"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -41,7 +42,7 @@ export default function OrderCard({ order, onClick, onEdit, onDelete }) {
           {order.status !== 'CLOSED' && (
             <button
               onClick={(e) => { e.stopPropagation(); onDelete(order.id); }}
-              className="p-2 text-red-400/60 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
+              className="p-2 text-red-400/60 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all cursor-pointer active:scale-95"
               title="Excluir Pedido"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

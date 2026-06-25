@@ -8,13 +8,22 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const role = localStorage.getItem('role');
-    const name = localStorage.getItem('name');
-
-    if (role && name) {
-      setUser({ role, name });
+    async function checkAuth() {
+      try {
+        const res = await api.post('/auth/refresh');
+        const { role, name } = res.data.data;
+        setUser({ role, name });
+        localStorage.setItem('role', role);
+        localStorage.setItem('name', name);
+      } catch (err) {
+        localStorage.removeItem('role');
+        localStorage.removeItem('name');
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
     }
-    setLoading(false);
+    checkAuth();
   }, []);
 
   function login({ role, name }) {

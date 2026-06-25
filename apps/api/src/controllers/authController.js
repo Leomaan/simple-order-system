@@ -38,7 +38,10 @@ export const refresh = asyncHandler(async (req, res) => {
     maxAge: 15 * 60 * 1000,
   });
 
-  res.status(200).json({ success: true });
+  res.status(200).json({
+    success: true,
+    data: { role: result.role, name: result.name },
+  });
 });
 
 export const logout = asyncHandler(async (req, res) => {

@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import ConfirmModal from '../ui/confirmModal';
+import React, { useState } from 'react';
+import ConfirmModal from '../ui/ConfirmModal';
+import Button from '../ui/Button';
 
 export default function CloseOrderButton({ orderId, onSuccess, onError }) {
   const [showConfirm, setShowConfirm] = useState(false);
@@ -25,21 +26,22 @@ export default function CloseOrderButton({ orderId, onSuccess, onError }) {
     <>
       {showConfirm && (
         <ConfirmModal
-          title="Fechar pedido?"
-          message="Ao fechar o pedido ele não poderá ser reaberto. Confirma?"
-          confirmLabel="Fechar pedido"
-          confirmClass="bg-orange-500 hover:bg-orange-400"
+          title="Fechar mesa?"
+          message="Esta mesa será marcada como Fechada. Esta operação é irreversível. Deseja fechar a mesa agora?"
+          confirmLabel="Sim, fechar mesa"
+          confirmVariant="primary"
           onConfirm={handleClose}
           onCancel={() => setShowConfirm(false)}
           loading={loading}
         />
       )}
-      <button
+      <Button
         onClick={() => setShowConfirm(true)}
-        className="w-full bg-orange-500 hover:bg-orange-400 text-white text-sm font-medium py-2.5 rounded-lg transition-colors mt-2"
+        variant="primary"
+        className="w-full mt-2.5 shadow-md shadow-orange-500/10"
       >
-        Fechar pedido
-      </button>
+        Fechar mesa / Encerrar conta
+      </Button>
     </>
   );
 }

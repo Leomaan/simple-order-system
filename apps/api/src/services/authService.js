@@ -56,7 +56,7 @@ export async function refresh(token) {
   if (!stored.User.active) throw new AppError('usuário inativo', 401);
 
   const accessToken = generateAccessToken(stored.User);
-  return { accessToken };
+  return { accessToken, role: stored.User.role, name: stored.User.name };
 }
 
 export async function logout(token, user, ip) {
