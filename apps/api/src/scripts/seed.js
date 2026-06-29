@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import bcrypt from 'bcryptjs';
-import { sequelize } from '../src/models/index.js';
-import User from '../src/models/user.js'; 
+import { sequelize } from '../models/index.js';
+import User from '../models/user.js'; 
 
 const isProduction = process.env.NODE_ENV === 'production';
 

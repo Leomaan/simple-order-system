@@ -10,7 +10,7 @@ const routes = Router();
 routes.get('/', requireAdmin, getAll);
 routes.get('/:id', requireAdmin, validateId, getById);
 routes.post('/', requireAdmin, validate(createUserSchema), create);
-routes.patch('/:id', requireAdmin, validateId, validate(updateUserSchema   ), update);
+routes.patch('/:id', requireAdmin, validateId, validate(updateUserSchema), update);
 routes.delete('/:id', requireAdmin, validateId, remove);
 routes.patch('/:id/restore', requireAdmin, validateId, restore);
 routes.delete('/:id/permanent', requireAdmin, validateId, permanentDelete);

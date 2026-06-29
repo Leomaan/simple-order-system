@@ -7,7 +7,7 @@ import { errorHandler } from './middleware/errorHandler.js';
 import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import auditLogRoutes from './routes/auditlogsRoutes.js';
-import { swaggerSpec } from '../config/swagger.js';
+import { swaggerSpec } from './config/swagger.js';
 import swaggerUi from 'swagger-ui-express';
 import reportRoutes from './routes/reportRoutes.js';
 import cors from 'cors';

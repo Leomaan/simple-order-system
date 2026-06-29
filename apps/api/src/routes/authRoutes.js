@@ -7,7 +7,7 @@ import { authenticate } from '../middleware/authtenticate.js';
 
 const routes = Router();
  
-routes.post('/login', loginLimiter, validate(loginSchema),   login);
+routes.post('/login', loginLimiter, validate(loginSchema), login);
 routes.post('/refresh', validate(refreshSchema), refresh);
 routes.post('/logout', authenticate, logout);
  
