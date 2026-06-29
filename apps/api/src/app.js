@@ -10,6 +10,7 @@ import auditLogRoutes from './routes/auditlogsRoutes.js';
 import { swaggerSpec } from './config/swagger.js';
 import swaggerUi from 'swagger-ui-express';
 import reportRoutes from './routes/reportRoutes.js';
+import paymentRoutes from './routes/paymentRoutes.js';
 import cors from 'cors';
 
 const app = e();
@@ -31,6 +32,7 @@ app.use('/auth', authRoutes);
 app.use('/user', userRoutes);
 app.use('/audit', auditLogRoutes);
 app.use('/report', reportRoutes);
+app.use('/payment', paymentRoutes);
 
 app.use(errorHandler);
 

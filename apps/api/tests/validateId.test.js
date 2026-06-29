@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { validateId } from '../middleware/validateId.js';
-import { AppError } from '../middleware/appError.js';
+import { validateId } from '../src/middleware/validateId.js';
+import { AppError } from '../src/middleware/appError.js';
 
 function mockReq(id) {
   return { params: { id } };

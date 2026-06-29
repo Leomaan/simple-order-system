@@ -104,7 +104,10 @@ describe('closeOrder', () => {
       id: 1,
       status: 'OPEN',
       OrderItems: [{ id: 1 }],
-      update: vi.fn().mockResolvedValue(true)
+      update: vi.fn().mockResolvedValue(true),
+      toJSON() {
+        return { id: this.id, status: this.status, OrderItems: this.OrderItems };
+      }
     };
     Order.findOne.mockResolvedValue(order);
 
