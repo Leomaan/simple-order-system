@@ -14,7 +14,13 @@ async function runSeed() {
       await sequelize.sync(); 
     }
 
-    const adminEmail = 'admin@restaurant.com';
+    const adminEmail = process.env.INITIAL_ADMIN_EMAIL || 'admin@restaurant.com';
+    const rawPassword = process.env.INITIAL_ADMIN_PASS || 'admin123';
+
+    if (isProduction && (!process.env.INITIAL_ADMIN_EMAIL || !process.env.INITIAL_ADMIN_PASS)) {
+      console.error('ERRO: Em produção, as variáveis INITIAL_ADMIN_EMAIL e INITIAL_ADMIN_PASS devem estar definidas no ambiente!');
+      process.exit(1);
+    }
 
     const exists = await User.findOne({ where: { email: adminEmail } });
 
@@ -23,7 +29,7 @@ async function runSeed() {
       process.exit(0);
     }
 
-    const password = await bcrypt.hash('admin123', 10);
+    const password = await bcrypt.hash(rawPassword, 10);
 
     await User.create({
       name: 'Admin Master',

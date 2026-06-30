@@ -5,8 +5,8 @@
   "scripts": {
     "dev": "nodemon ./server.js",
     "start": "node ./server.js",
-    "db:seed": "node scripts/seed.js",
-    "db:reset": "node scripts/reset.js",
+    "db:seed": "node src/scripts/seed.js",
+    "db:reset": "node src/scripts/reset.js",
     "test": "cross-env NODE_ENV=test vitest --config vitest.config.js"
   },
 
