@@ -30,7 +30,7 @@ export const login = asyncHandler(async (req, res) => {
 });
 
 export const refresh = asyncHandler(async (req, res) => {
-  const token = req.cookies?.refreshToken;
+  const token = req.cookies?.refreshToken || req.body?.refreshToken;
   const result = await authService.refresh(token);
 
   res.cookie('accessToken', result.accessToken, {
@@ -45,7 +45,7 @@ export const refresh = asyncHandler(async (req, res) => {
 });
 
 export const logout = asyncHandler(async (req, res) => {
-  const token = req.cookies?.refreshToken;
+  const token = req.cookies?.refreshToken || req.body?.refreshToken;
   const ip = req.ip || req.headers['x-forwarded-for'];
 
   await authService.logout(token, req.user, ip);

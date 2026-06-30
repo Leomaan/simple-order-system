@@ -12,6 +12,13 @@ afterAll(async () => {
   await teardownTestDb();
 });
 
+function extractCookieValue(setCookieHeader, cookieName) {
+  if (!setCookieHeader) return null;
+  const cookieStr = setCookieHeader.find(c => c.startsWith(`${cookieName}=`));
+  if (!cookieStr) return null;
+  return cookieStr.split(';')[0].split('=')[1];
+}
+
 describe('POST /auth/login', () => {
   it('deve retornar token com credenciais válidas', async () => {
     const res = await request(app)
@@ -20,8 +27,10 @@ describe('POST /auth/login', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
-    expect(res.body.data).toHaveProperty('accessToken');
-    expect(res.body.data).toHaveProperty('refreshToken');
+    const cookies = res.headers['set-cookie'];
+    expect(cookies).toBeDefined();
+    expect(cookies.some(c => c.startsWith('accessToken='))).toBe(true);
+    expect(cookies.some(c => c.startsWith('refreshToken='))).toBe(true);
     expect(res.body.data.role).toBe('ADMIN');
   });
 
@@ -69,20 +78,24 @@ describe('POST /auth/refresh', () => {
       .post('/auth/login')
       .send({ email: 'admin@test.com', password: 'admin123' });
 
-    const { refreshToken } = loginRes.body.data;
+    const refreshToken = extractCookieValue(loginRes.headers['set-cookie'], 'refreshToken');
 
     const res = await request(app)
       .post('/auth/refresh')
-      .send({ refreshToken });
+      .set('Cookie', [`refreshToken=${refreshToken}`])
+      .send({});
 
     expect(res.status).toBe(200);
-    expect(res.body.data).toHaveProperty('accessToken');
+    const cookies = res.headers['set-cookie'];
+    expect(cookies).toBeDefined();
+    expect(cookies.some(c => c.startsWith('accessToken='))).toBe(true);
   });
 
   it('deve retornar 401 com refresh token inválido', async () => {
     const res = await request(app)
       .post('/auth/refresh')
-      .send({ refreshToken: 'token_invalido' });
+      .set('Cookie', ['refreshToken=token_invalido'])
+      .send({});
 
     expect(res.status).toBe(401);
     expect(res.body.success).toBe(false);
@@ -93,7 +106,7 @@ describe('POST /auth/refresh', () => {
       .post('/auth/refresh')
       .send({});
 
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(401);
   });
 });
 
@@ -103,12 +116,14 @@ describe('POST /auth/logout', () => {
       .post('/auth/login')
       .send({ email: 'admin@test.com', password: 'admin123' });
 
-    const { refreshToken, accessToken } = loginRes.body.data;
+    const refreshToken = extractCookieValue(loginRes.headers['set-cookie'], 'refreshToken');
+    const accessToken = extractCookieValue(loginRes.headers['set-cookie'], 'accessToken');
 
     const res = await request(app)
       .post('/auth/logout')
       .set('Authorization', `Bearer ${accessToken}`)
-      .send({ refreshToken });
+      .set('Cookie', [`refreshToken=${refreshToken}`])
+      .send({});
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
@@ -119,9 +134,11 @@ describe('POST /auth/logout', () => {
       .post('/auth/login')
       .send({ email: 'admin@test.com', password: 'admin123' });
 
+    const accessToken = extractCookieValue(loginRes.headers['set-cookie'], 'accessToken');
+
     const res = await request(app)
       .post('/auth/logout')
-      .set('Authorization', `Bearer ${loginRes.body.data.accessToken}`)
+      .set('Authorization', `Bearer ${accessToken}`)
       .send({});
 
     expect(res.status).toBe(400);

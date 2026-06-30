@@ -32,16 +32,23 @@ export async function createWaiterUser() {
   });
 }
 
+function extractCookieValue(setCookieHeader, cookieName) {
+  if (!setCookieHeader) return null;
+  const cookieStr = setCookieHeader.find(c => c.startsWith(`${cookieName}=`));
+  if (!cookieStr) return null;
+  return cookieStr.split(';')[0].split('=')[1];
+}
+
 export async function getAdminToken(request, app) {
   const res = await request(app)
     .post('/auth/login')
     .send({ email: 'admin@test.com', password: 'admin123' });
-  return res.body.data.accessToken;
+  return extractCookieValue(res.headers['set-cookie'], 'accessToken');
 }
 
 export async function getWaiterToken(request, app) {
   const res = await request(app)
     .post('/auth/login')
     .send({ email: 'waiter@test.com', password: 'waiter123' });
-  return res.body.data.accessToken;
+  return extractCookieValue(res.headers['set-cookie'], 'accessToken');
 }
