@@ -10,7 +10,7 @@ services:
       - '3307:3306'
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./src/scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost', '-u', 'root', '-p${DB_PASS}']
       interval: 10s
@@ -19,8 +19,8 @@ services:
 
   app:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ../../
+      dockerfile: apps/api/Dockerfile
     container_name: nodejs_app
     restart: always
     depends_on:
