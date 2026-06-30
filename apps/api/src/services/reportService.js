@@ -10,29 +10,32 @@ export async function salesToday() {
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
 
-  const orders = await Order.findAll({
+  const result = await Order.findOne({
     where: {
       status: 'CLOSED',
       deletedAt: null,
       updatedAt: { [Op.between]: [today, tomorrow] },
     },
+    attributes: [
+      [fn('COUNT', fn('DISTINCT', col('Order.id'))), 'totalOrders'],
+      [fn('COALESCE', fn('SUM', col('OrderItems.totalPrice')), 0), 'totalRevenue'],
+    ],
     include: [
       {
         model: OrderItem,
-        attributes: ['quantity', 'totalPrice'],
-        include: [{ model: Product, attributes: ['name'] }],
+        attributes: [],
       },
     ],
+    raw: true,
+    subQuery: false,
   });
 
-  const total = orders.reduce((sum, order) => {
-    return sum + order.OrderItems.reduce((s, item) => s + Number(item.totalPrice), 0);
-  }, 0);
+  const localDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
   return {
-    date: today.toISOString().split('T')[0],
-    totalOrders: orders.length,
-    totalRevenue: Number(total.toFixed(2)),
+    date: localDate,
+    totalOrders: Number(result?.totalOrders || 0),
+    totalRevenue: Number(Number(result?.totalRevenue || 0).toFixed(2)),
   };
 }
 
@@ -45,29 +48,31 @@ export async function revenueByPeriod(from, to) {
 
   if (fromDate > toDate) throw new AppError('from deve ser anterior a to');
 
-  const orders = await Order.findAll({
+  const result = await Order.findOne({
     where: {
       status: 'CLOSED',
       deletedAt: null,
       updatedAt: { [Op.between]: [fromDate, toDate] },
     },
+    attributes: [
+      [fn('COUNT', fn('DISTINCT', col('Order.id'))), 'totalOrders'],
+      [fn('COALESCE', fn('SUM', col('OrderItems.totalPrice')), 0), 'totalRevenue'],
+    ],
     include: [
       {
         model: OrderItem,
-        attributes: ['quantity', 'totalPrice'],
+        attributes: [],
       },
     ],
+    raw: true,
+    subQuery: false,
   });
-
-  const total = orders.reduce((sum, order) => {
-    return sum + order.OrderItems.reduce((s, item) => s + Number(item.totalPrice), 0);
-  }, 0);
 
   return {
     from: from,
     to: to,
-    totalOrders: orders.length,
-    totalRevenue: Number(total.toFixed(2)),
+    totalOrders: Number(result?.totalOrders || 0),
+    totalRevenue: Number(Number(result?.totalRevenue || 0).toFixed(2)),
   };
 }
 

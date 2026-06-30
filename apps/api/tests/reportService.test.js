@@ -4,7 +4,10 @@ import Order from '../src/models/order.js';
 import { AppError } from '../src/middleware/appError.js';
 
 vi.mock('../src/models/order.js', () => ({
-  default: { findAll: vi.fn() }
+  default: { 
+    findAll: vi.fn(),
+    findOne: vi.fn()
+  }
 }));
 
 vi.mock('../src/models/orderItem.js', () => ({ default: {} }));
@@ -14,10 +17,10 @@ beforeEach(() => vi.clearAllMocks());
 
 describe('salesToday', () => {
   it('deve retornar resumo das vendas do dia', async () => {
-    Order.findAll.mockResolvedValue([
-      { OrderItems: [{ totalPrice: '25.90' }, { totalPrice: '10.00' }] },
-      { OrderItems: [{ totalPrice: '45.00' }] },
-    ]);
+    Order.findOne.mockResolvedValue({
+      totalOrders: 2,
+      totalRevenue: 80.90,
+    });
 
     const result = await salesToday();
 
@@ -27,7 +30,7 @@ describe('salesToday', () => {
   });
 
   it('deve retornar zero quando não há pedidos no dia', async () => {
-    Order.findAll.mockResolvedValue([]);
+    Order.findOne.mockResolvedValue(null);
 
     const result = await salesToday();
 
@@ -36,23 +39,23 @@ describe('salesToday', () => {
   });
 
   it('deve retornar a data de hoje', async () => {
-  Order.findAll.mockResolvedValue([]);
+    Order.findOne.mockResolvedValue(null);
 
-  const result = await salesToday();
-  
-  const today = new Date();
-  const localDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const result = await salesToday();
+    
+    const today = new Date();
+    const localDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
-  expect(result.date).toBe(localDate);
-});
+    expect(result.date).toBe(localDate);
+  });
 });
 
 describe('revenueByPeriod', () => {
   it('deve retornar faturamento no período', async () => {
-    Order.findAll.mockResolvedValue([
-      { OrderItems: [{ totalPrice: '100.00' }, { totalPrice: '50.00' }] },
-      { OrderItems: [{ totalPrice: '200.00' }] },
-    ]);
+    Order.findOne.mockResolvedValue({
+      totalOrders: 2,
+      totalRevenue: 350.00,
+    });
 
     const result = await revenueByPeriod('2026-01-01', '2026-12-31');
 
@@ -63,7 +66,7 @@ describe('revenueByPeriod', () => {
   });
 
   it('deve retornar zero quando não há pedidos no período', async () => {
-    Order.findAll.mockResolvedValue([]);
+    Order.findOne.mockResolvedValue(null);
 
     const result = await revenueByPeriod('2026-01-01', '2026-01-02');
 
