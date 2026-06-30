@@ -1,6 +1,6 @@
 export function validate(schema) {
   return (req, res, next) => {
-    const result = schema.safeParse(req.body);
+    const result = schema.safeParse(req.body || {});
 
     if (!result.success) {
       const messages = JSON.parse(result.error.message).map(e => e.message);
