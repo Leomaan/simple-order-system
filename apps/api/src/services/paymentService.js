@@ -25,7 +25,7 @@ export async function createPixPayment(orderId) {
   });
 
   if (!order) throw new AppError('Order not found', 404);
-  if (order.status !== 'OPEN') throw new AppError('Only open orders can be paid', 400);
+  if (order.status !== 'CLOSED') throw new AppError('Only closed orders can be paid', 400);
   if (!order.OrderItems?.length) throw new AppError('Cannot pay for an empty order', 400);
 
   // Calculate order total
@@ -151,11 +151,11 @@ export async function processWebhook(webhookPayload, user = { name: 'webhook_sys
 
       if (orderId && status === 'approved') {
         const order = await Order.findOne({ where: { id: orderId, deletedAt: null } });
-        if (order && order.status !== 'PAID' && order.status !== 'CLOSED') {
+        if (order && order.status === 'CLOSED') {
           await order.update({ status: 'PAID' });
           await log({
             user,
-            action: 'CLOSE_ORDER', // or a custom action
+            action: 'PAY_ORDER',
             entity: 'Order',
             entityId: order.id,
             details: { table: order.table, order: order.id, paymentId, status: 'PAID' }
@@ -179,11 +179,11 @@ async function approveMockPayment(paymentId, user) {
   const order = await Order.findOne({ where: { paymentId, deletedAt: null } });
   if (!order) return { success: false, reason: 'Order with paymentId not found' };
 
-  if (order.status !== 'PAID' && order.status !== 'CLOSED') {
+  if (order.status === 'CLOSED') {
     await order.update({ status: 'PAID' });
     await log({
       user,
-      action: 'CLOSE_ORDER',
+      action: 'PAY_ORDER',
       entity: 'Order',
       entityId: order.id,
       details: { table: order.table, order: order.id, paymentId, status: 'PAID_MOCK' }

@@ -35,7 +35,7 @@ export async function findAll(status) {
 export async function findById(id) {
   const order = await Order.findOne({
     where: { id, deletedAt: null },
-    attributes: ['id', 'table', 'status'],
+    attributes: ['id', 'table', 'status', 'paymentMethod', 'paymentId', 'paymentQrCode', 'paymentQrCodeCopy', 'paymentExpiresAt'],
     include: [
       {
         model: OrderItem,
