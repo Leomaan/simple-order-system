@@ -3,6 +3,7 @@ import { STATUS_MAP } from '../constants/orderConstants';
 
 export default function OrderCard({ order, onClick, onEdit, onDelete }) {
   const status = STATUS_MAP[order.status];
+  const orderTotal = order.OrderItems?.reduce((sum, item) => sum + Number(item.totalPrice), 0) || 0;
   
   return (
     <div
@@ -14,7 +15,17 @@ export default function OrderCard({ order, onClick, onEdit, onDelete }) {
           {order.table}
         </div>
         <div>
-          <p className="text-white font-semibold">Mesa {order.table}</p>
+          <div className="flex items-center gap-2">
+            <p className="text-white font-semibold">Mesa {order.table}</p>
+            {orderTotal > 0 && (
+              <>
+                <span className="text-neutral-650 text-xs">·</span>
+                <span className="text-emerald-400 text-xs font-bold">
+                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(orderTotal)}
+                </span>
+              </>
+            )}
+          </div>
           <p className="text-neutral-550 text-[10px] uppercase tracking-wider mt-1">
             {new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} •{' '}
             {new Date(order.createdAt).toLocaleDateString('pt-BR')}

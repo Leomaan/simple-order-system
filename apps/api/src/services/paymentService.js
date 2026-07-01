@@ -57,7 +57,7 @@ export async function createPixPayment(orderId) {
   // Example request payload for Mercado Pago API (v1/payments)
   const paymentPayload = {
     transaction_amount: Number(totalAmount.toFixed(2)),
-    description: `Pedido Mesa #${order.table}`,
+    description: `Pedido Mesa #${order.table} - Total: R$ ${totalAmount.toFixed(2)}`,
     payment_method_id: 'pix',
     payer: {
       email: 'customer@simpleorder.com', // In a real system, you can pass waiter or client email
@@ -150,15 +150,19 @@ export async function processWebhook(webhookPayload, user = { name: 'webhook_sys
       const status = paymentInfo.status; // 'approved', 'pending', 'rejected', 'refunded', etc.
 
       if (orderId && status === 'approved') {
-        const order = await Order.findOne({ where: { id: orderId, deletedAt: null } });
+        const order = await Order.findOne({
+          where: { id: orderId, deletedAt: null },
+          include: [OrderItem]
+        });
         if (order && order.status === 'CLOSED') {
+          const total = order.OrderItems?.reduce((sum, item) => sum + Number(item.totalPrice), 0) || 0;
           await order.update({ status: 'PAID' });
           await log({
             user,
             action: 'PAY_ORDER',
             entity: 'Order',
             entityId: order.id,
-            details: { table: order.table, order: order.id, paymentId, status: 'PAID' }
+            details: { table: order.table, order: order.id, paymentId, status: 'PAID', total }
           });
           return { success: true, orderId, status: 'PAID' };
         }
@@ -176,17 +180,21 @@ export async function processWebhook(webhookPayload, user = { name: 'webhook_sys
  * Simulates approving a payment (useful for local development and testing)
  */
 async function approveMockPayment(paymentId, user) {
-  const order = await Order.findOne({ where: { paymentId, deletedAt: null } });
+  const order = await Order.findOne({
+    where: { paymentId, deletedAt: null },
+    include: [OrderItem]
+  });
   if (!order) return { success: false, reason: 'Order with paymentId not found' };
 
   if (order.status === 'CLOSED') {
+    const total = order.OrderItems?.reduce((sum, item) => sum + Number(item.totalPrice), 0) || 0;
     await order.update({ status: 'PAID' });
     await log({
       user,
       action: 'PAY_ORDER',
       entity: 'Order',
       entityId: order.id,
-      details: { table: order.table, order: order.id, paymentId, status: 'PAID_MOCK' }
+      details: { table: order.table, order: order.id, paymentId, status: 'PAID_MOCK', total }
     });
     return { success: true, orderId: order.id, status: 'PAID' };
   }

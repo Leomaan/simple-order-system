@@ -20,6 +20,7 @@ export const ACTION_LABEL = {
   ADD_ORDER_ITEM: 'Adicionou item ao pedido',
   UPDATE_ORDER_ITEM: 'Alterou item do pedido',
   REMOVE_ORDER_ITEM: 'Removeu item do pedido',
+  PAY_ORDER: 'Confirmou pagamento',
 };
 
 export const ENTITY_LABEL = {
@@ -73,6 +74,13 @@ export function getActionStyle(action) {
     ),
   };
 
+  if (action === 'PAY_ORDER') {
+    return {
+      dot: 'bg-amber-500',
+      badge: 'bg-amber-500/10 text-amber-400 ring-1 ring-amber-500/20',
+      icon: <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+    };
+  }
   if (action.startsWith('CREATE') || action.startsWith('ADD') || action.startsWith('RESTORE')) {
     return {
       dot: 'bg-emerald-500',

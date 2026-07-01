@@ -8,7 +8,7 @@ import Input from '../ui/Input';
 
 const statusLabel = {
   OPEN:   { label: 'Aberto',  color: 'text-green-400 bg-green-400/10 border-green-400/20' },
-  PAID:   { label: 'Pago',    color: 'text-blue-400 bg-blue-400/10 border-blue-400/20' },
+  PAID:   { label: 'Pago',    color: 'text-amber-400 bg-amber-400/10 border-amber-400/20' },
   CLOSED: { label: 'Fechado', color: 'text-neutral-400 bg-neutral-400/10 border-neutral-400/20' },
 };
 
@@ -153,41 +153,54 @@ export default function WaiterOrderSection() {
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          {orders.map((o) => (
-            <div
-              key={o.id}
-              onClick={() => o.status === 'OPEN' ? setSelectedOrder(o) : null}
-              className={`glass-card glass-card-hover rounded-2xl px-5 py-4 flex items-center justify-between transition-all ${
-                o.status === 'OPEN' ? 'cursor-pointer hover:border-neutral-600' : 'opacity-70'
-              }`}
-            >
-              <div>
-                <p className="text-white font-semibold">Mesa {o.table}</p>
-                <p className="text-neutral-550 text-[10px] uppercase tracking-wider mt-1">
-                  {new Date(o.createdAt).toLocaleDateString('pt-BR')} ·{' '}
-                  {new Date(o.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                </p>
-                {o.status === 'OPEN' && (
-                  <p className="text-orange-400 text-[10px] font-semibold mt-1">Clique para gerenciar itens</p>
-                )}
+          {orders.map((o) => {
+            const orderTotal = o.OrderItems?.reduce((sum, item) => sum + Number(item.totalPrice), 0) || 0;
+            return (
+              <div
+                key={o.id}
+                onClick={() => o.status === 'OPEN' ? setSelectedOrder(o) : null}
+                className={`glass-card glass-card-hover rounded-2xl px-5 py-4 flex items-center justify-between transition-all ${
+                  o.status === 'OPEN' ? 'cursor-pointer hover:border-neutral-600' : 'opacity-70'
+                }`}
+              >
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-white font-semibold">Mesa {o.table}</p>
+                    {orderTotal > 0 && (
+                      <>
+                        <span className="text-neutral-600 text-xs">·</span>
+                        <span className="text-emerald-400 text-xs font-bold">
+                          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(orderTotal)}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                  <p className="text-neutral-550 text-[10px] uppercase tracking-wider mt-1">
+                    {new Date(o.createdAt).toLocaleDateString('pt-BR')} ·{' '}
+                    {new Date(o.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                  {o.status === 'OPEN' && (
+                    <p className="text-orange-400 text-[10px] font-semibold mt-1">Clique para gerenciar itens</p>
+                  )}
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${statusLabel[o.status].color}`}>
+                    {statusLabel[o.status].label}
+                  </span>
+                  {o.status === 'OPEN' && (
+                    <Button
+                      variant="ghost"
+                      onClick={(e) => { e.stopPropagation(); setDeleting(o.id); }}
+                      className="text-xs py-1.5 px-3 text-red-400 hover:text-red-300 hover:bg-red-500/5"
+                      title="Excluir mesa vazia"
+                    >
+                      Excluir
+                    </Button>
+                  )}
+                </div>
               </div>
-              <div className="flex items-center gap-4">
-                <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${statusLabel[o.status].color}`}>
-                  {statusLabel[o.status].label}
-                </span>
-                {o.status === 'OPEN' && (
-                  <Button
-                    variant="ghost"
-                    onClick={(e) => { e.stopPropagation(); setDeleting(o.id); }}
-                    className="text-xs py-1.5 px-3 text-red-400 hover:text-red-300 hover:bg-red-500/5"
-                    title="Excluir mesa vazia"
-                  >
-                    Excluir
-                  </Button>
-                )}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

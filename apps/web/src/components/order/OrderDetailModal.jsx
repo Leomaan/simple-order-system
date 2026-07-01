@@ -150,7 +150,7 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
               <span className="text-neutral-600 text-xs">•</span>
               {currentStatus === 'OPEN' && <span className="bg-orange-500/10 border border-orange-500/25 text-orange-400 font-semibold px-2 py-0.5 rounded-full text-[10px]">Aberto</span>}
               {currentStatus === 'CLOSED' && <span className="bg-amber-500/10 border border-amber-500/25 text-amber-400 font-semibold px-2 py-0.5 rounded-full text-[10px]">Aguardando Pagamento</span>}
-              {currentStatus === 'PAID' && <span className="bg-green-500/10 border border-green-500/25 text-green-400 font-semibold px-2 py-0.5 rounded-full text-[10px]">Pago</span>}
+              {currentStatus === 'PAID' && <span className="bg-amber-500/10 border border-amber-500/25 text-amber-400 font-semibold px-2 py-0.5 rounded-full text-[10px]">Pago</span>}
             </div>
           </div>
           <button 
@@ -220,7 +220,7 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
                       variant="primary"
                       className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold py-3 shadow-lg shadow-orange-500/10"
                     >
-                      Gerar QR Code PIX
+                      Gerar QR Code PIX ({formatPrice(orderDetails.total)})
                     </Button>
                   ) : (
                     <div className="flex flex-col gap-4 text-center">

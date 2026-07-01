@@ -42,6 +42,7 @@ export function getDetailRows(log) {
       break;
 
     case 'CLOSE_ORDER':
+    case 'PAY_ORDER':
       // TOTAL: Sinalizador Verde (success)
       if (d.total) {
         rows.push({ 
@@ -66,6 +67,14 @@ export function getDetailRows(log) {
 
 export function getActionStyle(action) {
   const label = ACTION_LABEL[action] || action;
+  if (action === 'PAY_ORDER') {
+    return {
+      label,
+      dot: 'bg-amber-500',
+      badge: 'bg-amber-500/10 text-amber-400 ring-1 ring-amber-500/20',
+      icon: ICONS.money
+    };
+  }
   if (action.match(/CREATE|ADD|RESTORE/)) return { label, dot: 'bg-emerald-500', badge: 'bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/20', icon: ICONS.plus };
   if (action.match(/DELETE|REMOVE|PERMANENT/)) return { label, dot: 'bg-red-500', badge: 'bg-red-500/10 text-red-400 ring-1 ring-red-500/20', icon: ICONS.trash };
   return { label, dot: 'bg-blue-500', badge: 'bg-blue-500/10 text-blue-400 ring-1 ring-blue-500/20', icon: ICONS.edit };
