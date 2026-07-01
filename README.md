@@ -1,144 +1,221 @@
-# 🍽️ Simple Order System
+# Simple Order System
 
-Sistema de gerenciamento de pedidos para restaurantes, desenvolvido com Node.js, Express e MySQL.
+Sistema de gerenciamento de pedidos para restaurantes e estabelecimentos comerciais, desenvolvido em arquitetura de monorepo utilizando Turborepo, Node.js (Express), React (Vite, TailwindCSS) e MySQL.
 
-## 🚀 Tecnologias
+---
 
-- **Node.js** + **Express 5**
-- **Sequelize** + **MySQL**
-- **Docker** + **Docker Compose**
-- **Zod** — validação de dados
-- **JWT** — autenticação
-- **Vitest** — testes unitários
+## Tecnologias e Ferramentas
 
-## 📁 Estrutura
+* **Orquestração de Monorepo:** Turborepo
+* **Backend:** Node.js (v20+) com Express 5
+* **Frontend:** React (v19) com Vite e TailwindCSS
+* **Banco de Dados & ORM:** MySQL 8 e Sequelize ORM
+* **Validação de Dados:** Zod
+* **Autenticação:** JSON Web Tokens (JWT) com controle de sessões e Refresh Tokens
+* **Suíte de Testes:** Vitest (Testes unitários e de integração com banco real)
+* **Ambientes Isolados:** Docker e Docker Compose (para banco de dados local)
 
+---
+
+## Estrutura do Monorepo
+
+O projeto está dividido em aplicações (`apps`) e pacotes compartilhados (`packages`):
+
+```text
+simple-order-system/
+├── apps/
+│   ├── api/          # API RESTful (Express, Sequelize, MySQL)
+│   └── web/          # Interface Web (React, Vite, TailwindCSS)
+├── packages/
+│   └── schemas/      # Validações Zod compartilhadas entre API e Frontend
+├── package.json      # Dependências globais e scripts de orquestração
+└── turbo.json        # Configurações de pipeline e cache do Turborepo
 ```
-src/
-  controllers/    # recebe req, devolve res
-  services/       # regras de negócio
-  models/         # definição das tabelas
-  routes/         # definição das rotas
-  middleware/     # asyncHandler, errorHandler, validate, authenticate
-  schemas/        # schemas Zod
-  config/         # configuração do banco
-  db/             # conexão Sequelize
-  util/           # funções auxiliares
-```
 
-## ⚙️ Configuração
+---
+
+## Configuração e Instalação
 
 ### Pré-requisitos
-- Node.js 20+
-- Docker
 
-### Instalação
+* Node.js v20 ou superior instalado.
+* Docker e Docker Compose ativos na máquina.
 
-```bash
-# clone o repositório
-git clone https://github.com/Leomaan/simple-order-system
-cd simple-order-system
+### Passo a Passo
 
-# instale as dependências
-npm install
+1. **Clonar o repositório:**
+   ```bash
+   git clone https://github.com/Leomaan/simple-order-system.git
+   cd simple-order-system
+   ```
 
-# configure as variáveis de ambiente
-cp .env.example .env
-```
+2. **Instalar dependências (executado na raiz):**
+   ```bash
+   npm install
+   ```
 
-### Variáveis de ambiente
+3. **Configurar as Variáveis de Ambiente:**
+   Copie os exemplos de ambiente tanto para a raiz quanto para as pastas internas.
+   
+   Na raiz do projeto:
+   ```bash
+   cp .env.example .env
+   ```
+   
+   Na pasta da API (`apps/api`):
+   ```bash
+   cp apps/api/.env.example apps/api/.env
+   ```
+
+---
+
+## Variáveis de Ambiente
+
+As principais variáveis necessárias para a execução estão descritas abaixo:
 
 ```dotenv
 PORT=3000
 
+# Conexão com o banco de dados principal
 DB_HOST=localhost
-DB_USER=root
-DB_PASS=sua_senha
-DB_NAME=simple_order_system
 DB_PORT=3307
+DB_USER=root
+DB_PASS=123456
+DB_NAME=simple_order_system
 
-ADMIN_CODE=seu_codigo_admin
-WAITER_CODE=seu_codigo_garcom
-JWT_SECRET=sua_chave_secreta
+# Banco de dados de testes
+TEST_DB_NAME=simple_order_system_test
+
+# Autenticação
+JWT_SECRET=sua_chave_secreta_de_32_caracteres
+FRONTEND_URL=http://localhost:5173
 ```
 
-### Subindo o banco com Docker
+---
+
+## Inicialização do Banco de Dados (Docker)
+
+Os testes de integração e o servidor de desenvolvimento necessitam de uma instância ativa do MySQL. Para subir o banco via contêiner Docker:
 
 ```bash
-docker compose up -d db
+docker compose -f apps/api/docker-compose.yml up -d db
 ```
 
-### Rodando o servidor
+> **Nota:** O script `apps/api/src/scripts/init.sql` inicializará automaticamente o contêiner criando tanto a base de dados principal (`simple_order_system`) quanto a de testes (`simple_order_system_test`).
+
+---
+
+## Execução em Desenvolvimento
+
+Para rodar todos os serviços do monorepo (API e Frontend) simultaneamente no modo de desenvolvimento:
 
 ```bash
-npm start
+npm run dev
 ```
 
-## 🔐 Autenticação
+* **Frontend:** Disponível em `http://localhost:5173`
+* **Backend API:** Disponível em `http://localhost:3000`
+* **Documentação Swagger:** Disponível em `http://localhost:3000/api-docs`
 
-O sistema possui dois perfis de acesso:
+---
 
-| Perfil | Acesso |
-|---|---|
-| **Admin** | Cadastrar/editar/deletar produtos, ver todos os pedidos, deletar pedidos |
-| **Garçom** | Abrir pedidos, adicionar itens, fechar pedidos, listar pedidos |
+## Executando Testes
 
-Para autenticar, faça login e use o token retornado no header `Authorization: Bearer <token>`:
+Os testes são escritos utilizando Vitest e cobrem as camadas de serviços, controllers e integração da API.
 
+Para rodar toda a suíte de testes:
+```bash
+npm run test
 ```
-POST /auth/login
-{ "code": "seu_codigo" }
-```
 
-## 📌 Rotas
+> **Atenção:** Certifique-se de que o contêiner do Docker (`mysql_db`) esteja em execução, pois os testes de integração realizam chamadas reais ao banco mapeado em `localhost:3307`.
 
-### Auth
-| Método | Rota | Descrição |
-|---|---|---|
-| POST | `/auth/login` | Login e geração do token |
+---
 
-### Produtos
-| Método | Rota | Acesso | Descrição |
-|---|---|---|---|
-| GET | `/product` | Garçom+ | Listar produtos |
-| GET | `/product/:id` | Garçom+ | Buscar produto |
-| POST | `/product` | Admin | Criar produto |
-| PUT | `/product/:id` | Admin | Editar produto |
-| DELETE | `/product/:id` | Admin | Deletar produto |
+## Compilação para Produção (Build)
 
-### Pedidos
-| Método | Rota | Acesso | Descrição |
-|---|---|---|---|
-| GET | `/order` | Garçom+ | Listar pedidos |
-| GET | `/order/:id` | Garçom+ | Buscar pedido |
-| POST | `/order` | Garçom+ | Criar pedido |
-| PUT | `/order/:id` | Garçom+ | Editar pedido |
-| PATCH | `/order/:id/close` | Garçom+ | Fechar pedido |
-| DELETE | `/order/:id` | Admin | Deletar pedido |
-
-### Itens do pedido
-| Método | Rota | Acesso | Descrição |
-|---|---|---|---|
-| POST | `/order-item` | Garçom+ | Adicionar item |
-| PATCH | `/order-item/:id` | Garçom+ | Alterar quantidade |
-| DELETE | `/order-item/:id` | Garçom+ | Remover item |
-
-## 🧪 Testes
+Para compilar todos os aplicativos e pacotes para o formato de produção:
 
 ```bash
-npm test
+npm run build
 ```
 
-37 testes unitários cobrindo os services de produto, pedido e itens.
+---
 
-## 🗺️ Roadmap
+## Controle de Acesso e Perfis
 
-- [ ] Categorias de produto (bebidas, petiscos, pratos...)
-- [ ] Integração com API de pagamento PIX (Mercado Pago / PagSeguro)
-- [ ] Geração de notas fiscais em PDF
-- [ ] Relatórios gerenciais (vendas por dia, produtos mais vendidos)
-- [ ] Deploy em produção
+O sistema dispõe de rotas e funcionalidades protegidas baseadas em funções de usuário (RBAC):
 
-## 📄 Licença
+| Perfil | Nível de Acesso | Funcionalidades Principais |
+| :--- | :--- | :--- |
+| **Admin** | Total | Gerenciamento de usuários, exclusão física de registros, relatórios financeiros e de auditoria, além de gerenciamento de produtos. |
+| **Garçom (Waiter)** | Operacional | Abertura de pedidos, adição e edição de itens de pedidos, fechamento de pedidos e emissão de cobrança PIX. |
 
-MIT © [Leomaan](https://github.com/Leomaan)
+---
+
+## Rotas da API
+
+### Autenticação (`/auth`)
+* `POST /auth/login` - Autenticação com controle de limite de taxa.
+* `POST /auth/refresh` - Atualização do token de sessão.
+* `POST /auth/logout` - Encerramento de sessão e invalidação de tokens.
+
+### Usuários (`/user`) - *Apenas Administradores*
+* `GET /user` - Listagem de usuários.
+* `GET /user/:id` - Detalhes do usuário.
+* `POST /user` - Cadastro de novos funcionários.
+* `PATCH /user/:id` - Atualização de dados cadastrais.
+* `DELETE /user/:id` - Exclusão lógica (soft delete).
+* `PATCH /user/:id/restore` - Restauração de usuário deletado.
+* `DELETE /user/:id/permanent` - Remoção definitiva.
+
+### Produtos (`/product`)
+* `GET /product` - Listagem de produtos (Garçom+).
+* `GET /product/:id` - Busca de produto por ID (Garçom+).
+* `POST /product` - Criação de produto (Admin).
+* `PUT /product/:id` - Edição de produto (Admin).
+* `DELETE /product/:id` - Exclusão lógica de produto (Admin).
+* `PATCH /product/:id/restore` - Restauração de produto (Admin).
+* `DELETE /product/:id/permanent` - Exclusão definitiva (Admin).
+
+### Pedidos (`/order`)
+* `POST /order` - Abertura de novos pedidos (Garçom+).
+* `GET /order` - Listagem geral (Garçom+).
+* `GET /order/:id` - Busca de pedido por ID (Garçom+).
+* `PUT /order/:id` - Atualização do pedido (Garçom+).
+* `PATCH /order/:id/close` - Fechamento e encerramento de pedido (Garçom+).
+* `DELETE /order/:id` - Exclusão lógica de pedido (Admin).
+* `PATCH /order/:id/restore` - Restauração de pedido deletado (Admin).
+* `DELETE /order/:id/permanent` - Exclusão definitiva (Admin).
+
+### Itens de Pedido (`/order-item`)
+* `POST /order-item` - Adiciona item a um pedido aberto (Garçom+).
+* `PATCH /order-item/:id` - Altera a quantidade de um item (Garçom+).
+* `DELETE /order-item/:id` - Remove item do pedido (Garçom+).
+
+### Relatórios (`/report`) - *Apenas Administradores*
+* `GET /report/today` - Faturamento e vendas do dia corrente.
+* `GET /report/revenue` - Gráfico de faturamento por período.
+* `GET /report/orders` - Estatísticas de pedidos por período.
+
+### Pagamentos (`/payment`)
+* `POST /payment/pix` - Geração do payload e QR Code de pagamento via PIX (Garçom+).
+* `POST /payment/webhook` - Recepção de confirmação de pagamento do provedor (Público).
+* `POST /payment/simulate-confirm` - Simulação de confirmação de pagamento (Garçom+ / Apenas Dev).
+
+### Auditoria (`/audit`) - *Apenas Administradores*
+* `GET /audit` - Acesso aos logs de ações sensíveis do sistema.
+
+---
+
+## Integração Contínua (CI)
+
+O projeto conta com automação via **GitHub Actions** ([ci.yml](file:///C:/Users/CLIENTE/Documents/GitHub/simple-order-system/.github/workflows/ci.yml)). Toda alteração enviada ao repositório passa pelas seguintes etapas automáticas de validação:
+
+1. Execução do Docker com banco de dados MySQL 8.
+2. Instalação limpa de dependências.
+3. Análise estática de código (Linter).
+4. Execução de testes de unidade e integração.
+5. Verificação do processo de Build de todas as aplicações.
+
+As variáveis necessárias para o pipeline são repassadas ao ambiente do Turborepo via declaração explícita no arquivo [turbo.json](file:///C:/Users/CLIENTE/Documents/GitHub/simple-order-system/turbo.json).
