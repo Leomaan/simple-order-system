@@ -7,7 +7,8 @@ module.exports = {
     database: process.env.DB_NAME || 'simple_order_system',
     host: process.env.DB_HOST || 'localhost',
     port: process.env.DB_PORT || 3307,
-    dialect: 'mysql'
+    dialect: 'mysql',
+    logging: process.env.DB_LOGGING === 'true' ? console.log : false
   },
   test: {
     username: process.env.DB_USER || 'root',
@@ -24,6 +25,7 @@ module.exports = {
     database: process.env.DB_NAME,
     host: process.env.DB_HOST,
     port: process.env.DB_PORT || 3306,
-    dialect: 'mysql'
+    dialect: 'mysql',
+    logging: process.env.DB_LOGGING === 'true' ? console.log : false
   }
 };

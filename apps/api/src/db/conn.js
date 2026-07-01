@@ -1,14 +1,18 @@
 import { Sequelize } from 'sequelize';
-import dbConfig from '../config/database.js';
+import dbConfigMap from '../config/database-cli.cjs';
+
+const env = process.env.NODE_ENV || 'development';
+const dbConfig = dbConfigMap[env];
 
 const sequelize = new Sequelize(
   dbConfig.database,
-  dbConfig.user,
-  dbConfig.pass,
+  dbConfig.username,
+  dbConfig.password,
   {
     host: dbConfig.host,
     port: dbConfig.port,
     dialect: dbConfig.dialect,
+    logging: dbConfig.logging,
   }
 );
 
