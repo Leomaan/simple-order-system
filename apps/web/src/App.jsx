@@ -1,9 +1,9 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { PrivateRoute } from './components/PrivateRoute';
-import Login from './pages/login';
-import Admin from './pages/admin';
-import Waiter from './pages/waiter';
+import Login from './pages/Login';
+import Admin from './pages/Admin';
+import Waiter from './pages/Waiter';
 
 export default function App() {
   return (
