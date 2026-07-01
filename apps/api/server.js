@@ -7,10 +7,14 @@ const force = process.argv.includes('--force');
 
 async function bootstrap() {
   try {
-    await sequelize.sync({ force });
-
-    if (force) console.log('Banco resetado com sucesso!');
-    console.log('Banco conectado com sucesso!');
+    if (process.env.NODE_ENV !== 'production') {
+      await sequelize.sync({ force });
+      if (force) console.log('Banco resetado com sucesso!');
+      console.log('Banco conectado e sincronizado com sucesso!');
+    } else {
+      await sequelize.authenticate();
+      console.log('Banco conectado com sucesso (Produção)!');
+    }
 
     const server = app.listen(PORT, () =>
       console.log(`Servidor rodando na porta ${PORT}`)

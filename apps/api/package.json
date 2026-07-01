@@ -7,9 +7,9 @@
     "start": "node ./server.js",
     "db:seed": "node src/scripts/seed.js",
     "db:reset": "node src/scripts/reset.js",
+    "db:migrate": "sequelize db:migrate",
     "test": "cross-env NODE_ENV=test vitest --config vitest.config.js"
   },
-
   "dependencies": {
     "@simple-order/schemas": "*",
     "bcryptjs": "^3.0.3",
@@ -29,6 +29,7 @@
     "@vitest/coverage-v8": "^4.1.7",
     "cross-env": "^7.0.3",
     "nodemon": "^3.1.14",
+    "sequelize-cli": "^6.6.5",
     "supertest": "^7.2.2",
     "vitest": "^4.1.7"
   }
