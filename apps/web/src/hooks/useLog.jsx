@@ -13,10 +13,10 @@ const ACTIONS = [
 const ENTITIES = ['Product', 'Order', 'User', 'OrderItem'];
 
 export function useLogs(initialFilters = {}) {
-  const [filters, setFilters] = useState(initialFilters);
+  const [filters, setFilters] = useState({ page: 1, limit: 15, ...initialFilters });
 
   // Busca reativa de logs com polling automático e recarga rápida
-  const { data: logs = [], isLoading: loading, error } = useQuery({
+  const { data, isLoading: loading, error } = useQuery({
     queryKey: ['auditLogs', filters],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -25,6 +25,9 @@ export function useLogs(initialFilters = {}) {
       if (filters.entity) params.append('entity', filters.entity);
       if (filters.from) params.append('from', filters.from);
       if (filters.to) params.append('to', filters.to);
+      params.append('page', String(filters.page));
+      params.append('limit', String(filters.limit));
+      
       const res = await api.get(`/audit?${params}`);
       return res.data.data;
     },
@@ -34,10 +37,14 @@ export function useLogs(initialFilters = {}) {
   });
 
   return {
-    logs,
+    logs: data?.logs || [],
+    totalPages: data?.totalPages || 1,
+    currentPage: filters.page,
+    totalLogs: data?.totalLogs || 0,
     loading,
     error: error ? 'Erro ao carregar logs' : '',
-    fetchLogs: (newFilters) => setFilters(newFilters ?? {}),
+    fetchLogs: (newFilters) => setFilters((prev) => ({ page: 1, limit: prev.limit, ...newFilters })),
+    setPage: (page) => setFilters((prev) => ({ ...prev, page })),
     ACTIONS,
     ENTITIES
   };

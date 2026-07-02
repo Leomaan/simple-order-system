@@ -3,10 +3,37 @@ import bcrypt from 'bcryptjs';
 import User from '../models/user.js';
 import { AppError } from '../middleware/appError.js';
 
-export async function findAll() {
-  return User.findAll({
-    attributes: ['id', 'name', 'email', 'role', 'active', 'isSuperAdmin', 'createdAt'],
-  });
+export async function findAll(onlyDeleted = false, page, limit) {
+  const where = {};
+  const queryOptions = {
+    attributes: ['id', 'name', 'email', 'role', 'active', 'isSuperAdmin', 'createdAt', 'deletedAt'],
+    where,
+    order: [['name', 'ASC']],
+  };
+  if (onlyDeleted) {
+    const { Op } = await import('sequelize');
+    queryOptions.paranoid = false;
+    where.deletedAt = { [Op.ne]: null };
+  }
+
+  if (page && limit) {
+    const parsedPage = Number(page);
+    const parsedLimit = Number(limit);
+    const offset = (parsedPage - 1) * parsedLimit;
+
+    queryOptions.limit = parsedLimit;
+    queryOptions.offset = offset;
+
+    const { count, rows } = await User.findAndCountAll(queryOptions);
+    return {
+      users: rows,
+      totalPages: Math.ceil(count / parsedLimit),
+      currentPage: parsedPage,
+      totalUsers: count,
+    };
+  }
+
+  return User.findAll(queryOptions);
 }
 
 export async function findById(id) {
@@ -20,8 +47,21 @@ export async function findById(id) {
 export async function createUser(data) {
   const { name, email, password, role } = data;
 
-  const exists = await User.findOne({ where: { email } });
-  if (exists) throw new AppError('email já cadastrado');
+  // Buscar incluindo usuários deletados (soft delete)
+  const exists = await User.findOne({ where: { email }, paranoid: false });
+  if (exists) {
+    if (!exists.deletedAt) {
+      throw new AppError('email já cadastrado');
+    }
+    
+    // Se o usuário estava deletado logicamente, restauramos e atualizamos com os novos dados
+    const hashed = await bcrypt.hash(password, 10);
+    await exists.restore();
+    await exists.update({ name, password: hashed, role, active: true });
+    
+    const { password: _, ...userWithoutPassword } = exists.toJSON();
+    return userWithoutPassword;
+  }
 
   const hashed = await bcrypt.hash(password, 10);
   const user = await User.create({ name, email, password: hashed, role });
@@ -73,6 +113,7 @@ export async function deleteUser(id, requesterId) {
     throw new AppError('apenas o superadmin pode deletar um admin');
 
   await user.destroy();
+  return user;
 }
 
 export async function restoreUser(id) {
@@ -98,4 +139,5 @@ export async function permanentDeleteUser(id, requesterId) {
     throw new AppError('apenas o superadmin pode deletar permanentemente um admin');
 
   await user.destroy({ force: true });
+  return user;
 }

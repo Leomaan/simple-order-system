@@ -5,16 +5,25 @@ import api from '../config/api';
 export function useOrders(initialStatus = '') {
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState(initialStatus);
+  const [page, setPage] = useState(1);
+  const limit = 10;
 
   // Busca reativa de pedidos com cache de dados
-  const { data: orders = [], isLoading: loading, error, refetch } = useQuery({
-    queryKey: ['orders', { status: statusFilter }],
+  const { data, isLoading: loading, error, refetch } = useQuery({
+    queryKey: ['orders', { status: statusFilter, page, limit }],
     queryFn: async () => {
-      const params = statusFilter ? `?status=${statusFilter}` : '';
-      const res = await api.get(`/order${params}`);
+      const params = new URLSearchParams();
+      if (statusFilter) params.append('status', statusFilter);
+      params.append('page', String(page));
+      params.append('limit', String(limit));
+      const res = await api.get(`/order?${params}`);
       return res.data.data;
     },
   });
+
+  const orders = data?.orders || (Array.isArray(data) ? data : []);
+  const totalPages = data?.totalPages || 1;
+  const totalOrders = data?.totalOrders || orders.length;
 
   // Mutação para criar pedido
   const createMutation = useMutation({
@@ -51,10 +60,15 @@ export function useOrders(initialStatus = '') {
   return {
     orders,
     loading,
+    totalPages,
+    currentPage: page,
+    totalOrders,
+    setPage,
     error: error ? 'Erro ao carregar pedidos' : '',
     fetchOrders: (status) => {
       setStatusFilter(status ?? '');
-      refetch();
+      setPage(1);
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
     },
     createOrder: (data) => createMutation.mutateAsync(data),
     updateOrder: (id, data) => updateMutation.mutateAsync({ id, data }),

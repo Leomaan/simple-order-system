@@ -2,9 +2,10 @@ import React, { useState, useEffect } from "react";
 import { useLogs } from "../../hooks/useLog";
 import LogFilters from "./LogFilters";
 import LogItem from "./LogItem";
+import Button from "../ui/Button";
 
 export default function LogSection() {
-  const { logs, loading, error, fetchLogs, ACTIONS, ENTITIES } = useLogs();
+  const { logs, loading, error, fetchLogs, totalPages, currentPage, setPage, totalLogs, ACTIONS, ENTITIES } = useLogs();
   const [filters, setFilters] = useState({ action: "", entity: "", from: "", to: "" });
 
   useEffect(() => {
@@ -35,7 +36,7 @@ export default function LogSection() {
         {!loading && (
           <div className="flex items-center gap-2 text-xs font-semibold text-neutral-400 bg-neutral-900 border border-neutral-800 rounded-full px-4.5 py-2 select-none">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            {logs.length} registros
+            {totalLogs} registros
           </div>
         )}
       </header>
@@ -69,6 +70,33 @@ export default function LogSection() {
           logs.map((log) => <LogItem key={log.id} log={log} />)
         )}
       </main>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between border border-neutral-850 bg-neutral-900/10 rounded-2xl px-5 py-4 mt-2">
+          <p className="text-xs text-neutral-500 font-semibold select-none">
+            Mostrando página <span className="text-neutral-350">{currentPage}</span> de <span className="text-neutral-350">{totalPages}</span>
+          </p>
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              onClick={() => setPage(currentPage - 1)}
+              disabled={currentPage === 1 || loading}
+              className="text-xs py-1.5 px-4"
+            >
+              Anterior
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => setPage(currentPage + 1)}
+              disabled={currentPage === totalPages || loading}
+              className="text-xs py-1.5 px-4"
+            >
+              Próxima
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

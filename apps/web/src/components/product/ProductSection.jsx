@@ -5,6 +5,7 @@ import CategoryFilter from "../ui/CategoryFilter";
 import Input from "../ui/Input";
 import Button from "../ui/Button";
 import ErrorMessage from "../ui/ErrorMessage";
+import { Utensils, Beer, Popcorn, CakeSlice, Soup, Search } from "lucide-react";
 
 const CATEGORIES = ["FOOD", "DRINK", "SNACK", "DESSERT", "SIDE"];
 
@@ -16,11 +17,21 @@ const categoryLabel = {
   SIDE: "Acompanhamento",
 };
 
-const emptyForm = { name: "", price: "", category: "FOOD", description: "" };
+const categoryIcon = {
+  FOOD: Utensils,
+  DRINK: Beer,
+  SNACK: Popcorn,
+  DESSERT: CakeSlice,
+  SIDE: Soup,
+};
+
+const emptyForm = { name: "", price: "", category: "FOOD", description: "", available: true };
 
 export default function ProductSection() {
-  const { products, loading, createProduct, updateProduct, deleteProduct } =
-    useProducts();
+  const [filterCategory, setFilterCategory] = useState("FOOD");
+  const [searchQuery, setSearchQuery] = useState("");
+  const { products, loading, createProduct, updateProduct, deleteProduct, totalPages, currentPage, setPage, fetchProducts } =
+    useProducts("FOOD");
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptyForm);
@@ -28,13 +39,8 @@ export default function ProductSection() {
   const [error, setError] = useState("");
   const [deleting, setDeleting] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const [filterCategory, setFilterCategory] = useState("");
 
-  const filteredProducts = (
-    filterCategory
-      ? products.filter((p) => p.category === filterCategory)
-      : products
-  ).sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+  const sortedProducts = [...products].sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
 
   function openCreate() {
     setEditing(null);
@@ -50,6 +56,7 @@ export default function ProductSection() {
       price: product.price,
       category: product.category,
       description: product.description || "",
+      available: product.available,
     });
     setError("");
     setShowForm(true);
@@ -67,7 +74,11 @@ export default function ProductSection() {
     setSaving(true);
     setError("");
     try {
-      const data = { ...form, price: Number(form.price) };
+      const data = { 
+        ...form, 
+        price: Number(form.price), 
+        available: Boolean(form.available) 
+      };
       if (editing) {
         await updateProduct(editing.id, data);
       } else {
@@ -174,6 +185,20 @@ export default function ProductSection() {
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               placeholder="Ex: Pão brioche, blend 150g, queijo cheddar, maionese"
             />
+
+            <div className="flex flex-col gap-1.5 justify-center mt-4 md:mt-6">
+              <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={form.available}
+                  onChange={(e) => setForm({ ...form, available: e.target.checked })}
+                  className="w-4 h-4 rounded border-neutral-800 bg-neutral-900 text-orange-500 focus:ring-0 focus:ring-offset-0 outline-none cursor-pointer"
+                />
+                <span className="text-white text-xs font-bold uppercase tracking-wider">
+                  Disponível para Venda
+                </span>
+              </label>
+            </div>
           </div>
 
           <ErrorMessage message={error} />
@@ -189,13 +214,30 @@ export default function ProductSection() {
         </form>
       )}
 
-      {/* Filtros de categoria */}
-      <div className="mb-6">
+      {/* Filtros de categoria & Busca */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <CategoryFilter
           categories={CATEGORIES}
           selected={filterCategory}
-          onChange={setFilterCategory}
+          onChange={(cat) => {
+            setFilterCategory(cat);
+            fetchProducts(cat, searchQuery);
+          }}
         />
+
+        <div className="relative w-full md:max-w-xs select-none">
+          <input
+            type="text"
+            placeholder="Buscar produto por nome..."
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              fetchProducts(filterCategory, e.target.value);
+            }}
+            className="w-full bg-neutral-900 border border-neutral-800 text-white rounded-xl py-2 pl-9 pr-4 text-xs outline-none focus:border-orange-500 transition-colors"
+          />
+          <Search size={14} className="absolute left-3 top-3 text-neutral-500" />
+        </div>
       </div>
 
       {/* Lista */}
@@ -205,60 +247,108 @@ export default function ProductSection() {
             <div key={i} className="h-20 bg-neutral-900/50 border border-neutral-800 rounded-2xl animate-pulse" />
           ))}
         </div>
-      ) : filteredProducts.length === 0 ? (
+      ) : sortedProducts.length === 0 ? (
         <div className="text-center py-16 bg-neutral-900/10 rounded-2xl border border-dashed border-neutral-800">
           <p className="text-neutral-500 font-medium">Nenhum produto cadastrado nesta categoria.</p>
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          {filteredProducts.map((p) => (
-            <div
-              key={p.id}
-              className="glass-card glass-card-hover rounded-2xl px-5 py-4 flex items-center justify-between"
-            >
-              <div>
-                <div className="flex items-center gap-2">
-                  <p className="text-white font-semibold">{p.name}</p>
-                  <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${
-                    p.available 
-                      ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" 
-                      : "bg-red-500/10 text-red-400 border-red-500/20"
-                  }`}>
-                    {p.available ? "Disponível" : "Indisponível"}
+          {sortedProducts.map((p) => {
+            const IconComponent = categoryIcon[p.category] || Utensils;
+            return (
+              <div
+                key={p.id}
+                className="glass-card glass-card-hover rounded-2xl px-5 py-4 flex items-center justify-between"
+              >
+                <div className="flex items-center gap-4 min-w-0">
+                  {/* Miniature Thumbnail */}
+                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-neutral-800/80 to-neutral-900/80 border border-neutral-800 flex items-center justify-center text-orange-400 shrink-0 shadow-inner">
+                    <IconComponent size={18} />
+                  </div>
+
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-white font-semibold">{p.name}</p>
+                      <button
+                        type="button"
+                        title="Clique para alternar a disponibilidade"
+                        onClick={async () => {
+                          try {
+                            await updateProduct(p.id, { available: !p.available });
+                          } catch (err) {
+                            setError(err.response?.data?.message || "Erro ao alterar disponibilidade");
+                          }
+                        }}
+                        className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border transition-all hover:scale-105 active:scale-95 cursor-pointer ${
+                          p.available 
+                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20" 
+                            : "bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20"
+                        }`}
+                      >
+                        {p.available ? "Disponível" : "Indisponível"}
+                      </button>
+                    </div>
+                    {p.description && (
+                      <p className="text-neutral-450 text-xs mt-1 leading-relaxed max-w-lg truncate">
+                        {p.description}
+                      </p>
+                    )}
+                    <p className="text-neutral-550 text-[10px] uppercase tracking-wider mt-1.5 font-bold">
+                      {categoryLabel[p.category]}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-5">
+                  <span className="text-orange-400 font-bold text-base whitespace-nowrap">
+                    R$ {Number(p.price).toFixed(2)}
                   </span>
-                </div>
-                {p.description && (
-                  <p className="text-neutral-450 text-xs mt-1 leading-relaxed max-w-lg">
-                    {p.description}
-                  </p>
-                )}
-                <p className="text-neutral-500 text-[10px] uppercase tracking-wider mt-1.5">
-                  {categoryLabel[p.category]}
-                </p>
-              </div>
-              <div className="flex items-center gap-5">
-                <span className="text-orange-400 font-bold text-base whitespace-nowrap">
-                  R$ {Number(p.price).toFixed(2)}
-                </span>
-                <div className="flex items-center gap-1.5">
-                  <Button
-                    variant="ghost"
-                    onClick={() => openEdit(p)}
-                    className="text-xs py-1 px-3"
-                  >
-                    Editar
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    onClick={() => setDeleting(p.id)}
-                    className="text-xs py-1 px-3 text-red-400 hover:text-red-300 hover:bg-red-500/5"
-                  >
-                    Excluir
-                  </Button>
+                  <div className="flex items-center gap-1.5">
+                    <Button
+                      variant="ghost"
+                      onClick={() => openEdit(p)}
+                      className="text-xs py-1 px-3"
+                    >
+                      Editar
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      onClick={() => setDeleting(p.id)}
+                      className="text-xs py-1 px-3 text-red-450 hover:text-red-400 hover:bg-red-500/5"
+                    >
+                      Excluir
+                    </Button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
+        </div>
+      )}
+
+      {/* Paginação */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between border border-neutral-850 bg-neutral-900/10 rounded-2xl px-5 py-4 mt-6">
+          <p className="text-xs text-neutral-500 font-semibold select-none">
+            Mostrando página <span className="text-neutral-350">{currentPage}</span> de <span className="text-neutral-350">{totalPages}</span>
+          </p>
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              onClick={() => setPage(currentPage - 1)}
+              disabled={currentPage === 1 || loading}
+              className="text-xs py-1.5 px-4"
+            >
+              Anterior
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => setPage(currentPage + 1)}
+              disabled={currentPage === totalPages || loading}
+              className="text-xs py-1.5 px-4"
+            >
+              Próxima
+            </Button>
+          </div>
         </div>
       )}
     </div>

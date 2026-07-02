@@ -10,7 +10,7 @@ const roleLabel = { ADMIN: 'Admin', WAITER: 'Garçom' };
 const emptyForm = { name: '', email: '', password: '', role: 'WAITER' };
 
 export default function UserSection() {
-  const { users, loading, createUser, updateUser, deleteUser } = useUsers();
+  const { users, loading, createUser, updateUser, deleteUser, totalPages, currentPage, setPage } = useUsers();
   const { user: currentUser } = useAuth();
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -64,7 +64,7 @@ export default function UserSection() {
   async function handleDelete() {
     setDeleteLoading(true);
     try {
-      await deleteUser(deleting);
+      await deleteUser(deleting.id);
       setDeleting(null);
     } catch (err) {
       const msg = err.response?.data?.message;
@@ -79,8 +79,8 @@ export default function UserSection() {
     <div className="p-8 max-w-5xl mx-auto animate-in fade-in duration-300">
       {deleting && (
         <ConfirmModal
-          title="Excluir usuário?"
-          message="O usuário será removido do sistema. Esta ação pode ser revertida pelo superadmin."
+          title={`Excluir usuário ${deleting.name}?`}
+          message={`O usuário "${deleting.name}" será removido do sistema. Esta ação pode ser revertida pelo superadmin.`}
           onConfirm={handleDelete}
           onCancel={() => setDeleting(null)}
           loading={deleteLoading}
@@ -169,7 +169,7 @@ export default function UserSection() {
         </div>
       ) : users.length === 0 ? (
         <div className="text-center py-20 bg-neutral-900/10 rounded-3xl border border-dashed border-neutral-800">
-          <p className="text-neutral-500 font-medium">Nenhum usuário cadastrado no sistema.</p>
+          <p className="text-neutral-550 font-medium">Nenhum usuário cadastrado no sistema.</p>
         </div>
       ) : (
         <div className="flex flex-col gap-3">
@@ -193,7 +193,7 @@ export default function UserSection() {
                     <Button variant="ghost" onClick={() => openEdit(u)} className="text-xs py-1.5 px-3">
                       Editar
                     </Button>
-                    <Button variant="ghost" onClick={() => setDeleting(u.id)} className="text-xs py-1.5 px-3 text-red-400 hover:text-red-300 hover:bg-red-500/5">
+                    <Button variant="ghost" onClick={() => setDeleting(u)} className="text-xs py-1.5 px-3 text-red-400 hover:text-red-300 hover:bg-red-500/5">
                       Excluir
                     </Button>
                   </>
@@ -201,6 +201,33 @@ export default function UserSection() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Paginação */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between border border-neutral-850 bg-neutral-900/10 rounded-2xl px-5 py-4 mt-6">
+          <p className="text-xs text-neutral-500 font-semibold select-none">
+            Mostrando página <span className="text-neutral-350">{currentPage}</span> de <span className="text-neutral-350">{totalPages}</span>
+          </p>
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              onClick={() => setPage(currentPage - 1)}
+              disabled={currentPage === 1 || loading}
+              className="text-xs py-1.5 px-4"
+            >
+              Anterior
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => setPage(currentPage + 1)}
+              disabled={currentPage === totalPages || loading}
+              className="text-xs py-1.5 px-4"
+            >
+              Próxima
+            </Button>
+          </div>
         </div>
       )}
     </div>

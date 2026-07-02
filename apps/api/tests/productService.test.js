@@ -32,7 +32,7 @@ describe('findAll', () => {
     const result = await findAll('DRINK');
 
     expect(result).toEqual(drinks);
-    expect(Product.findAll).toHaveBeenCalledWith({ where: { category: 'DRINK' } });
+    expect(Product.findAll).toHaveBeenCalledWith({ where: { category: 'DRINK' }, order: [['name', 'ASC']] });
   });
 
   it('deve lançar AppError se categoria for inválida', async () => {

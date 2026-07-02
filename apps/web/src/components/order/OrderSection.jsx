@@ -9,10 +9,10 @@ import Button from '../ui/Button';
 import Input from '../ui/Input';
 
 export default function OrderSection() {
-  const { orders, loading, fetchOrders, createOrder, deleteOrder, updateOrder } = useOrders();
+  const { orders, loading, fetchOrders, createOrder, deleteOrder, updateOrder, totalPages, currentPage, setPage } = useOrders('OPEN');
   const { products } = useProducts();
   
-  const [filter, setFilter] = useState('');
+  const [filter, setFilter] = useState('OPEN');
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [deleting, setDeleting] = useState(null);
@@ -159,6 +159,33 @@ export default function OrderSection() {
           ))
         )}
       </div>
+
+      {/* Paginação */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between border border-neutral-850 bg-neutral-900/10 rounded-2xl px-5 py-4 mt-6">
+          <p className="text-xs text-neutral-500 font-semibold select-none">
+            Mostrando página <span className="text-neutral-350">{currentPage}</span> de <span className="text-neutral-350">{totalPages}</span>
+          </p>
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              onClick={() => setPage(currentPage - 1)}
+              disabled={currentPage === 1 || loading}
+              className="text-xs py-1.5 px-4"
+            >
+              Anterior
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => setPage(currentPage + 1)}
+              disabled={currentPage === totalPages || loading}
+              className="text-xs py-1.5 px-4"
+            >
+              Próxima
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
