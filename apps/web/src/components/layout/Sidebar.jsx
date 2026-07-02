@@ -7,7 +7,8 @@ import {
   BarChart3, 
   History, 
   LogOut, 
-  User 
+  User,
+  Trash2
 } from 'lucide-react';
 
 const adminNavItems = [
@@ -16,6 +17,7 @@ const adminNavItems = [
   { label: 'Usuários', key: 'users', icon: Users },
   { label: 'Relatórios', key: 'reports', icon: BarChart3 },
   { label: 'Auditoria', key: 'logs', icon: History },
+  { label: 'Lixeira', key: 'trash', icon: Trash2 },
 ];
 
 const waiterNavItems = [

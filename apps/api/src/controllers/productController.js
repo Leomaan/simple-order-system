@@ -9,8 +9,8 @@ export const create = asyncHandler(async (req, res) => {
 });
  
 export const getAll = asyncHandler(async (req, res) => {
-  const { category } = req.query;
-  const products = await productService.findAll(category);
+  const { category, onlyDeleted, page, limit, search } = req.query;
+  const products = await productService.findAll(category, onlyDeleted === 'true', page, limit, search);
   res.status(200).json({ success: true, data: products });
 });
  
@@ -26,19 +26,19 @@ export const update = asyncHandler(async (req, res) => {
 });
  
 export const remove = asyncHandler(async (req, res) => {
-  await productService.deleteProduct(req.params.id);
-  await log({ user: req.user, action: 'DELETE_PRODUCT', entity: 'Product', entityId: Number(req.params.id) });
+  const product = await productService.deleteProduct(req.params.id);
+  await log({ user: req.user, action: 'DELETE_PRODUCT', entity: 'Product', entityId: Number(req.params.id), details: { name: product.name } });
   res.status(200).json({ success: true, message: 'product removed' });
 });
  
 export const restore = asyncHandler(async (req, res) => {
   const product = await productService.restoreProduct(req.params.id);
-  await log({ user: req.user, action: 'RESTORE_PRODUCT', entity: 'Product', entityId: product.id });
+  await log({ user: req.user, action: 'RESTORE_PRODUCT', entity: 'Product', entityId: product.id, details: { name: product.name } });
   res.status(200).json({ success: true, data: product });
 });
  
 export const permanentDelete = asyncHandler(async (req, res) => {
-  await productService.permanentDeleteProduct(req.params.id);
-  await log({ user: req.user, action: 'PERMANENT_DELETE_PRODUCT', entity: 'Product', entityId: Number(req.params.id) });
+  const product = await productService.permanentDeleteProduct(req.params.id);
+  await log({ user: req.user, action: 'PERMANENT_DELETE_PRODUCT', entity: 'Product', entityId: Number(req.params.id), details: { name: product.name } });
   res.status(200).json({ success: true, message: 'product permanently deleted' });
 });

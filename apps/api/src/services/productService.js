@@ -4,7 +4,7 @@ import { AppError } from '../middleware/appError.js';
 
 const VALID_CATEGORIES = ['FOOD', 'DRINK', 'SNACK', 'DESSERT', 'SIDE'];
 
-export async function findAll(category) {
+export async function findAll(category, onlyDeleted = false, page, limit, search) {
   const where = {}; 
 
   if (category) {
@@ -13,7 +13,39 @@ export async function findAll(category) {
     where.category = category;
   }
 
-  return Product.findAll({ where });
+  if (search) {
+    const { Op } = await import('sequelize');
+    where.name = { [Op.like]: `%${search}%` };
+  }
+
+  const queryOptions = { 
+    where,
+    order: [['name', 'ASC']]
+  };
+  if (onlyDeleted) {
+    const { Op } = await import('sequelize');
+    queryOptions.paranoid = false;
+    where.deletedAt = { [Op.ne]: null };
+  }
+
+  if (page && limit) {
+    const parsedPage = Number(page);
+    const parsedLimit = Number(limit);
+    const offset = (parsedPage - 1) * parsedLimit;
+
+    queryOptions.limit = parsedLimit;
+    queryOptions.offset = offset;
+
+    const { count, rows } = await Product.findAndCountAll(queryOptions);
+    return {
+      products: rows,
+      totalPages: Math.ceil(count / parsedLimit),
+      currentPage: parsedPage,
+      totalProducts: count,
+    };
+  }
+
+  return Product.findAll(queryOptions);
 }
 
 export async function findById(id) {
@@ -44,6 +76,7 @@ export async function updateProduct(id, data) {
 export async function deleteProduct(id) {
   const product = await findById(id);
   await product.destroy();
+  return product;
 }
 
 export async function restoreProduct(id) {
@@ -57,4 +90,5 @@ export async function permanentDeleteProduct(id) {
   const product = await Product.findOne({ where: { id }, paranoid: false });
   if (!product) throw new AppError('product not found', 404);
   await product.destroy({ force: true }); 
+  return product;
 }
