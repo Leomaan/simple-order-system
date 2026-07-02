@@ -141,20 +141,31 @@ describe('deleteOrder', () => {
     };
     Order.findByPk.mockResolvedValue(order);
 
-    await deleteOrder(1);
+    await deleteOrder(1, 'ADMIN');
 
     expect(order.destroy).toHaveBeenCalledOnce();
   });
+
+  it('deve lançar AppError se usuário não for administrador', async () => {
+    const order = { id: 1, status: 'OPEN' };
+    Order.findByPk.mockResolvedValue(order);
+
+    await expect(deleteOrder(1, 'WAITER')).rejects.toMatchObject({ 
+      status: 403, 
+      message: 'apenas administradores podem excluir pedidos' 
+    });
+  });
+
   it('deve lançar AppError se pedido não existir', async () => {
     Order.findByPk.mockResolvedValue(null);
 
-    await expect(deleteOrder(99)).rejects.toMatchObject({ status: 404 });
+    await expect(deleteOrder(99, 'ADMIN')).rejects.toMatchObject({ status: 404 });
   });
 
   it('deve lançar AppError se pedido estiver fechado', async () => {
     Order.findByPk.mockResolvedValue({ id: 1, status: 'CLOSED' });
 
-    await expect(deleteOrder(1)).rejects.toMatchObject({ message: 'cannot delete a closed order' });
+    await expect(deleteOrder(1, 'ADMIN')).rejects.toMatchObject({ message: 'cannot delete a closed order' });
   });
 });
 
