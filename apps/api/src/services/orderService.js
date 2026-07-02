@@ -7,8 +7,8 @@ import { updateTotal } from '../util/updateTotalOrder.js';
 
 const VALID_STATUSES = ['OPEN', 'PAID', 'CLOSED'];
 
-export async function findAll(status) {
-  const where = { deletedAt: null };
+export async function findAll(status, page, limit) {
+  const where = {};
 
   if (status) {
     if (!VALID_STATUSES.includes(status))
@@ -16,7 +16,7 @@ export async function findAll(status) {
     where.status = status;
   }
 
-   return Order.findAll({
+  const queryOptions = {
     where,
     include: [
       {
@@ -29,12 +29,31 @@ export async function findAll(status) {
         ],
       },
     ],
-  });
+    order: [['createdAt', 'DESC']],
+  };
+
+  if (page && limit) {
+    const parsedPage = Number(page);
+    const parsedLimit = Number(limit);
+    const offset = (parsedPage - 1) * parsedLimit;
+    
+    queryOptions.limit = parsedLimit;
+    queryOptions.offset = offset;
+
+    const { count, rows } = await Order.findAndCountAll(queryOptions);
+    return {
+      orders: rows,
+      totalPages: Math.ceil(count / parsedLimit),
+      currentPage: parsedPage,
+      totalOrders: count,
+    };
+  }
+
+  return Order.findAll(queryOptions);
 }
 
 export async function findById(id) {
-  const order = await Order.findOne({
-    where: { id, deletedAt: null },
+  const order = await Order.findByPk(id, {
     attributes: ['id', 'table', 'status', 'paymentMethod', 'paymentId', 'paymentQrCode', 'paymentQrCodeCopy', 'paymentExpiresAt'],
     include: [
       {
@@ -55,7 +74,7 @@ export async function createOrder(data) {
   const { table } = data;
   if (!table) throw new AppError('table is required');
 
-  const openOrder = await Order.findOne({ where: { table, status: 'OPEN', deletedAt: null } });
+  const openOrder = await Order.findOne({ where: { table, status: 'OPEN' } });
   if (openOrder) throw new AppError('there is already an open order for this table');
 
   return Order.create(data);
@@ -65,7 +84,7 @@ export async function updateOrder(id, data) {
   if (!data || Object.keys(data).length === 0)
     throw new AppError('no data provided');
 
-  const order = await Order.findOne({ where: { id, deletedAt: null } });
+  const order = await Order.findByPk(id);
   if (!order) throw new AppError('order not found', 404);
 
   if (order.status !== 'OPEN' && data.status === 'OPEN')
@@ -76,8 +95,7 @@ export async function updateOrder(id, data) {
 }
 
 export async function closeOrder(id) {
-  const order = await Order.findOne({
-    where: { id, deletedAt: null },
+  const order = await Order.findByPk(id, {
     include: [OrderItem],
   });
 
@@ -99,8 +117,7 @@ export async function closeOrder(id) {
 }
 
 export async function deleteOrder(id, userRole) {
-  const order = await Order.findOne({
-    where: { id, deletedAt: null },
+  const order = await Order.findByPk(id, {
     include: [OrderItem],
   });
 
@@ -113,18 +130,18 @@ export async function deleteOrder(id, userRole) {
     throw new AppError('only an admin can delete an order that already has items', 403);
   }
 
-  await order.update({ deletedAt: new Date() });
+  await order.destroy();
 }
 
 export async function restoreOrder(id) {
-  const order = await Order.findOne({ where: { id, deletedAt: { [Op.not]: null } } });
+  const order = await Order.findOne({ where: { id }, paranoid: false });
   if (!order) throw new AppError('order not found or not deleted', 404);
-  await order.update({ deletedAt: null });
+  await order.restore();
   return order;
 }
 
 export async function permanentDeleteOrder(id) {
-  const order = await Order.findByPk(id);
+  const order = await Order.findByPk(id, { paranoid: false });
   if (!order) throw new AppError('order not found', 404);
-  await order.destroy();
+  await order.destroy({ force: true });
 }

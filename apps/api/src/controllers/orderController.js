@@ -9,8 +9,8 @@ export const create = asyncHandler(async (req, res) => {
 });
  
 export const getAll = asyncHandler(async (req, res) => {
-  const { status } = req.query;
-  const orders = await orderService.findAll(status);
+  const { status, page, limit } = req.query;
+  const orders = await orderService.findAll(status, page, limit);
   res.status(200).json({ success: true, data: orders });
 });
  

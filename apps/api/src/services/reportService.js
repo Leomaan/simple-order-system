@@ -12,8 +12,7 @@ export async function salesToday() {
 
   const result = await Order.findOne({
     where: {
-      status: 'CLOSED',
-      deletedAt: null,
+      status: 'PAID',
       updatedAt: { [Op.between]: [today, tomorrow] },
     },
     attributes: [
@@ -42,16 +41,17 @@ export async function salesToday() {
 export async function revenueByPeriod(from, to) {
   if (!from || !to) throw new AppError('from e to são obrigatórios');
 
-  const fromDate = new Date(from);
-  const toDate = new Date(to);
-  toDate.setHours(23, 59, 59, 999);
+  const [fromYear, fromMonth, fromDay] = from.split('-').map(Number);
+  const fromDate = new Date(fromYear, fromMonth - 1, fromDay, 0, 0, 0, 0);
+
+  const [toYear, toMonth, toDay] = to.split('-').map(Number);
+  const toDate = new Date(toYear, toMonth - 1, toDay, 23, 59, 59, 999);
 
   if (fromDate > toDate) throw new AppError('from deve ser anterior a to');
 
   const result = await Order.findOne({
     where: {
-      status: 'CLOSED',
-      deletedAt: null,
+      status: 'PAID',
       updatedAt: { [Op.between]: [fromDate, toDate] },
     },
     attributes: [
@@ -79,14 +79,15 @@ export async function revenueByPeriod(from, to) {
 export async function ordersByPeriod(from, to, status) {
   if (!from || !to) throw new AppError('from e to são obrigatórios');
 
-  const fromDate = new Date(from);
-  const toDate = new Date(to);
-  toDate.setHours(23, 59, 59, 999);
+  const [fromYear, fromMonth, fromDay] = from.split('-').map(Number);
+  const fromDate = new Date(fromYear, fromMonth - 1, fromDay, 0, 0, 0, 0);
+
+  const [toYear, toMonth, toDay] = to.split('-').map(Number);
+  const toDate = new Date(toYear, toMonth - 1, toDay, 23, 59, 59, 999);
 
   if (fromDate > toDate) throw new AppError('from deve ser anterior a to');
 
   const where = {
-    deletedAt: null,
     createdAt: { [Op.between]: [fromDate, toDate] },
   };
 
