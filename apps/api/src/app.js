@@ -1,27 +1,37 @@
 import e from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import compression from 'compression';
 import cookieParser from 'cookie-parser';
+
+import { generalLimiter } from './middleware/rateLimiter.js';
+import { errorHandler } from './middleware/errorHandler.js';
+import { swaggerSpec } from './config/swagger.js';
+import swaggerUi from 'swagger-ui-express';
+
 import productRoutes from './routes/productRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
 import orderItemRoutes from './routes/orderItemRoutes.js';
-import { errorHandler } from './middleware/errorHandler.js';
 import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import auditLogRoutes from './routes/auditlogsRoutes.js';
-import { swaggerSpec } from './config/swagger.js';
-import swaggerUi from 'swagger-ui-express';
 import reportRoutes from './routes/reportRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
-import cors from 'cors';
 
 const app = e();
 
-app.use(cookieParser());
-app.use(e.json());
+
+app.use(helmet());
+app.use(compression());
+app.use(generalLimiter);
 
 app.use(cors({
-  origin: 'http://localhost:5173', 
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
   credentials: true,
 }));
+
+app.use(cookieParser());
+app.use(e.json());
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
@@ -33,6 +43,7 @@ app.use('/user', userRoutes);
 app.use('/audit', auditLogRoutes);
 app.use('/report', reportRoutes);
 app.use('/payment', paymentRoutes);
+
 
 app.use(errorHandler);
 
