@@ -1,22 +1,7 @@
-import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import React from 'react';
 import LoginForm from '../components/auth/LoginForm';
 
 export default function Login() {
-  const { user, loading } = useAuth();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!loading && user) {
-      if (user.role === 'ADMIN') {
-        navigate('/admin', { replace: true });
-      } else {
-        navigate('/waiter', { replace: true });
-      }
-    }
-  }, [user, loading, navigate]);
-
   return (
     <div className="min-h-screen bg-neutral-950 flex items-center justify-center px-4 relative overflow-hidden select-none">
       {/* Decorative Blur Backgrounds */}

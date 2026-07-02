@@ -8,6 +8,7 @@ import { generalLimiter } from './middleware/rateLimiter.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { swaggerSpec } from './config/swagger.js';
 import swaggerUi from 'swagger-ui-express';
+import { csrfProtection } from './middleware/csrf.js';
 
 import productRoutes from './routes/productRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
@@ -20,17 +21,16 @@ import paymentRoutes from './routes/paymentRoutes.js';
 
 const app = e();
 
-
 app.use(helmet());
 app.use(compression());
-app.use(generalLimiter);
-
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:5173',
   credentials: true,
 }));
+app.use(generalLimiter);
 
 app.use(cookieParser());
+app.use(csrfProtection);
 app.use(e.json());
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));

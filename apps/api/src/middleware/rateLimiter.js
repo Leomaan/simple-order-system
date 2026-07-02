@@ -1,6 +1,6 @@
 import rateLimit from 'express-rate-limit';
 
-const skipIfTest = () => process.env.NODE_ENV === 'test';
+const skipIfDevOrTest = () => process.env.NODE_ENV !== 'production';
 
 export const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, 
@@ -11,7 +11,7 @@ export const loginLimiter = rateLimit({
   },
   standardHeaders: true, 
   legacyHeaders: false,
-  skip: skipIfTest, 
+  skip: skipIfDevOrTest, 
 });
 
 export const generalLimiter = rateLimit({
@@ -23,5 +23,5 @@ export const generalLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  skip: skipIfTest,
+  skip: skipIfDevOrTest,
 });

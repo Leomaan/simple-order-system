@@ -30,6 +30,7 @@ services:
       - .env
     environment:
       DB_HOST: db
+      DB_PORT: 3306
     ports:
       - '${PORT}:${PORT}'
     volumes:

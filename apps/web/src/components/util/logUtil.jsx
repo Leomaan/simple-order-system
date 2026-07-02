@@ -1,12 +1,20 @@
 import { ICONS, ACTION_LABEL } from '../constants/logConstants';
 
 export function getDetailRows(log) {
-  const d = log.details || {};
+  let d = log.details || {};
+  if (typeof d === 'string') {
+    try {
+      d = JSON.parse(d);
+    } catch {
+      d = {};
+    }
+  }
   const rows = [];
 
   const mesa = d.table != null ? d.table : null;
   const pedido = d.order != null ? d.order : (log.entity === 'Order' ? log.entityId : null);
-  const produto = d.product != null ? d.product : (d.name != null ? d.name : null);
+  const produto = d.product != null ? d.product : (d.name != null && log.entity !== 'User' ? d.name : null);
+  const usuarioAlvo = log.entity === 'User' ? (d.name || null) : null;
 
   // MESA: Sinalizador Laranja (warning)
   if (mesa) {
@@ -20,6 +28,7 @@ export function getDetailRows(log) {
 
   if (pedido) rows.push({ icon: ICONS.tag, label: 'Pedido', value: `#${pedido}`, variant: 'neutral' });
   if (produto) rows.push({ icon: ICONS.product, label: 'Item', value: String(produto), variant: 'neutral' });
+  if (usuarioAlvo) rows.push({ icon: ICONS.person, label: 'Usuário', value: String(usuarioAlvo), variant: 'neutral' });
 
   switch (log.action) {
     case 'UPDATE_ORDER_ITEM':

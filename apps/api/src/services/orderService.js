@@ -7,7 +7,7 @@ import { updateTotal } from '../util/updateTotalOrder.js';
 
 const VALID_STATUSES = ['OPEN', 'PAID', 'CLOSED'];
 
-export async function findAll(status, page, limit) {
+export async function findAll(status, page, limit, onlyDeleted = false) {
   const where = {};
 
   if (status) {
@@ -31,6 +31,12 @@ export async function findAll(status, page, limit) {
     ],
     order: [['createdAt', 'DESC']],
   };
+
+  if (onlyDeleted) {
+    const { Op } = await import('sequelize');
+    queryOptions.paranoid = false;
+    where.deletedAt = { [Op.ne]: null };
+  }
 
   if (page && limit) {
     const parsedPage = Number(page);
@@ -117,17 +123,13 @@ export async function closeOrder(id) {
 }
 
 export async function deleteOrder(id, userRole) {
-  const order = await Order.findByPk(id, {
-    include: [OrderItem],
-  });
+  const order = await Order.findByPk(id);
 
   if (!order) throw new AppError('order not found', 404);
   if (order.status === 'CLOSED') throw new AppError('cannot delete a closed order');
 
-  const hasItems = order.OrderItems?.length > 0;
-
-  if (hasItems && userRole !== 'ADMIN') {
-    throw new AppError('only an admin can delete an order that already has items', 403);
+  if (userRole !== 'ADMIN') {
+    throw new AppError('apenas administradores podem excluir pedidos', 403);
   }
 
   await order.destroy();
@@ -144,4 +146,5 @@ export async function permanentDeleteOrder(id) {
   const order = await Order.findByPk(id, { paranoid: false });
   if (!order) throw new AppError('order not found', 404);
   await order.destroy({ force: true });
+  return order;
 }

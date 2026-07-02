@@ -12,7 +12,7 @@ routes.get('/',  requireWaiter, getAll);
 routes.get('/:id', validateId, requireWaiter, getById);
 routes.put('/:id', validateId, requireWaiter, validate(updateOrderSchema), update);
 routes.patch('/:id/close', validateId, requireWaiter, close);
-routes.delete('/:id', validateId, remove);
+routes.delete('/:id', validateId, requireAdmin, remove);
 routes.patch('/:id/restore', requireAdmin,  validateId, restore);
 routes.delete('/:id/permanent', requireAdmin,  validateId, permanentDelete)
 

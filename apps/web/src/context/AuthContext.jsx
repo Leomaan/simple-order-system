@@ -26,6 +26,16 @@ export function AuthProvider({ children }) {
     checkAuth();
   }, []);
 
+  useEffect(() => {
+    function handleSessionExpired() {
+      logout();
+    }
+    window.addEventListener('auth:expired', handleSessionExpired);
+    return () => {
+      window.removeEventListener('auth:expired', handleSessionExpired);
+    };
+  }, []);
+
   function login({ role, name }) {
     localStorage.setItem('role', role);
     localStorage.setItem('name', name);
