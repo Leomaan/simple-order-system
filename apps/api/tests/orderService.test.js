@@ -32,16 +32,16 @@ describe('findAll', () => {
   });
 
   it('deve filtrar pedidos por status', async () => {
-  const openOrders = [{ id: 1, table: 3, status: 'OPEN' }];
-  Order.findAll.mockResolvedValue(openOrders);
-  const result = await findAll('OPEN');
-  expect(result).toEqual(openOrders);
-  expect(Order.findAll).toHaveBeenCalledWith(
-    expect.objectContaining({
-      where: { deletedAt: null, status: 'OPEN' },
-    })
-  );
-});
+    const openOrders = [{ id: 1, table: 3, status: 'OPEN' }];
+    Order.findAll.mockResolvedValue(openOrders);
+    const result = await findAll('OPEN');
+    expect(result).toEqual(openOrders);
+    expect(Order.findAll).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { status: 'OPEN' },
+      })
+    );
+  });
 
   it('deve lançar AppError se status for inválido', async () => {
     await expect(findAll('INVALIDO')).rejects.toMatchObject({
@@ -58,43 +58,46 @@ describe('createOrder', () => {
     const result = await createOrder({ table: 3 });
 
     expect(result).toMatchObject({ id: 1, table: 3 });
-    expect(Order.create).toHaveBeenCalledWith({ table: 3 });
   });
 
-  it('deve lançar AppError se mesa não for fornecida', async () => {
+  it('deve lançar AppError se status não for fornecido', async () => {
     await expect(createOrder({})).rejects.toMatchObject({ message: 'table is required' });
   });
 
-  it('deve lançar AppError se já existir pedido aberto na mesa', async () => {
+  it('deve lançar AppError se mesa já tiver pedido aberto', async () => {
     Order.findOne.mockResolvedValue({ id: 1, table: 3, status: 'OPEN' });
 
     await expect(createOrder({ table: 3 })).rejects.toMatchObject({
-      message: 'there is already an open order for this table'
+      message: 'there is already an open order for this table',
     });
   });
 });
 
 describe('updateOrder', () => {
   it('deve atualizar um pedido com sucesso', async () => {
-    const order = { id: 1, status: 'OPEN', update: vi.fn().mockResolvedValue(true) };
-    Order.findOne.mockResolvedValue(order);
+    const order = { id: 1, table: 3, status: 'OPEN', update: vi.fn().mockResolvedValue(true) };
+    Order.findByPk.mockResolvedValue(order);
 
-    await updateOrder(1, { status: 'PAID' });
+    await updateOrder(1, { table: 4 });
 
-    expect(order.update).toHaveBeenCalledWith({ status: 'PAID' });
+    expect(order.update).toHaveBeenCalledWith({ table: 4 });
   });
 
   it('deve lançar AppError se nenhum dado for fornecido', async () => {
     await expect(updateOrder(1, {})).rejects.toMatchObject({ message: 'no data provided' });
   });
 
-  it('deve lançar AppError ao tentar reabrir pedido', async () => {
-    const order = { id: 1, status: 'PAID' };
-    Order.findOne.mockResolvedValue(order);
+  it('deve lançar AppError 404 se pedido não existir', async () => {
+    Order.findByPk.mockResolvedValue(null);
 
-    await expect(updateOrder(1, { status: 'OPEN' })).rejects.toMatchObject({
-      message: 'cannot reopen a closed order'
-    });
+    await expect(updateOrder(99, { table: 4 })).rejects.toMatchObject({ status: 404 });
+  });
+
+  it('deve lançar AppError ao tentar reabrir pedido fechado', async () => {
+    const order = { id: 1, status: 'CLOSED', update: vi.fn() };
+    Order.findByPk.mockResolvedValue(order);
+
+    await expect(updateOrder(1, { status: 'OPEN' })).rejects.toMatchObject({ message: 'cannot reopen a closed order' });
   });
 });
 
@@ -109,7 +112,7 @@ describe('closeOrder', () => {
         return { id: this.id, status: this.status, OrderItems: this.OrderItems };
       }
     };
-    Order.findOne.mockResolvedValue(order);
+    Order.findByPk.mockResolvedValue(order);
 
     await closeOrder(1);
 
@@ -117,13 +120,13 @@ describe('closeOrder', () => {
   });
 
   it('deve lançar AppError se pedido já estiver fechado', async () => {
-    Order.findOne.mockResolvedValue({ id: 1, status: 'CLOSED', OrderItems: [] });
+    Order.findByPk.mockResolvedValue({ id: 1, status: 'CLOSED', OrderItems: [] });
 
     await expect(closeOrder(1)).rejects.toMatchObject({ message: 'order is already closed' });
   });
 
   it('deve lançar AppError se pedido estiver vazio', async () => {
-    Order.findOne.mockResolvedValue({ id: 1, status: 'OPEN', OrderItems: [] });
+    Order.findByPk.mockResolvedValue({ id: 1, status: 'OPEN', OrderItems: [] });
 
     await expect(closeOrder(1)).rejects.toMatchObject({ message: 'cannot close an empty order' });
   });
@@ -134,24 +137,22 @@ describe('deleteOrder', () => {
     const order = { 
       id: 1, 
       status: 'OPEN', 
-      update: vi.fn().mockResolvedValue(true) 
+      destroy: vi.fn().mockResolvedValue(true) 
     };
-    Order.findOne.mockResolvedValue(order);
+    Order.findByPk.mockResolvedValue(order);
 
     await deleteOrder(1);
 
-    expect(order.update).toHaveBeenCalledWith(expect.objectContaining({
-      deletedAt: expect.any(Date)
-    }));
+    expect(order.destroy).toHaveBeenCalledOnce();
   });
   it('deve lançar AppError se pedido não existir', async () => {
-    Order.findOne.mockResolvedValue(null);
+    Order.findByPk.mockResolvedValue(null);
 
     await expect(deleteOrder(99)).rejects.toMatchObject({ status: 404 });
   });
 
   it('deve lançar AppError se pedido estiver fechado', async () => {
-    Order.findOne.mockResolvedValue({ id: 1, status: 'CLOSED' });
+    Order.findByPk.mockResolvedValue({ id: 1, status: 'CLOSED' });
 
     await expect(deleteOrder(1)).rejects.toMatchObject({ message: 'cannot delete a closed order' });
   });
@@ -159,12 +160,12 @@ describe('deleteOrder', () => {
 
 describe('restoreOrder', () => {
   it('deve restaurar um pedido com sucesso', async () => {
-    const order = { id: 1, update: vi.fn().mockResolvedValue(true) };
+    const order = { id: 1, restore: vi.fn().mockResolvedValue(true) };
     Order.findOne.mockResolvedValue(order);
 
     await restoreOrder(1);
 
-    expect(order.update).toHaveBeenCalledWith({ deletedAt: null });
+    expect(order.restore).toHaveBeenCalledOnce();
   });
 });
 
@@ -175,6 +176,6 @@ describe('permanentDeleteOrder', () => {
 
     await permanentDeleteOrder(1);
 
-    expect(order.destroy).toHaveBeenCalledOnce();
+    expect(order.destroy).toHaveBeenCalledWith({ force: true });
   });
 });

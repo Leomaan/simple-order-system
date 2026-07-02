@@ -37,7 +37,7 @@ describe('findAll', () => {
 describe('findById', () => {
   it('deve retornar o usuário pelo id', async () => {
     const user = { id: 1, name: 'Admin' };
-    User.findOne.mockResolvedValue(user);
+    User.findByPk.mockResolvedValue(user);
 
     const result = await findById(1);
 
@@ -45,7 +45,7 @@ describe('findById', () => {
   });
 
   it('deve lançar AppError 404 se usuário não existir', async () => {
-    User.findOne.mockResolvedValue(null);
+    User.findByPk.mockResolvedValue(null);
 
     await expect(findById(99)).rejects.toMatchObject({ status: 404, message: 'user not found' });
   });
@@ -86,7 +86,11 @@ describe('createUser', () => {
 describe('updateUser', () => {
   it('deve atualizar um usuário com sucesso', async () => {
     const user = { id: 2, name: 'João', update: vi.fn().mockResolvedValue(true) };
-    User.findOne.mockResolvedValue(user);
+    User.findByPk.mockImplementation(async (id) => {
+      if (id === 2) return user;
+      if (id === 1) return { id: 1, role: 'ADMIN', isSuperAdmin: true };
+      return null;
+    });
 
     await updateUser(2, { name: 'João Silva' }, 1);
 
@@ -95,7 +99,10 @@ describe('updateUser', () => {
 
   it('deve lançar AppError se admin tentar desativar a si mesmo', async () => {
     const user = { id: 1, name: 'Admin', update: vi.fn() };
-    User.findOne.mockResolvedValue(user);
+    User.findByPk.mockImplementation(async (id) => {
+      if (id === 1) return user;
+      return null;
+    });
 
     await expect(updateUser(1, { active: false }, 1))
       .rejects.toMatchObject({ message: 'você não pode desativar sua própria conta' });
@@ -103,7 +110,10 @@ describe('updateUser', () => {
 
   it('deve lançar AppError se admin tentar alterar a própria role', async () => {
     const user = { id: 1, name: 'Admin', update: vi.fn() };
-    User.findOne.mockResolvedValue(user);
+    User.findByPk.mockImplementation(async (id) => {
+      if (id === 1) return user;
+      return null;
+    });
 
     await expect(updateUser(1, { role: 'WAITER' }, 1))
       .rejects.toMatchObject({ message: 'você não pode alterar sua própria role' });
@@ -114,23 +124,25 @@ describe('deleteUser', () => {
   it('deve deletar um usuário com sucesso', async () => {
     const user = { 
       id: 2, 
-      update: vi.fn().mockResolvedValue(true) 
+      destroy: vi.fn().mockResolvedValue(true) 
     };
-    User.findOne.mockResolvedValue(user);
+    User.findByPk.mockImplementation(async (id) => {
+      if (id === 2) return user;
+      if (id === 1) return { id: 1, role: 'ADMIN', isSuperAdmin: true };
+      return null;
+    });
 
     await deleteUser(2, 1);
 
-    expect(user.update).toHaveBeenCalledWith(expect.objectContaining({
-      deletedAt: expect.any(Date)
-    }));
+    expect(user.destroy).toHaveBeenCalledOnce();
   });
- it('deve lançar AppError se admin tentar deletar a si mesmo', async () => {
+  it('deve lançar AppError se admin tentar deletar a si mesmo', async () => {
     await expect(deleteUser(1, 1))
       .rejects.toMatchObject({ message: 'você não pode deletar sua própria conta' });
   });
 
   it('deve lançar AppError se usuário não existir', async () => {
-    User.findOne.mockResolvedValue(null);
+    User.findByPk.mockResolvedValue(null);
 
     await expect(deleteUser(99, 1)).rejects.toMatchObject({ status: 404 });
   });
@@ -138,12 +150,13 @@ describe('deleteUser', () => {
 
 describe('restoreUser', () => {
   it('deve restaurar um usuário com sucesso', async () => {
-    const user = { id: 1, update: vi.fn().mockResolvedValue(true) };
+    const user = { id: 1, restore: vi.fn().mockResolvedValue(true), update: vi.fn().mockResolvedValue(true) };
     User.findOne.mockResolvedValue(user);
 
     await restoreUser(1);
 
-    expect(user.update).toHaveBeenCalledWith({ deletedAt: null, active: true });
+    expect(user.restore).toHaveBeenCalledOnce();
+    expect(user.update).toHaveBeenCalledWith({ active: true });
   });
 
   it('deve lançar erro se usuário não for encontrado ou não estiver deletado', async () => {
@@ -155,10 +168,14 @@ describe('restoreUser', () => {
 describe('permanentDeleteUser', () => {
   it('deve deletar permanentemente um usuário', async () => {
     const user = { id: 2, destroy: vi.fn().mockResolvedValue(true) };
-    User.findByPk.mockResolvedValue(user);
+    User.findByPk.mockImplementation(async (id) => {
+      if (id === 2) return user;
+      if (id === 1) return { id: 1, role: 'ADMIN', isSuperAdmin: true };
+      return null;
+    });
 
     await permanentDeleteUser(2, 1); // id 2, requester 1
 
-    expect(user.destroy).toHaveBeenCalledOnce();
+    expect(user.destroy).toHaveBeenCalledWith({ force: true });
   });
 });

@@ -30,6 +30,8 @@ const Product = sequelize.define('Product',{
     allowNull: true,
     defaultValue: null,
   },
-})
+}, {
+  paranoid: true,
+});
 
 export default Product;

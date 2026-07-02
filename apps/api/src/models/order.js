@@ -41,6 +41,8 @@ const Order = sequelize.define('Order',{
     allowNull: true,
     defaultValue: null,
   },
-})
+}, {
+  paranoid: true,
+});
 
 export default Order;

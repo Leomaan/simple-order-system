@@ -5,14 +5,12 @@ import { AppError } from '../middleware/appError.js';
 
 export async function findAll() {
   return User.findAll({
-    where: { deletedAt: null },
     attributes: ['id', 'name', 'email', 'role', 'active', 'isSuperAdmin', 'createdAt'],
   });
 }
 
 export async function findById(id) {
-  const user = await User.findOne({
-    where: { id, deletedAt: null },
+  const user = await User.findByPk(id, {
     attributes: ['id', 'name', 'email', 'role', 'active', 'isSuperAdmin', 'createdAt'],
   });
   if (!user) throw new AppError('user not found', 404);
@@ -22,7 +20,7 @@ export async function findById(id) {
 export async function createUser(data) {
   const { name, email, password, role } = data;
 
-  const exists = await User.findOne({ where: { email, deletedAt: null } });
+  const exists = await User.findOne({ where: { email } });
   if (exists) throw new AppError('email já cadastrado');
 
   const hashed = await bcrypt.hash(password, 10);
@@ -74,13 +72,14 @@ export async function deleteUser(id, requesterId) {
   if (user.role === 'ADMIN' && !requester.isSuperAdmin)
     throw new AppError('apenas o superadmin pode deletar um admin');
 
-  await user.update({ deletedAt: new Date() });
+  await user.destroy();
 }
 
 export async function restoreUser(id) {
-  const user = await User.findOne({ where: { id, deletedAt: { [Op.not]: null } } });
+  const user = await User.findOne({ where: { id }, paranoid: false });
   if (!user) throw new AppError('user not found or not deleted', 404);
-  await user.update({ deletedAt: null, active: true });
+  await user.restore();
+  await user.update({ active: true });
   return user;
 }
 
@@ -88,7 +87,7 @@ export async function permanentDeleteUser(id, requesterId) {
   if (id === requesterId)
     throw new AppError('você não pode deletar sua própria conta');
 
-  const user = await User.findByPk(id);
+  const user = await User.findByPk(id, { paranoid: false });
   if (!user) throw new AppError('user not found', 404);
 
   if (user.isSuperAdmin)
@@ -98,5 +97,5 @@ export async function permanentDeleteUser(id, requesterId) {
   if (user.role === 'ADMIN' && !requester.isSuperAdmin)
     throw new AppError('apenas o superadmin pode deletar permanentemente um admin');
 
-  await user.destroy();
+  await user.destroy({ force: true });
 }

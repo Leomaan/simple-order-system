@@ -32,7 +32,7 @@ describe('findAll', () => {
     const result = await findAll('DRINK');
 
     expect(result).toEqual(drinks);
-    expect(Product.findAll).toHaveBeenCalledWith({ where: { deletedAt: null, category: 'DRINK' } });
+    expect(Product.findAll).toHaveBeenCalledWith({ where: { category: 'DRINK' } });
   });
 
   it('deve lançar AppError se categoria for inválida', async () => {
@@ -45,7 +45,7 @@ describe('findAll', () => {
 describe('findById', () => {
   it('deve retornar o produto pelo id', async () => {
     const product = { id: 1, name: 'X-Burguer' };
-    Product.findOne.mockResolvedValue(product);
+    Product.findByPk.mockResolvedValue(product);
 
     const result = await findById(1);
 
@@ -53,7 +53,7 @@ describe('findById', () => {
   });
 
   it('deve lançar AppError 404 se produto não existir', async () => {
-    Product.findOne.mockResolvedValue(null);
+    Product.findByPk.mockResolvedValue(null);
 
     await expect(findById(99)).rejects.toThrow(AppError);
     await expect(findById(99)).rejects.toMatchObject({ status: 404, message: 'product not found' });
@@ -88,7 +88,7 @@ describe('createProduct', () => {
 describe('updateProduct', () => {
   it('deve atualizar um produto com sucesso', async () => {
     const product = { id: 1, name: 'X-Burguer', update: vi.fn().mockResolvedValue(true) };
-    Product.findOne.mockResolvedValue(product);
+    Product.findByPk.mockResolvedValue(product);
 
     await updateProduct(1, { name: 'X-Burguer Duplo' });
 
@@ -97,7 +97,7 @@ describe('updateProduct', () => {
 
   it('deve atualizar a categoria do produto', async () => {
     const product = { id: 1, category: 'FOOD', update: vi.fn().mockResolvedValue(true) };
-    Product.findOne.mockResolvedValue(product);
+    Product.findByPk.mockResolvedValue(product);
 
     await updateProduct(1, { category: 'SNACK' });
 
@@ -109,7 +109,7 @@ describe('updateProduct', () => {
   });
 
   it('deve lançar AppError 404 se produto não existir', async () => {
-    Product.findOne.mockResolvedValue(null);
+    Product.findByPk.mockResolvedValue(null);
 
     await expect(updateProduct(99, { name: 'X-Burguer' })).rejects.toMatchObject({ status: 404 });
   });
@@ -119,18 +119,16 @@ describe('deleteProduct', () => {
   it('deve deletar um produto com sucesso', async () => {
     const product = { 
       id: 1, 
-      update: vi.fn().mockResolvedValue(true) 
+      destroy: vi.fn().mockResolvedValue(true) 
     };
-    Product.findOne.mockResolvedValue(product);
+    Product.findByPk.mockResolvedValue(product);
 
     await deleteProduct(1);
 
-    expect(product.update).toHaveBeenCalledWith(expect.objectContaining({
-      deletedAt: expect.any(Date)
-    }));
+    expect(product.destroy).toHaveBeenCalledOnce();
   });
   it('deve lançar AppError 404 se produto não existir', async () => {
-    Product.findOne.mockResolvedValue(null);
+    Product.findByPk.mockResolvedValue(null);
 
     await expect(deleteProduct(99)).rejects.toMatchObject({ status: 404, message: 'product not found' });
   });
@@ -138,22 +136,22 @@ describe('deleteProduct', () => {
 
 describe('restoreProduct', () => {
   it('deve restaurar um produto com sucesso', async () => {
-    const product = { id: 1, update: vi.fn().mockResolvedValue(true) };
+    const product = { id: 1, restore: vi.fn().mockResolvedValue(true) };
     Product.findOne.mockResolvedValue(product);
 
     await restoreProduct(1);
 
-    expect(product.update).toHaveBeenCalledWith({ deletedAt: null });
+    expect(product.restore).toHaveBeenCalledOnce();
   });
 });
 
 describe('permanentDeleteProduct', () => {
   it('deve deletar permanentemente um produto', async () => {
     const product = { id: 1, destroy: vi.fn().mockResolvedValue(true) };
-    Product.findByPk.mockResolvedValue(product);
+    Product.findOne.mockResolvedValue(product);
 
     await permanentDeleteProduct(1);
 
-    expect(product.destroy).toHaveBeenCalledOnce();
+    expect(product.destroy).toHaveBeenCalledWith({ force: true });
   });
 });

@@ -14,8 +14,7 @@ import { log } from './auditLogService.js';
  * @returns {Promise<object>} The payment details including QR code and copy-paste code.
  */
 export async function createPixPayment(orderId) {
-  const order = await Order.findOne({
-    where: { id: orderId, deletedAt: null },
+  const order = await Order.findByPk(orderId, {
     include: [
       {
         model: OrderItem,
@@ -150,8 +149,7 @@ export async function processWebhook(webhookPayload, user = { name: 'webhook_sys
       const status = paymentInfo.status; // 'approved', 'pending', 'rejected', 'refunded', etc.
 
       if (orderId && status === 'approved') {
-        const order = await Order.findOne({
-          where: { id: orderId, deletedAt: null },
+        const order = await Order.findByPk(orderId, {
           include: [OrderItem]
         });
         if (order && order.status === 'CLOSED') {
@@ -181,7 +179,7 @@ export async function processWebhook(webhookPayload, user = { name: 'webhook_sys
  */
 async function approveMockPayment(paymentId, user) {
   const order = await Order.findOne({
-    where: { paymentId, deletedAt: null },
+    where: { paymentId },
     include: [OrderItem]
   });
   if (!order) return { success: false, reason: 'Order with paymentId not found' };
