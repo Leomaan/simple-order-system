@@ -33,8 +33,8 @@ services:
     ports:
       - '${PORT}:${PORT}'
     volumes:
-      - .:/app
-      - /app/node_modules
+      - .:/app/apps/api
+      - /app/apps/api/node_modules
 
 volumes:
   mysql_data:
