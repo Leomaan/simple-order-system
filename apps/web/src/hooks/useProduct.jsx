@@ -1,44 +1,57 @@
-import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../config/api';
 
 export function useProducts() {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const queryClient = useQueryClient();
 
-  async function fetchProducts(category) {
-    setLoading(true);
-    try {
-      const params = category ? `?category=${category}` : '';
-      const res = await api.get(`/product${params}`);
-      setProducts(res.data.data);
-    } catch (err) {
-      setError('Erro ao carregar produtos');
-    } finally {
-      setLoading(false);
-    }
-  }
+  // Busca do cardápio de produtos com cache de 5 minutos
+  const { data: products = [], isLoading: loading, error, refetch: fetchProducts } = useQuery({
+    queryKey: ['products'],
+    queryFn: async () => {
+      const res = await api.get('/product');
+      return res.data.data;
+    },
+  });
 
-  async function createProduct(data) {
-    const res = await api.post('/product', data);
-    setProducts((prev) => [...prev, res.data.data]);
-    return res.data.data;
-  }
+  // Mutação para criação de produto
+  const createMutation = useMutation({
+    mutationFn: async (data) => {
+      const res = await api.post('/product', data);
+      return res.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+    },
+  });
 
-  async function updateProduct(id, data) {
-    const res = await api.put(`/product/${id}`, data);
-    setProducts((prev) => prev.map((p) => (p.id === id ? res.data.data : p)));
-    return res.data.data;
-  }
+  // Mutação para edição de produto
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }) => {
+      const res = await api.put(`/product/${id}`, data);
+      return res.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+    },
+  });
 
-  async function deleteProduct(id) {
-    await api.delete(`/product/${id}`);
-    setProducts((prev) => prev.filter((p) => p.id !== id));
-  }
+  // Mutação para exclusão (soft delete) de produto
+  const deleteMutation = useMutation({
+    mutationFn: async (id) => {
+      await api.delete(`/product/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+    },
+  });
 
-  useEffect(() => {
-    fetchProducts();
-  }, []);
-
-  return { products, loading, error, fetchProducts, createProduct, updateProduct, deleteProduct };
+  return {
+    products,
+    loading,
+    error: error ? 'Erro ao carregar produtos' : '',
+    fetchProducts,
+    createProduct: (data) => createMutation.mutateAsync(data),
+    updateProduct: (id, data) => updateMutation.mutateAsync({ id, data }),
+    deleteProduct: (id) => deleteMutation.mutateAsync(id),
+  };
 }

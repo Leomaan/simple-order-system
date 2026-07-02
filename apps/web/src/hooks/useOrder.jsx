@@ -1,44 +1,63 @@
-import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 import api from '../config/api';
 
-export function useOrders() {
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+export function useOrders(initialStatus = '') {
+  const queryClient = useQueryClient();
+  const [statusFilter, setStatusFilter] = useState(initialStatus);
 
-  async function fetchOrders(status) {
-    setLoading(true);
-    try {
-      const params = status ? `?status=${status}` : '';
+  // Busca reativa de pedidos com cache de dados
+  const { data: orders = [], isLoading: loading, error, refetch } = useQuery({
+    queryKey: ['orders', { status: statusFilter }],
+    queryFn: async () => {
+      const params = statusFilter ? `?status=${statusFilter}` : '';
       const res = await api.get(`/order${params}`);
-      setOrders(res.data.data);
-    } catch (err) {
-      setError('Erro ao carregar pedidos');
-    } finally {
-      setLoading(false);
-    }
-  }
+      return res.data.data;
+    },
+  });
 
-  async function createOrder(data) {
-    const res = await api.post('/order', data);
-    setOrders((prev) => [...prev, res.data.data]);
-    return res.data.data;
-  }
+  // Mutação para criar pedido
+  const createMutation = useMutation({
+    mutationFn: async (data) => {
+      const res = await api.post('/order', data);
+      return res.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+    },
+  });
 
-  async function updateOrder(id, data) {
-    const res = await api.put(`/order/${id}`, data);
-    setOrders((prev) => prev.map((o) => (o.id === id ? res.data.data : o)));
-    return res.data.data;
-  }
+  // Mutação para editar pedido
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }) => {
+      const res = await api.put(`/order/${id}`, data);
+      return res.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+    },
+  });
 
-  async function deleteOrder(id) {
-    await api.delete(`/order/${id}`);
-    setOrders((prev) => prev.filter((o) => o.id !== id));
-  }
+  // Mutação para remover pedido
+  const deleteMutation = useMutation({
+    mutationFn: async (id) => {
+      await api.delete(`/order/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+    },
+  });
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
-
-  return { orders, loading, error, fetchOrders, createOrder, updateOrder, deleteOrder };
+  return {
+    orders,
+    loading,
+    error: error ? 'Erro ao carregar pedidos' : '',
+    fetchOrders: (status) => {
+      setStatusFilter(status ?? '');
+      refetch();
+    },
+    createOrder: (data) => createMutation.mutateAsync(data),
+    updateOrder: (id, data) => updateMutation.mutateAsync({ id, data }),
+    deleteOrder: (id) => deleteMutation.mutateAsync(id),
+  };
 }

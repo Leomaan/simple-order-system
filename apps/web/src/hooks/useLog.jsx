@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import api from '../config/api';
 
@@ -11,29 +12,33 @@ const ACTIONS = [
 
 const ENTITIES = ['Product', 'Order', 'User', 'OrderItem'];
 
-export function useLogs() {
-  const [logs, setLogs] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+export function useLogs(initialFilters = {}) {
+  const [filters, setFilters] = useState(initialFilters);
 
-  async function fetchLogs({ userId, action, entity, from, to } = {}) {
-    setLoading(true);
-    setError('');
-    try {
+  // Busca reativa de logs com polling automático e recarga rápida
+  const { data: logs = [], isLoading: loading, error } = useQuery({
+    queryKey: ['auditLogs', filters],
+    queryFn: async () => {
       const params = new URLSearchParams();
-      if (userId) params.append('userId', userId);
-      if (action) params.append('action', action);
-      if (entity) params.append('entity', entity);
-      if (from) params.append('from', from);
-      if (to) params.append('to', to);
+      if (filters.userId) params.append('userId', filters.userId);
+      if (filters.action) params.append('action', filters.action);
+      if (filters.entity) params.append('entity', filters.entity);
+      if (filters.from) params.append('from', filters.from);
+      if (filters.to) params.append('to', filters.to);
       const res = await api.get(`/audit?${params}`);
-      setLogs(res.data.data);
-    } catch (err) {
-      setError('Erro ao carregar logs');
-    } finally {
-      setLoading(false);
-    }
-  }
+      return res.data.data;
+    },
+    staleTime: 0,              // Dados obsoletos na hora para forçar checagem
+    refetchInterval: 10000,    // Atualiza logs de auditoria a cada 10 segundos
+    refetchOnWindowFocus: true // Atualiza os logs assim que o admin volta para a janela/aba
+  });
 
-  return { logs, loading, error, fetchLogs, ACTIONS, ENTITIES };
+  return {
+    logs,
+    loading,
+    error: error ? 'Erro ao carregar logs' : '',
+    fetchLogs: (newFilters) => setFilters(newFilters ?? {}),
+    ACTIONS,
+    ENTITIES
+  };
 }
