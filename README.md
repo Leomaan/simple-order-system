@@ -1,173 +1,105 @@
 # Simple Order System
 
-Sistema de gerenciamento de pedidos e PDV para restaurantes e estabelecimentos comerciais, desenvolvido em arquitetura monorepo utilizando Turborepo, Node.js (Express), React (Vite, TailwindCSS), Sequelize e MySQL 8.
-
-O projeto conta com controle de perfis (Admin e Garçom), relatórios financeiros em tempo real, auditoria interna de ações sensíveis e integração nativa de pagamentos via PIX (Mercado Pago).
+Sistema de alto desempenho para gerenciamento de pedidos e PDV comercial, desenvolvido em arquitetura monorepo com foco em segurança de dados, resiliência de rede e conformidade com padrões de desenvolvimento modernos.
 
 ---
 
-## Funcionalidades Principais e Implementações
+## Recursos Técnicos e Engenharia de Software
 
-O sistema dispõe de recursos robustos para execução em ambientes de demonstração e produção:
+### 1. Autenticação Segura e Controle de Sessão (JWT & Stateful Refresh Tokens)
+* **Fluxo de Tokens**: Autenticação stateless baseada em pares de Access Token (curta duração) e Refresh Token (longa duração).
+* **Armazenamento de Cookies**: Para mitigar ataques de Cross-Site Scripting (XSS), os tokens de sessão são transmitidos e armazenados em cookies HTTP-only estruturados com flags de segurança configuráveis em produção (`secure`, `httpOnly`, `sameSite`).
+* **Invalidação Stateful**: Refresh tokens são armazenados e monitorados em banco de dados relacional. Ao efetuar logout, os tokens são expurgados do banco para impedir qualquer tipo de reutilização.
+* **Limpeza Automática de Tokens**: O servidor executa uma rotina automática e assíncrona ao inicializar para expurgar refresh tokens vencidos (`expiresAt < NOW()`), prevenindo o acúmulo desnecessário de linhas e degradação de performance nas queries de indexação do banco.
 
-* **Painel de Configurações Dinâmicas (Multi-Tenant)**: As configurações do restaurante (nome do estabelecimento e credenciais de pagamento) são salvas diretamente no banco de dados. Isso possibilita alterar o nome e chaves do PIX dinamicamente em tempo de execução, sem necessidade de editar arquivos de código ou reiniciar servidores.
-* **Integração Real Mercado Pago (PIX)**: Geração automatizada de payloads Copia e Cola e imagem de QR Code dinâmico do PIX via API oficial do Mercado Pago.
-* **Simulador de Confirmação (Dev Mode)**: Recurso no painel do garçom para simular instantaneamente o pagamento do PIX, facilitando testes sem custos reais e dispensando configurações complexas de túneis (como Ngrok) em ambiente local.
-* **Segurança e Máscara de Credenciais**: Tokens de acesso confidenciais são armazenados no banco e retornados de forma mascarada (`TEST-...******abcd`) no painel administrativo, além de possuir proteção contra preenchimento automático indesejado (`autoComplete="new-password"`).
-* **Limpeza Automática de Sessões**: Rotina executada na inicialização do servidor backend para destruir automaticamente registros de tokens de login expirados, otimizando o banco de dados.
-* **Auditoria em Tempo Real**: Painel de auditoria do administrador com cálculos relativos dinâmicos de timestamps e exibição da data/hora completa ao passar o mouse.
-* **Acesso Rápido para Portfólio (Admin e Garçom Demo)**: Botões de login instantâneo na tela inicial para demonstração pública fluida de privilégios e layouts.
+### 2. Camada de Segurança e Defesa Contra Ataques comuns
+* **Prevenção de CSRF**: Proteção de endpoints de mutação (POST, PUT, DELETE, PATCH) utilizando o padrão *Double Submit Cookie* via middleware exclusivo. O frontend e a API validam tokens XSRF sincronizados para prevenir chamadas cross-origin maliciosas.
+* **Rate Limiting**: Limitação de taxa de requisições (`express-rate-limit`) ativa em rotas críticas (como login e criação de pagamentos) para bloquear ataques de força bruta, spam de requisições e tentativas de negação de serviço (DoS).
+* **CORS e Cookies Dinâmicos**: Acesso seletivo de origens via cabeçalho CORS dinâmico com suporte a `credentials: true`. Configuração nativa de variáveis de ambiente (`COOKIE_SAME_SITE`) que possibilita alternar o escopo do cookie entre domínios cruzados (`none` para ambientes de hospedagem livre) ou subdomínios alinhados (`lax` / `strict`).
+
+### 3. Gerenciamento de Estado e Sincronização de Cache (React Query)
+* **Camada de Dados**: Integração do TanStack React Query (`@tanstack/react-query`) no frontend para manipulação de estado assíncrono.
+* **Políticas de Cache**: Implementação de revalidação inteligente em segundo plano, invalidação explícita de chaves de consulta após mutações com sucesso e tratamento de erros de forma declarativa nas requisições da API.
+* **Redução de Payload**: Evita requisições repetitivas ao servidor mantendo estados em cache com expiração controlada e revalidação de foco na tela.
+
+### 4. Arquitetura de Banco de Dados (Sequelize ORM & MySQL 8)
+* **Migrations e Versionamento**: Modelagem e evolução do schema do banco controladas exclusivamente por arquivos de migração sequenciais em NodeJS.
+* **Soft Delete (Paranoid Models)**: Implementação de exclusão lógica para entidades principais (Usuários, Produtos, Pedidos). Os registros deletados são mantidos com timestamp `deletedAt` e podem ser restaurados sem perda de integridade relacional, restando apenas a exclusão física aos usuários de nível administrador.
+* **Paginação e Filtros Server-side**: Endpoints estruturados para paginação de registros de forma nativa no banco de dados (usando limit e offset) para garantir a eficiência no tráfego de rede.
+
+### 5. Integração com Provedores de Pagamento (Mercado Pago API)
+* **Configurações Dinâmicas no Banco**: Armazenamento seguro de chaves de integração do Mercado Pago no banco de dados com isolamento por tenant. Os segredos são mascarados na API antes de serem retornados ao cliente administrativo.
+* **Fluxo Assíncrono de Webhooks**: Endpoint público preparado para processar notificações do Mercado Pago de forma assíncrona, atualizando o status interno do pedido em background.
+* **Simulação Local (Dev Bypass)**: Endpoint dedicado para ambientes de desenvolvimento local, contornando a comunicação externa para simular aprovação imediata do pagamento e transição de estado da ordem sem requisições reais.
 
 ---
 
-## Estrutura do Monorepo e Localização de Componentes
+## Estrutura do Monorepo
 
-Abaixo está o mapa de arquivos principais para guiar desenvolvedores ou proprietários de negócios que queiram customizar o sistema:
+O projeto adota a arquitetura de monorepo gerenciada pelo Turborepo para compartilhamento de código estático e otimização de builds:
 
 ```text
 simple-order-system/
 ├── apps/
-│   ├── api/                          # BACKEND (API RESTful)
-│   │   ├── server.js                 # Inicialização do servidor e limpeza de tokens
-│   │   └── src/
-│   │       ├── app.js                # Configuração do Express, CORS, CSRF e rotas
-│   │       ├── config/
-│   │       │   ├── database-cli.cjs  # Configuração de credenciais MySQL
-│   │       │   └── swagger.js        # Configuração do Swagger UI (com caminhos dinâmicos)
-│   │       ├── controllers/
-│   │       │   ├── authController.js # Login, refresh, logout e controle de cookies/CSRF
-│   │       │   ├── paymentController.js # Webhook e rotas de simulação de PIX
-│   │       │   └── settingsController.js # GET/PUT de configurações do restaurante
-│   │       ├── docs/                 # Arquivos de documentação OpenAPI (Swagger)
-│   │       │   └── settings.doc.yaml # Docs das rotas de configurações
-│   │       ├── migrations/           # Scripts de migração de tabelas Sequelize
-│   │       ├── models/               # Modelos das tabelas do banco de dados (Sequelize)
-│   │       │   └── settings.js       # Tabela de configurações gerais do restaurante
-│   │       ├── routes/               # Definição de endpoints da API
-│   │       └── services/
-│   │           ├── paymentService.js # Integração de PIX (Mercado Pago / Simulação)
-│   │           └── settingsService.js# Lógica de atualização e mascaramento de chaves
-│   │
-│   └── web/                          # FRONTEND (Interface do Usuário - React)
-│       └── src/
-│           ├── components/
-│           │   ├── auth/
-│           │   │   └── LoginForm.jsx # Login com botões de atalho Admin/Garçom Demo
-│           │   ├── layout/
-│           │   │   └── Sidebar.jsx   # Menu lateral (inclui o link de configurações)
-│           │   └── settings/
-│           │       └── SettingsSection.jsx # Painel administrativo de configurações
-│           ├── hooks/
-│           │   └── useSettings.jsx   # Hook para requisição e cache de dados de settings
-│           └── pages/
-│               ├── Admin.jsx         # Dashboard administrativo (relatórios, produtos, logs)
-│               └── Waiter.jsx        # Painel do garçom (pedidos e pagamentos)
-│
-└── packages/
-    └── schemas/                      # VALIDAÇÕES ZOD COMPARTILHADAS (API e Web)
-        ├── index.js                  # Exportação central de validações
-        └── settingsSchema.js         # Validações Zod para nome do restaurante e chaves MP
+│   ├── api/                          # Backend RESTful (Express, Sequelize, MySQL)
+│   └── web/                          # Frontend React SPA (Vite, React Query)
+├── packages/
+│   └── schemas/                      # Schemas de validação Zod compartilhados
+├── package.json                      # Orquestrador de dependências do workspace
+└── turbo.json                        # Pipeline de cache de build e teste do Turborepo
 ```
 
 ---
 
-## Tecnologias e Ferramentas
-
-* **Orquestração de Monorepo:** Turborepo
-* **Backend:** Node.js (v20+) com Express 5
-* **Frontend:** React (v19) com Vite e TailwindCSS
-* **Banco de Dados e ORM:** MySQL 8 e Sequelize ORM
-* **Validação de Dados:** Zod
-* **Autenticação:** JSON Web Tokens (JWT) armazenados em Cookies HttpOnly (`sameSite` configurável em produção) com controle de sessões e Refresh Tokens
-* **Suíte de Testes:** Vitest (Testes unitários e de integração com banco real)
-* **Ambientes Isolados:** Docker e Docker Compose (para banco de dados local)
-
----
-
-## Configuração para o Estabelecimento (Customização)
-
-Siga estes passos para customizar a identidade visual e os dados operacionais:
-
-### 1. Customizar Nome e Identidade Visual (Branding)
-* **Nome do Restaurante**: O nome padrão do restaurante exibido na barra superior e nos relatórios é definido na inicialização por meio do banco. Você pode alterá-lo diretamente no Painel Administrativo (`/admin` -> Configurações) ou editar a semente padrão em `apps/api/src/scripts/seed.js`.
-* **Cores e Temas**: O layout utiliza Tailwind CSS com tons neutros escuros e detalhes em Laranja. Para mudar a cor de destaque (ex: alterar de Laranja para Azul):
-  1. Vá até o arquivo CSS global `apps/web/src/index.css`.
-  2. Altere os valores de cores padrão ou substitua as classes de cores de destaque Tailwind (como `bg-orange-500` e `text-orange-500`) nos componentes de Sidebar ([Sidebar.jsx](file:///C:/Users/CLIENTE/Documents/GitHub/simple-order-system/apps/web/src/components/layout/Sidebar.jsx)) e Páginas principais.
-
-### 2. Configurar a Integração de PIX (Mercado Pago)
-Para receber pagamentos diretamente na sua conta bancária pelo sistema:
-1. Acesse o portal de desenvolvedores do [Mercado Pago Developers](https://www.mercadopago.com.br/developers/panel).
-2. Crie uma aplicação para o seu negócio.
-3. No menu lateral, acesse **Credenciais**:
-   * **Para Testes**: Use as credenciais da aba "Credenciais de teste" (Access Token começando com `TEST-`).
-   * **Para Produção (Dinheiro Real)**: Faça a ativação da conta preenchendo o formulário de cadastro no painel. Depois, copie o Access Token da aba "Credenciais de produção" (começando com `APP_USR-`).
-4. Abra o painel de administrador do seu sistema (`/admin` -> Configurações).
-5. Cole o seu **Access Token** no campo respectivo e salve. 
-
-### 3. Remover os Botões de Acesso Rápido (Demo)
-Para desativar o login automático em produção real com seus funcionários:
-1. Abra o arquivo [LoginForm.jsx](file:///C:/Users/CLIENTE/Documents/GitHub/simple-order-system/apps/web/src/components/auth/LoginForm.jsx).
-2. Remova ou comente a div que renderiza os botões de demo (linhas correspondentes à renderização de "Admin Demo" e "Garçom Demo" no final do formulário).
-
----
-
-## Instalação e Execução Local
+## Configuração do Ambiente e Inicialização
 
 ### Pré-requisitos
-* Node.js v20 ou superior instalado.
-* Docker e Docker Compose ativos.
+* Node.js v20+
+* Docker e Docker Compose
 
-### Instalação
-1. Clone o repositório:
-   ```bash
-   git clone https://github.com/Leomaan/simple-order-system.git
-   cd simple-order-system
-   ```
-2. Instale as dependências na raiz:
+### Instalação e Configurações Iniciais
+1. Instale as dependências da raiz do workspace:
    ```bash
    npm install
    ```
-3. Crie os arquivos `.env` baseados nos exemplos:
+2. Crie as variáveis de ambiente baseadas nos templates:
    ```bash
-   # Na raiz
    cp .env.example .env
-   # Na API
    cp apps/api/.env.example apps/api/.env
    ```
+3. Suba o banco de dados MySQL de desenvolvimento via Docker:
+   ```bash
+   docker compose -f apps/api/docker-compose.yml up -d db
+   ```
+4. Execute as migrations e popule o banco de dados com as seeds padrões:
+   ```bash
+   npm run db:seed --workspace=@simple-order/api
+   ```
+5. Inicie o ecossistema no modo de desenvolvimento:
+   ```bash
+   npm run dev
+   ```
 
-### Rodar Banco de Dados (Local)
-Para iniciar o MySQL local através de container Docker:
-```bash
-docker compose -f apps/api/docker-compose.yml up -d db
-```
-
-### Inicializar Banco com Dados Iniciais (Seeds)
-Para popular o banco com os produtos iniciais, usuários padrões e as configurações padrão do restaurante:
-```bash
-npm run db:seed --workspace=@simple-order/api
-```
-
-### Executar em Desenvolvimento
-Para rodar a API e o Frontend React ao mesmo tempo em modo hot-reload:
-```bash
-npm run dev
-```
-* **Frontend:** `http://localhost:5173`
-* **API Backend:** `http://localhost:3000`
-* **Docs Swagger:** `http://localhost:3000/api-docs`
+* **Frontend SPA**: `http://localhost:5173`
+* **API REST**: `http://localhost:3000`
+* **Swagger UI (Documentação OpenAPI)**: `http://localhost:3000/api-docs`
 
 ---
 
-## Execução de Testes
+## Execução de Testes Automatizados
 
-Os testes automatizados cobrem rotas, permissões, serviços e integrações:
+A suite de testes utiliza Vitest e roda tanto testes de lógica unitária quanto testes de integração reais contra o contêiner do MySQL:
+
 ```bash
 npm run test
 ```
 
 ---
 
-## Deploy em Produção
+## Diretrizes de Deploy
 
-Consulte o guia passo a passo completo para hospedar o frontend, backend e o banco de dados em servidores online de forma 100% gratuita no arquivo:
-* **[Guia de Deploy Gratuito (Aiven + Render + Vercel)](file:///C:/Users/CLIENTE/.gemini/antigravity-cli/brain/2eed2ae3-0eb3-4c81-a89a-3ce31424ffbe/deployment_plan.md)**
+Para subir os servidores de forma resiliente, certifique-se de:
+1. Executar as migrations no processo de inicialização do contêiner: `npx sequelize-cli db:migrate && node server.js`.
+2. Mapear o domínio do frontend na variável `FRONTEND_URL` para o correto funcionamento do CORS e cookies de sessão.
+3. Definir a variável `API_BASE_URL` para o registro correto dos webhooks de confirmação de pagamento.
+4. Consulte as especificações de deploy no documento de planejamento: **[Guia de Deploy (Aiven + Render + Vercel)](file:///C:/Users/CLIENTE/.gemini/antigravity-cli/brain/2eed2ae3-0eb3-4c81-a89a-3ce31424ffbe/deployment_plan.md)**.
