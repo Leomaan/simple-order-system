@@ -18,6 +18,7 @@ import userRoutes from './routes/userRoutes.js';
 import auditLogRoutes from './routes/auditlogsRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
+import settingsRoutes from './routes/settingsRoutes.js';
 
 const app = e();
 
@@ -33,7 +34,11 @@ app.use(cookieParser());
 app.use(csrfProtection);
 app.use(e.json());
 
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  swaggerOptions: {
+    persistAuthorization: true
+  }
+}));
 
 app.use('/product', productRoutes);
 app.use('/order', orderRoutes);
@@ -43,6 +48,7 @@ app.use('/user', userRoutes);
 app.use('/audit', auditLogRoutes);
 app.use('/report', reportRoutes);
 app.use('/payment', paymentRoutes);
+app.use('/settings', settingsRoutes);
 
 
 app.use(errorHandler);

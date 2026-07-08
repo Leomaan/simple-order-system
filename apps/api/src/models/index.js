@@ -5,6 +5,7 @@ import OrderItem from './orderItem.js';
 import User from './user.js';
 import RefreshToken from './refreshToken.js';
 import AuditLog from './auditLog.js';
+import Settings from './settings.js';
 
 Order.hasMany(OrderItem, { foreignKey: 'OrderId', onDelete: 'CASCADE' });
 OrderItem.belongsTo(Order);
@@ -12,4 +13,4 @@ OrderItem.belongsTo(Order);
 Product.hasMany(OrderItem);
 OrderItem.belongsTo(Product);
 
-export { sequelize };
+export { sequelize, Settings };
