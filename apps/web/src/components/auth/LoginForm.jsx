@@ -51,6 +51,31 @@ export default function LoginForm() {
           className="w-full mt-2"
         />
       </form>
+
+      {/* Demo Credentials Section */}
+      <div className="mt-6 pt-6 border-t border-neutral-800 flex flex-col gap-3">
+        <p className="text-center text-neutral-500 text-[10px] font-bold uppercase tracking-wider select-none">
+          Acesso Rápido (Demonstração)
+        </p>
+        <div className="grid grid-cols-2 gap-2.5">
+          <button
+            type="button"
+            onClick={() => handleLogin('admin@restaurant.com', 'admin123')}
+            disabled={loading}
+            className="py-2.5 px-3 bg-neutral-900 border border-neutral-800 hover:bg-neutral-800 text-neutral-350 hover:text-white rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer text-center select-none active:scale-[0.97]"
+          >
+            Admin Demo
+          </button>
+          <button
+            type="button"
+            onClick={() => handleLogin('waiter@restaurant.com', 'waiter123')}
+            disabled={loading}
+            className="py-2.5 px-3 bg-neutral-900 border border-neutral-800 hover:bg-neutral-800 text-neutral-350 hover:text-white rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer text-center select-none active:scale-[0.97]"
+          >
+            Garçom Demo
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

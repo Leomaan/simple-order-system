@@ -24,23 +24,38 @@ async function runSeed() {
 
     const exists = await User.findOne({ where: { email: adminEmail } });
 
-    if (exists) {
-      console.log('SuperAdmin já existe no banco. O script foi ignorado.');
-      process.exit(0);
+    if (!exists) {
+      const password = await bcrypt.hash(rawPassword, 10);
+      await User.create({
+        name: 'Admin Master',
+        email: adminEmail,
+        password,
+        role: 'ADMIN',
+        active: true,
+        isSuperAdmin: true,
+      });
+      console.log('SuperAdmin criado com sucesso!');
+    } else {
+      console.log('SuperAdmin já existe no banco.');
     }
 
-    const password = await bcrypt.hash(rawPassword, 10);
+    const waiterEmail = 'waiter@restaurant.com';
+    const waiterExists = await User.findOne({ where: { email: waiterEmail } });
 
-    await User.create({
-      name: 'Admin Master',
-      email: adminEmail,
-      password,
-      role: 'ADMIN',
-      active: true,
-      isSuperAdmin: true,
-    });
+    if (!waiterExists) {
+      const waiterPassword = await bcrypt.hash('waiter123', 10);
+      await User.create({
+        name: 'Garçom Demo',
+        email: waiterEmail,
+        password: waiterPassword,
+        role: 'WAITER',
+        active: true,
+      });
+      console.log('Garçom Demo criado com sucesso!');
+    } else {
+      console.log('Garçom Demo já existe no banco.');
+    }
 
-    console.log('SuperAdmin criado com sucesso!');
     process.exit(0);
   } catch (error) {
     console.error('Erro ao tentar criar o Admin:', error);
