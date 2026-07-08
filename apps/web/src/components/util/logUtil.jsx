@@ -97,6 +97,39 @@ export function getRoleStyle(role) {
 
 export function formatRelativeTime(dateStr) {
   const date = new Date(dateStr);
-  // ... sua lógica de formatRelativeTime ...
-  return { relative: '2m atrás', hour: '14:20' }; // Exemplo
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffSec = Math.max(0, Math.floor(diffMs / 1000));
+  const diffMin = Math.floor(diffSec / 60);
+  const diffHr = Math.floor(diffMin / 60);
+  const diffDays = Math.floor(diffHr / 24);
+
+  let relative = '';
+  if (diffSec < 10) {
+    relative = 'agora mesmo';
+  } else if (diffSec < 60) {
+    relative = `há ${diffSec}s`;
+  } else if (diffMin === 1) {
+    relative = 'há 1 min';
+  } else if (diffMin < 60) {
+    relative = `há ${diffMin} min`;
+  } else if (diffHr === 1) {
+    relative = 'há 1 hora';
+  } else if (diffHr < 24) {
+    relative = `há ${diffHr} horas`;
+  } else if (diffDays === 1) {
+    relative = 'ontem';
+  } else {
+    relative = `há ${diffDays} dias`;
+  }
+
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  
+  const absoluteDateTime = `${day}/${month}/${year} ${hours}:${minutes}`;
+
+  return { relative, absoluteDateTime };
 }

@@ -57,8 +57,8 @@ function LogItem({ log }) {
 
         {/* Timestamp */}
         <div className="flex-none text-right shrink-0 select-none">
-          <p className="text-neutral-450 text-[11px] font-semibold">{time.relative}</p>
-          <p className="text-neutral-650 text-[10px] tracking-wide mt-1 uppercase font-semibold">{time.hour}</p>
+          <p className="text-neutral-300 text-[11px] font-bold">{time.relative}</p>
+          <p className="text-neutral-500 text-[10px] mt-1 font-medium">{time.absoluteDateTime}</p>
         </div>
       </div>
     </article>
