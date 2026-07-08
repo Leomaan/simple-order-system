@@ -7,6 +7,7 @@ import UserSection from '../components/user/UserSection';
 import ReportSection from '../components/report/ReportSection';
 import LogSection from '../components/log/LogSection';
 import TrashSection from '../components/trash/TrashSection';
+import SettingsSection from '../components/settings/SettingsSection';
 
 const sections = {
   products: ProductSection,
@@ -15,6 +16,7 @@ const sections = {
   reports: ReportSection,
   logs: LogSection,
   trash: TrashSection,
+  settings: SettingsSection,
 };
 
 export default function Admin() {

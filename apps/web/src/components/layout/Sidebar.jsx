@@ -8,7 +8,8 @@ import {
   History, 
   LogOut, 
   User,
-  Trash2
+  Trash2,
+  Settings as SettingsIcon
 } from 'lucide-react';
 
 const adminNavItems = [
@@ -18,6 +19,7 @@ const adminNavItems = [
   { label: 'Relatórios', key: 'reports', icon: BarChart3 },
   { label: 'Auditoria', key: 'logs', icon: History },
   { label: 'Lixeira', key: 'trash', icon: Trash2 },
+  { label: 'Configurações', key: 'settings', icon: SettingsIcon },
 ];
 
 const waiterNavItems = [
