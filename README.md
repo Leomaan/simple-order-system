@@ -1,221 +1,173 @@
-# Simple Order System
+# Simple Order System 🍽️
 
-Sistema de gerenciamento de pedidos para restaurantes e estabelecimentos comerciais, desenvolvido em arquitetura de monorepo utilizando Turborepo, Node.js (Express), React (Vite, TailwindCSS) e MySQL.
+Sistema completo de gerenciamento de pedidos e PDV para restaurantes e estabelecimentos comerciais. Desenvolvido em arquitetura monorepo utilizando **Turborepo**, **Node.js (Express)**, **React (Vite, TailwindCSS)**, **Sequelize** e **MySQL 8**.
+
+O projeto conta com controle de perfis (Admin e Garçom), relatórios financeiros em tempo real, auditoria interna de ações sensíveis e **integração nativa de pagamentos via PIX (Mercado Pago)**.
 
 ---
 
-## Tecnologias e Ferramentas
+## 🚀 Funcionalidades Principais & O que Implementamos
+
+Durante o desenvolvimento recente, o sistema foi evoluído com recursos robustos para rodar tanto como um portfólio interativo quanto como um sistema real pronto para negócios:
+
+* **⚙️ Painel de Configurações Dinâmicas (Multi-Tenant)**: As configurações do restaurante (nome do estabelecimento e credenciais de pagamento) são salvas diretamente no banco de dados. Isso possibilita alterar o nome e chaves do PIX dinamicamente em tempo de execução, sem necessidade de editar arquivos de código ou reiniciar servidores.
+* **💳 Integração Real Mercado Pago (PIX)**: Geração automatizada de payloads Copia e Cola e imagem de QR Code dinâmico do PIX via API oficial do Mercado Pago.
+* **⚡ Simulador de Confirmação (Dev Mode)**: Botão inteligente no painel do garçom para simular instantaneamente o pagamento do PIX, facilitando testes sem gastar dinheiro real e dispensando configurações complexas de túneis (como Ngrok) em ambiente local.
+* **🔐 Segurança e Máscara de Credenciais**: Tokens de acesso confidenciais são armazenados no banco e retornados de forma mascarada (`TEST-...******abcd`) no painel administrativo, além de possuir proteção contra preenchimento automático indesejado (`autoComplete="new-password"`).
+* **🧹 Limpeza Automática de Sessões**: Rotina inteligente que roda na inicialização do servidor backend, destruindo automaticamente registros de tokens de login expirados para manter o banco leve.
+* **⏱️ Auditoria com Tempo Real**: Painel de auditoria do administrador com cálculos relativos dinâmicos de timestamps e exibição da data/hora completa ao passar o mouse.
+* **👥 Acesso Rápido para Portfólio (Admin & Garçom Demo)**: Botões de login instantâneo na tela inicial para demonstração pública fluida de privilégios e layouts.
+
+---
+
+## 📁 Estrutura do Monorepo & Onde fica cada coisa?
+
+Abaixo está o mapa de arquivos principais para guiar desenvolvedores ou proprietários de negócios que queiram customizar o sistema:
+
+```text
+simple-order-system/
+├── apps/
+│   ├── api/                          # BACKEND (API RESTful)
+│   │   ├── server.js                 # Inicialização do servidor e limpeza de tokens
+│   │   └── src/
+│   │       ├── app.js                # Configuração do Express, CORS, CSRF e rotas
+│   │       ├── config/
+│   │       │   ├── database-cli.cjs  # Configuração de credenciais MySQL
+│   │       │   └── swagger.js        # Configuração do Swagger UI (com caminhos dinâmicos)
+│   │       ├── controllers/
+│   │       │   ├── authController.js # Login, refresh, logout e controle de cookies/CSRF
+│   │       │   ├── paymentController.js # Webhook e rotas de simulação de PIX
+│   │       │   └── settingsController.js # GET/PUT de configurações do restaurante
+│   │       ├── docs/                 # Arquivos de documentação OpenAPI (Swagger)
+│   │       │   └── settings.doc.yaml # Docs das rotas de configurações
+│   │       ├── migrations/           # Scripts de migração de tabelas Sequelize
+│   │       ├── models/               # Modelos das tabelas do banco de dados (Sequelize)
+│   │       │   └── settings.js       # Tabela de configurações gerais do restaurante
+│   │       ├── routes/               # Definição de endpoints da API
+│   │       └── services/
+│   │           ├── paymentService.js # Integração de PIX (Mercado Pago / Simulação)
+│   │           └── settingsService.js# Lógica de atualização e mascaramento de chaves
+│   │
+│   └── web/                          # FRONTEND (Interface do Usuário - React)
+│       └── src/
+│           ├── components/
+│           │   ├── auth/
+│           │   │   └── LoginForm.jsx # Login com botões de atalho Admin/Garçom Demo
+│           │   ├── layout/
+│           │   │   └── Sidebar.jsx   # Menu lateral (inclui o link de configurações)
+│           │   └── settings/
+│           │       └── SettingsSection.jsx # Painel administrativo de configurações
+│           ├── hooks/
+│           │   └── useSettings.jsx   # Hook para requisição e cache de dados de settings
+│           └── pages/
+│               ├── Admin.jsx         # Dashboard administrativo (relatórios, produtos, logs)
+│               └── Waiter.jsx        # Painel do garçom (pedidos e pagamentos)
+│
+└── packages/
+    └── schemas/                      # VALIDAÇÕES ZOD COMPARTILHADAS (API e Web)
+        ├── index.js                  # Exportação central de validações
+        └── settingsSchema.js         # Validações Zod para nome do restaurante e chaves MP
+```
+
+---
+
+## 🛠️ Tecnologias e Ferramentas
 
 * **Orquestração de Monorepo:** Turborepo
 * **Backend:** Node.js (v20+) com Express 5
 * **Frontend:** React (v19) com Vite e TailwindCSS
 * **Banco de Dados & ORM:** MySQL 8 e Sequelize ORM
 * **Validação de Dados:** Zod
-* **Autenticação:** JSON Web Tokens (JWT) com controle de sessões e Refresh Tokens
+* **Autenticação:** JSON Web Tokens (JWT) armazenados em Cookies HttpOnly (`sameSite` configurável em produção) com controle de sessões e Refresh Tokens
 * **Suíte de Testes:** Vitest (Testes unitários e de integração com banco real)
 * **Ambientes Isolados:** Docker e Docker Compose (para banco de dados local)
 
 ---
 
-## Estrutura do Monorepo
+## ⚙️ Configuração para o seu Negócio (Customização)
 
-O projeto está dividido em aplicações (`apps`) e pacotes compartilhados (`packages`):
+Se você deseja adotar esta aplicação para o seu próprio estabelecimento, siga estes passos para customizar a identidade visual e os dados operacionais:
 
-```text
-simple-order-system/
-├── apps/
-│   ├── api/          # API RESTful (Express, Sequelize, MySQL)
-│   └── web/          # Interface Web (React, Vite, TailwindCSS)
-├── packages/
-│   └── schemas/      # Validações Zod compartilhadas entre API e Frontend
-├── package.json      # Dependências globais e scripts de orquestração
-└── turbo.json        # Configurações de pipeline e cache do Turborepo
-```
+### 1. Customizar Nome e Identidade Visual (Branding)
+* **Nome do Restaurante (Padrão)**: O nome padrão do restaurante exibido na barra superior e nos relatórios é definido na inicialização por meio do banco. Você pode alterá-lo diretamente no Painel Administrativo (`/admin` -> Configurações) ou editar a semente padrão em `apps/api/src/scripts/seed.js`.
+* **Cores e Temas**: O layout utiliza Tailwind CSS com tons neutros escuros e detalhes em Laranja/Laranja-Escuro. Para mudar a cor de destaque (ex: mudar de Laranja para Azul):
+  1. Vá até o arquivo CSS global `apps/web/src/index.css`.
+  2. Altere os valores de cores padrão ou substitua as classes de cores de destaque Tailwind (como `bg-orange-500` e `text-orange-500`) nos componentes de Sidebar ([Sidebar.jsx](file:///C:/Users/CLIENTE/Documents/GitHub/simple-order-system/apps/web/src/components/layout/Sidebar.jsx)) e Páginas principais.
+
+### 2. Configurar a Integração de PIX (Mercado Pago)
+Para receber pagamentos diretamente na sua conta bancária pelo sistema:
+1. Acesse o portal de desenvolvedores do [Mercado Pago Developers](https://www.mercadopago.com.br/developers/panel).
+2. Crie uma aplicação para o seu negócio.
+3. No menu lateral, acesse **Credenciais**:
+   * **Para Testes**: Use as credenciais da aba "Credenciais de teste" (Access Token começando com `TEST-`).
+   * **Para Produção (Dinheiro Real)**: Faça a ativação da conta preenchendo o formulário de cadastro no painel. Depois, copie o Access Token da aba "Credenciais de produção" (começando com `APP_USR-`).
+4. Abra o painel de administrador do seu sistema (`/admin` -> Configurações).
+5. Cole o seu **Access Token** no campo respectivo e salve. 
+
+### 3. Remover os Botões de Acesso Rápido (Demo)
+Quando colocar o site no ar para os funcionários de verdade usarem, remova os botões que preenchem as senhas automaticamente:
+1. Abra o arquivo [LoginForm.jsx](file:///C:/Users/CLIENTE/Documents/GitHub/simple-order-system/apps/web/src/components/auth/LoginForm.jsx).
+2. Remova ou comente a div que renderiza os botões de demo (linhas correspondentes à renderização de "Admin Demo" e "Garçom Demo" no final do formulário).
 
 ---
 
-## Configuração e Instalação
+## 💻 Instalação e Execução Local
 
 ### Pré-requisitos
-
 * Node.js v20 ou superior instalado.
-* Docker e Docker Compose ativos na máquina.
+* Docker e Docker Compose ativos.
 
-### Passo a Passo
-
-1. **Clonar o repositório:**
+### Instalação
+1. Clone o repositório:
    ```bash
    git clone https://github.com/Leomaan/simple-order-system.git
    cd simple-order-system
    ```
-
-2. **Instalar dependências (executado na raiz):**
+2. Instale as dependências na raiz:
    ```bash
    npm install
    ```
-
-3. **Configurar as Variáveis de Ambiente:**
-   Copie os exemplos de ambiente tanto para a raiz quanto para as pastas internas.
-   
-   Na raiz do projeto:
+3. Crie os arquivos `.env` baseados nos exemplos:
    ```bash
+   # Na raiz
    cp .env.example .env
-   ```
-   
-   Na pasta da API (`apps/api`):
-   ```bash
+   # Na API
    cp apps/api/.env.example apps/api/.env
    ```
 
----
-
-## Variáveis de Ambiente
-
-As principais variáveis necessárias para a execução estão descritas abaixo:
-
-```dotenv
-PORT=3000
-
-# Conexão com o banco de dados principal
-DB_HOST=localhost
-DB_PORT=3307
-DB_USER=root
-DB_PASS=123456
-DB_NAME=simple_order_system
-
-# Banco de dados de testes
-TEST_DB_NAME=simple_order_system_test
-
-# Autenticação
-JWT_SECRET=sua_chave_secreta_de_32_caracteres
-FRONTEND_URL=http://localhost:5173
-```
-
----
-
-## Inicialização do Banco de Dados (Docker)
-
-Os testes de integração e o servidor de desenvolvimento necessitam de uma instância ativa do MySQL. Para subir o banco via contêiner Docker:
-
+### Rodar Banco de Dados (Local)
+Para iniciar o MySQL local através de container Docker:
 ```bash
 docker compose -f apps/api/docker-compose.yml up -d db
 ```
 
-> **Nota:** O script `apps/api/src/scripts/init.sql` inicializará automaticamente o contêiner criando tanto a base de dados principal (`simple_order_system`) quanto a de testes (`simple_order_system_test`).
+### Inicializar Banco com Dados Iniciais (Seeds)
+Para popular o banco com os produtos iniciais, usuários padrões e as configurações padrão do restaurante:
+```bash
+npm run db:seed --workspace=@simple-order/api
+```
 
----
-
-## Execução em Desenvolvimento
-
-Para rodar todos os serviços do monorepo (API e Frontend) simultaneamente no modo de desenvolvimento:
-
+### Executar em Desenvolvimento
+Para rodar a API e o Frontend React ao mesmo tempo em modo hot-reload:
 ```bash
 npm run dev
 ```
-
-* **Frontend:** Disponível em `http://localhost:5173`
-* **Backend API:** Disponível em `http://localhost:3000`
-* **Documentação Swagger:** Disponível em `http://localhost:3000/api-docs`
+* **Frontend:** `http://localhost:5173`
+* **API Backend:** `http://localhost:3000`
+* **Docs Swagger:** `http://localhost:3000/api-docs`
 
 ---
 
-## Executando Testes
+## 🧪 Rodando os Testes
 
-Os testes são escritos utilizando Vitest e cobrem as camadas de serviços, controllers e integração da API.
-
-Para rodar toda a suíte de testes:
+Os testes automatizados cobrem rotas, permissões, serviços e integrações:
 ```bash
 npm run test
 ```
 
-> **Atenção:** Certifique-se de que o contêiner do Docker (`mysql_db`) esteja em execução, pois os testes de integração realizam chamadas reais ao banco mapeado em `localhost:3307`.
-
 ---
 
-## Compilação para Produção (Build)
+## 📦 Deploy em Produção
 
-Para compilar todos os aplicativos e pacotes para o formato de produção:
-
-```bash
-npm run build
-```
-
----
-
-## Controle de Acesso e Perfis
-
-O sistema dispõe de rotas e funcionalidades protegidas baseadas em funções de usuário (RBAC):
-
-| Perfil | Nível de Acesso | Funcionalidades Principais |
-| :--- | :--- | :--- |
-| **Admin** | Total | Gerenciamento de usuários, exclusão física de registros, relatórios financeiros e de auditoria, além de gerenciamento de produtos. |
-| **Garçom (Waiter)** | Operacional | Abertura de pedidos, adição e edição de itens de pedidos, fechamento de pedidos e emissão de cobrança PIX. |
-
----
-
-## Rotas da API
-
-### Autenticação (`/auth`)
-* `POST /auth/login` - Autenticação com controle de limite de taxa.
-* `POST /auth/refresh` - Atualização do token de sessão.
-* `POST /auth/logout` - Encerramento de sessão e invalidação de tokens.
-
-### Usuários (`/user`) - *Apenas Administradores*
-* `GET /user` - Listagem de usuários.
-* `GET /user/:id` - Detalhes do usuário.
-* `POST /user` - Cadastro de novos funcionários.
-* `PATCH /user/:id` - Atualização de dados cadastrais.
-* `DELETE /user/:id` - Exclusão lógica (soft delete).
-* `PATCH /user/:id/restore` - Restauração de usuário deletado.
-* `DELETE /user/:id/permanent` - Remoção definitiva.
-
-### Produtos (`/product`)
-* `GET /product` - Listagem de produtos (Garçom+).
-* `GET /product/:id` - Busca de produto por ID (Garçom+).
-* `POST /product` - Criação de produto (Admin).
-* `PUT /product/:id` - Edição de produto (Admin).
-* `DELETE /product/:id` - Exclusão lógica de produto (Admin).
-* `PATCH /product/:id/restore` - Restauração de produto (Admin).
-* `DELETE /product/:id/permanent` - Exclusão definitiva (Admin).
-
-### Pedidos (`/order`)
-* `POST /order` - Abertura de novos pedidos (Garçom+).
-* `GET /order` - Listagem geral (Garçom+).
-* `GET /order/:id` - Busca de pedido por ID (Garçom+).
-* `PUT /order/:id` - Atualização do pedido (Garçom+).
-* `PATCH /order/:id/close` - Fechamento e encerramento de pedido (Garçom+).
-* `DELETE /order/:id` - Exclusão lógica de pedido (Admin).
-* `PATCH /order/:id/restore` - Restauração de pedido deletado (Admin).
-* `DELETE /order/:id/permanent` - Exclusão definitiva (Admin).
-
-### Itens de Pedido (`/order-item`)
-* `POST /order-item` - Adiciona item a um pedido aberto (Garçom+).
-* `PATCH /order-item/:id` - Altera a quantidade de um item (Garçom+).
-* `DELETE /order-item/:id` - Remove item do pedido (Garçom+).
-
-### Relatórios (`/report`) - *Apenas Administradores*
-* `GET /report/today` - Faturamento e vendas do dia corrente.
-* `GET /report/revenue` - Gráfico de faturamento por período.
-* `GET /report/orders` - Estatísticas de pedidos por período.
-
-### Pagamentos (`/payment`)
-* `POST /payment/pix` - Geração do payload e QR Code de pagamento via PIX (Garçom+).
-* `POST /payment/webhook` - Recepção de confirmação de pagamento do provedor (Público).
-* `POST /payment/simulate-confirm` - Simulação de confirmação de pagamento (Garçom+ / Apenas Dev).
-
-### Auditoria (`/audit`) - *Apenas Administradores*
-* `GET /audit` - Acesso aos logs de ações sensíveis do sistema.
-
----
-
-## Integração Contínua (CI)
-
-O projeto conta com automação via **GitHub Actions** ([ci.yml](file:///C:/Users/CLIENTE/Documents/GitHub/simple-order-system/.github/workflows/ci.yml)). Toda alteração enviada ao repositório passa pelas seguintes etapas automáticas de validação:
-
-1. Execução do Docker com banco de dados MySQL 8.
-2. Instalação limpa de dependências.
-3. Análise estática de código (Linter).
-4. Execução de testes de unidade e integração.
-5. Verificação do processo de Build de todas as aplicações.
-
-As variáveis necessárias para o pipeline são repassadas ao ambiente do Turborepo via declaração explícita no arquivo [turbo.json](file:///C:/Users/CLIENTE/Documents/GitHub/simple-order-system/turbo.json).
+Consulte o nosso guia passo a passo completo para hospedar o frontend, backend e o banco de dados em servidores online de forma 100% gratuita no arquivo:
+* **[Guia de Deploy Gratuito (Aiven + Render + Vercel)](file:///C:/Users/CLIENTE/.gemini/antigravity-cli/brain/2eed2ae3-0eb3-4c81-a89a-3ce31424ffbe/deployment_plan.md)**
