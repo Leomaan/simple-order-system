@@ -1,6 +1,8 @@
 import 'dotenv/config';
 import app from './src/app.js';
-import { sequelize } from './src/models/index.js'
+import { sequelize } from './src/models/index.js';
+import { Op } from 'sequelize';
+import RefreshToken from './src/models/refreshToken.js';
 
 const PORT = process.env.PORT || 3000;
 const force = process.argv.includes('--force');
@@ -14,6 +16,22 @@ async function bootstrap() {
     } else {
       await sequelize.authenticate();
       console.log('Banco conectado com sucesso (Produção)!');
+    }
+
+    // Limpeza de refresh tokens expirados na inicialização
+    try {
+      const deleted = await RefreshToken.destroy({
+        where: {
+          expiresAt: {
+            [Op.lt]: new Date()
+          }
+        }
+      });
+      if (deleted > 0) {
+        console.log(`Limpeza: ${deleted} tokens de atualização expirados removidos.`);
+      }
+    } catch (cleanErr) {
+      console.warn('Alerta: Falha ao limpar tokens expirados:', cleanErr.message);
     }
 
     const server = app.listen(PORT, () =>
