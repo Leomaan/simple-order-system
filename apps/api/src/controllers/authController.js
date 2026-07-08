@@ -7,7 +7,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 const cookieOptions = {
   httpOnly: true,             
   secure: isProduction,            
-  sameSite: isProduction ? 'strict' : 'lax',
+  sameSite: isProduction ? (process.env.COOKIE_SAME_SITE || 'none') : 'lax',
 };
 
 const getCsrfCookieOptions = (req) => {
@@ -17,7 +17,7 @@ const getCsrfCookieOptions = (req) => {
   return {
     httpOnly: false,
     secure: isProduction && !isLocal,
-    sameSite: 'lax',
+    sameSite: isProduction ? (process.env.COOKIE_SAME_SITE || 'none') : 'lax',
   };
 };
 
