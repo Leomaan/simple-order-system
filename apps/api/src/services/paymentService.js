@@ -3,6 +3,7 @@ import OrderItem from '../models/orderItem.js';
 import Product from '../models/product.js';
 import { AppError } from '../middleware/appError.js';
 import { log } from './auditLogService.js';
+import { getSettings } from './settingsService.js';
 
 /**
  * Service to handle integration with Payment Gateways (e.g., Mercado Pago)
@@ -30,7 +31,8 @@ export async function createPixPayment(orderId) {
   // Calculate order total
   const totalAmount = order.OrderItems.reduce((sum, item) => sum + Number(item.totalPrice), 0);
 
-  const accessToken = process.env.MERCADO_PAGO_ACCESS_TOKEN;
+  const settings = await getSettings();
+  const accessToken = settings?.mercadoPagoAccessToken || process.env.MERCADO_PAGO_ACCESS_TOKEN;
   if (!accessToken || accessToken.includes('your_mercado_pago_access_token')) {
     // Return a mocked payment details if the integration token is not configured yet
     console.warn('Mercado Pago Access Token is not set. Returning mock payment details.');
@@ -53,6 +55,12 @@ export async function createPixPayment(orderId) {
     return mockPayment;
   }
 
+  // Fallback to a valid public URL format in local development to satisfy Mercado Pago's validation
+  let apiBaseUrl = process.env.API_BASE_URL;
+  if (!apiBaseUrl || apiBaseUrl.includes('localhost') || apiBaseUrl.includes('127.0.0.1')) {
+    apiBaseUrl = 'https://example.com';
+  }
+
   // Example request payload for Mercado Pago API (v1/payments)
   const paymentPayload = {
     transaction_amount: Number(totalAmount.toFixed(2)),
@@ -63,7 +71,7 @@ export async function createPixPayment(orderId) {
       first_name: 'Cliente',
       last_name: `Mesa ${order.table}`
     },
-    notification_url: `${process.env.API_BASE_URL}/payment/webhook`,
+    notification_url: `${apiBaseUrl}/payment/webhook`,
     external_reference: String(order.id)
   };
 
@@ -125,7 +133,8 @@ export async function processWebhook(webhookPayload, user = { name: 'webhook_sys
     const paymentId = data.id;
     if (!paymentId) return { success: false, reason: 'No payment ID found in webhook payload' };
 
-    const accessToken = process.env.MERCADO_PAGO_ACCESS_TOKEN;
+    const settings = await getSettings();
+    const accessToken = settings?.mercadoPagoAccessToken || process.env.MERCADO_PAGO_ACCESS_TOKEN;
     if (!accessToken || accessToken.includes('your_mercado_pago_access_token')) {
       console.warn('Webhook received but Access Token not set. Processing as demo/mock update.');
       // In local development, if we want to manually simulate a webhook approval:
@@ -177,7 +186,7 @@ export async function processWebhook(webhookPayload, user = { name: 'webhook_sys
 /**
  * Simulates approving a payment (useful for local development and testing)
  */
-async function approveMockPayment(paymentId, user) {
+export async function approveMockPayment(paymentId, user) {
   const order = await Order.findOne({
     where: { paymentId },
     include: [OrderItem]

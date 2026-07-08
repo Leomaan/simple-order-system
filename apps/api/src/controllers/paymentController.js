@@ -36,15 +36,8 @@ export const simulatePaymentConfirmation = asyncHandler(async (req, res) => {
     return res.status(400).json({ success: false, message: 'paymentId is required' });
   }
 
-  // Simulate webhook payload for the mock payment
-  const mockPayload = {
-    action: 'payment.updated',
-    type: 'payment',
-    data: { id: paymentId }
-  };
-
   const user = req.user || { name: 'admin_simulator', role: 'ADMIN' };
-  const result = await paymentService.processWebhook(mockPayload, user);
+  const result = await paymentService.approveMockPayment(paymentId, user);
 
   if (result.success) {
     res.status(200).json({ success: true, message: 'Payment simulated and approved successfully', data: result });
