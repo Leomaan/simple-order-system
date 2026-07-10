@@ -14,8 +14,8 @@ export function useLogin() {
     setLoading(true);
     try {
       const res = await api.post('/auth/login', { email, password });
-      const { role, name } = res.data.data;
-      login({ role, name }); 
+      const { role, name, csrfToken } = res.data.data;
+      login({ role, name, csrfToken }); 
 
       if (role === 'ADMIN') {
         navigate('/admin');

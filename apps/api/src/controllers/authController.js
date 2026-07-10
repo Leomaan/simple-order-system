@@ -44,7 +44,7 @@ export const login = asyncHandler(async (req, res) => {
 
   res.status(200).json({
     success: true,
-    data: { role: result.role, name: result.name }, 
+    data: { role: result.role, name: result.name, csrfToken }, 
   });
 });
 
@@ -66,7 +66,7 @@ export const refresh = asyncHandler(async (req, res) => {
 
   res.status(200).json({
     success: true,
-    data: { role: result.role, name: result.name },
+    data: { role: result.role, name: result.name, csrfToken },
   });
 });
 

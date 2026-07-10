@@ -20,7 +20,7 @@ api.interceptors.request.use(
   (config) => {
     const method = config.method?.toLowerCase();
     if (['post', 'put', 'delete', 'patch'].includes(method)) {
-      const csrfToken = getCookie('XSRF-TOKEN');
+      const csrfToken = localStorage.getItem('csrfToken');
       if (csrfToken) {
         config.headers['X-XSRF-TOKEN'] = csrfToken;
       }

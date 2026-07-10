@@ -11,13 +11,17 @@ export function AuthProvider({ children }) {
     async function checkAuth() {
       try {
         const res = await api.post('/auth/refresh');
-        const { role, name } = res.data.data;
+        const { role, name, csrfToken } = res.data.data;
         setUser({ role, name });
         localStorage.setItem('role', role);
         localStorage.setItem('name', name);
+        if (csrfToken) {
+          localStorage.setItem('csrfToken', csrfToken);
+        }
       } catch (err) {
         localStorage.removeItem('role');
         localStorage.removeItem('name');
+        localStorage.removeItem('csrfToken');
         setUser(null);
       } finally {
         setLoading(false);
@@ -36,9 +40,12 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
-  function login({ role, name }) {
+  function login({ role, name, csrfToken }) {
     localStorage.setItem('role', role);
     localStorage.setItem('name', name);
+    if (csrfToken) {
+      localStorage.setItem('csrfToken', csrfToken);
+    }
     setUser({ role, name });
   }
 
@@ -48,6 +55,7 @@ export function AuthProvider({ children }) {
     } catch {}
     localStorage.removeItem('role');
     localStorage.removeItem('name');
+    localStorage.removeItem('csrfToken');
     setUser(null);
   }
 
