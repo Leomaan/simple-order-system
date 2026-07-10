@@ -22,6 +22,10 @@ import settingsRoutes from './routes/settingsRoutes.js';
 
 const app = e();
 
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+}
+
 app.use(helmet());
 app.use(compression());
 app.use(cors({
