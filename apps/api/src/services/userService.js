@@ -78,6 +78,10 @@ export async function updateUser(id, data, requesterId) {
   if (user.isSuperAdmin && requesterId !== id)
     throw new AppError('não é possível alterar o superadmin');
 
+  // Garçom Demo não pode ser alterado por ninguém exceto o SuperAdmin
+  if (user.email === 'waiter@restaurant.com' && !requester.isSuperAdmin)
+    throw new AppError('a conta de demonstração do garçom não pode ser alterada');
+
   // ninguém pode remover o isSuperAdmin
   if ('isSuperAdmin' in data)
     throw new AppError('não é possível alterar o status de superadmin');
@@ -107,8 +111,12 @@ export async function deleteUser(id, requesterId) {
   if (user.isSuperAdmin)
     throw new AppError('o superadmin não pode ser deletado');
 
-  // só superadmin pode fazer soft delete de outros admins
+  // Garçom Demo não pode ser deletado por ninguém exceto o SuperAdmin
   const requester = await User.findByPk(requesterId);
+  if (user.email === 'waiter@restaurant.com' && !requester.isSuperAdmin)
+    throw new AppError('a conta de demonstração do garçom não pode ser deletada');
+
+  // só superadmin pode fazer soft delete de outros admins
   if (user.role === 'ADMIN' && !requester.isSuperAdmin)
     throw new AppError('apenas o superadmin pode deletar um admin');
 
@@ -135,6 +143,8 @@ export async function permanentDeleteUser(id, requesterId) {
     throw new AppError('o superadmin não pode ser deletado');
 
   const requester = await User.findByPk(requesterId);
+  if (user.email === 'waiter@restaurant.com' && !requester.isSuperAdmin)
+    throw new AppError('a conta de demonstração do garçom não pode ser deletada permanentemente');
   if (user.role === 'ADMIN' && !requester.isSuperAdmin)
     throw new AppError('apenas o superadmin pode deletar permanentemente um admin');
 
