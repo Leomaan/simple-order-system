@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { getAll, getById, create, update, remove, permanentDelete, restore } from '../controllers/userController.js';
 import { validate } from '../middleware/validate.js';
-import { requireAdmin } from '../middleware/authtenticate.js';
+import { requireAdmin } from '../middleware/authenticate.js';
 import { validateId } from '../middleware/validateId.js';
 import { createUserSchema, updateUserSchema } from '@simple-order/schemas';
 

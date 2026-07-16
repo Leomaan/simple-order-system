@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { generatePix, receiveWebhook, simulatePaymentConfirmation } from '../controllers/paymentController.js';
-import { requireWaiter } from '../middleware/authtenticate.js';
+import { requireWaiter } from '../middleware/authenticate.js';
 
 const routes = Router();
 

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { requireAdmin } from '../middleware/authtenticate.js';
+import { requireAdmin } from '../middleware/authenticate.js';
 import { getAll } from '../controllers/auditLogController.js';
 
 const routes = Router();

@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { create, getAll, getById, update, remove, restore, permanentDelete, } from '../controllers/productController.js';
 import { validate } from '../middleware/validate.js';
 import { createProductSchema, updateProductSchema, } from '@simple-order/schemas';
-import { requireAdmin, requireWaiter } from '../middleware/authtenticate.js';
+import { requireAdmin, requireWaiter } from '../middleware/authenticate.js';
 import { validateId } from '../middleware/validateId.js';
 
 const routes = Router();
