@@ -62,7 +62,7 @@ export default function WaiterOrderSection() {
   }
 
   return (
-    <div className="p-8 max-w-5xl mx-auto animate-in fade-in duration-300">
+    <div className="p-4 md:p-8 max-w-5xl mx-auto animate-in fade-in duration-300">
       {deleting && (
         <ConfirmModal
           title="Excluir pedido vazio?"

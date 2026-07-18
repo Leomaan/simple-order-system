@@ -30,7 +30,7 @@ export default function ProductView() {
   const sortedProducts = [...products].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
 
   return (
-    <div className="p-8 max-w-5xl mx-auto animate-in fade-in duration-300">
+    <div className="p-4 md:p-8 max-w-5xl mx-auto animate-in fade-in duration-300">
       <header className="mb-6">
         <h2 className="text-2xl font-bold text-white tracking-tight">Cardápio</h2>
         <p className="text-neutral-550 text-sm font-medium">Visualize os itens disponíveis no restaurante</p>

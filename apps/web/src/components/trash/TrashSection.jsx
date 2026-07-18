@@ -108,7 +108,7 @@ export default function TrashSection() {
   };
 
   return (
-    <div className="p-8 max-w-5xl mx-auto flex flex-col gap-6 animate-in fade-in duration-300">
+    <div className="p-4 md:p-8 max-w-5xl mx-auto flex flex-col gap-6 animate-in fade-in duration-300">
       {confirmingDelete && (
         <ConfirmModal
           title={`Excluir ${getEntityName()} permanentemente?`}

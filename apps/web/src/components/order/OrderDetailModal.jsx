@@ -15,6 +15,7 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
   const [error, setError] = useState('');
   const [changingQty, setChangingQty] = useState(null);
   const [addingProductId, setAddingProductId] = useState(null);
+  const [activeTab, setActiveTab] = useState('add'); // 'items' ou 'add'
 
   // Estados de Pagamento
   const [generatingPix, setGeneratingPix] = useState(false);
@@ -139,13 +140,11 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
   };
 
   const formatPrice = (val) => `R$ ${Number(val || 0).toFixed(2)}`;
-  const currentStatus = orderDetails?.status || order.status;
-
-  return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 px-4 animate-in fade-in duration-200">
+  const currentStatus = orderDetails?.status || order.status;  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 md:px-4 animate-in fade-in duration-200">
       <div 
-        className={`bg-neutral-900 border border-neutral-800 rounded-3xl p-6 w-full max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col gap-6 animate-in scale-in duration-200 transition-all ${
-          currentStatus === 'OPEN' ? 'max-w-4xl' : 'max-w-lg'
+        className={`bg-neutral-900 p-4 md:p-6 w-full h-full max-h-screen md:h-auto md:max-h-[90vh] md:rounded-3xl border-none md:border border-neutral-800 overflow-y-auto shadow-2xl flex flex-col gap-5 md:gap-6 animate-in scale-in duration-200 transition-all ${
+          currentStatus === 'OPEN' ? 'md:max-w-6xl' : 'md:max-w-lg'
         }`}
       >
         
@@ -170,7 +169,7 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
                 </span>
               )}
             </div>
-            <p className="text-neutral-500 text-xs mt-1">Pedido #{order.id} · Aberto em {new Date(orderDetails?.createdAt || order.createdAt).toLocaleString('pt-BR')}</p>
+            <p className="text-neutral-550 text-xs mt-1">Pedido #{order.id} · Aberto em {new Date(orderDetails?.createdAt || order.createdAt).toLocaleString('pt-BR')}</p>
           </div>
           <button 
             onClick={onClose} 
@@ -180,11 +179,39 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
           </button>
         </header>
 
+        {/* Tabs de navegação no mobile (Apenas se o pedido estiver aberto) */}
+        {currentStatus === 'OPEN' && (
+          <div className="flex md:hidden border border-neutral-800 p-1 bg-neutral-950/60 rounded-2xl select-none shrink-0">
+            <button
+              type="button"
+              onClick={() => setActiveTab('add')}
+              className={`flex-1 py-3 text-center text-xs font-black uppercase tracking-wider rounded-xl transition-all duration-200 cursor-pointer ${
+                activeTab === 'add'
+                  ? 'bg-orange-500 text-white shadow-md shadow-orange-500/10'
+                  : 'text-neutral-400 hover:text-neutral-200'
+              }`}
+            >
+              Adicionar Itens
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('items')}
+              className={`flex-1 py-3 text-center text-xs font-black uppercase tracking-wider rounded-xl transition-all duration-200 cursor-pointer relative ${
+                activeTab === 'items'
+                  ? 'bg-orange-500 text-white shadow-md shadow-orange-500/10'
+                  : 'text-neutral-400 hover:text-neutral-200'
+              }`}
+            >
+              Ver Consumo ({orderDetails?.OrderItems?.reduce((sum, item) => sum + item.quantity, 0) || 0})
+            </button>
+          </div>
+        )}
+
         {/* Corpo do Modal em Grid (POS Style) */}
-        <div className={`grid grid-cols-1 gap-8 ${currentStatus === 'OPEN' ? 'md:grid-cols-12' : 'md:grid-cols-1'}`}>
+        <div className={`grid grid-cols-1 gap-6 md:gap-8 ${currentStatus === 'OPEN' ? 'md:grid-cols-12' : 'md:grid-cols-1'}`}>
           
           {/* Coluna da Esquerda: Consumo e Totais */}
-          <div className={`${currentStatus === 'OPEN' ? 'md:col-span-7' : 'w-full'} flex flex-col gap-5`}>
+          <div className={`${currentStatus === 'OPEN' ? 'md:col-span-5' : 'w-full'} ${currentStatus === 'OPEN' && activeTab !== 'items' ? 'hidden md:flex' : 'flex'} flex-col gap-5`}>
             <div>
               <h4 className="text-white text-xs font-bold uppercase tracking-wider mb-3 flex items-center gap-1.5 select-none text-neutral-450">
                 <Ticket size={12} /> Itens Consumidos
@@ -203,7 +230,7 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
                   )}
                 </div>
               ) : (
-                <div className="flex flex-col gap-2 max-h-[40vh] overflow-y-auto pr-1">
+                <div className="flex flex-col gap-2 max-h-[50vh] md:max-h-[40vh] overflow-y-auto pr-1">
                   {orderDetails.OrderItems.map((item) => (
                     <div key={item.id} className="flex items-center justify-between bg-neutral-950/60 border border-neutral-850 rounded-xl px-4 py-3 hover:border-neutral-800 transition-colors">
                       <div className="min-w-0">
@@ -219,7 +246,7 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
                             disabled={changingQty === item.id}
                           />
                         ) : (
-                          <span className="text-neutral-500 text-xs font-bold bg-neutral-900 border border-neutral-800 px-2.5 py-1 rounded-lg">{item.quantity}x</span>
+                          <span className="text-neutral-550 text-xs font-bold bg-neutral-900 border border-neutral-800 px-2.5 py-1 rounded-lg">{item.quantity}x</span>
                         )}
                       </div>
                     </div>
@@ -233,7 +260,7 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
               <div className="bg-neutral-950/40 border border-neutral-850 rounded-2xl p-4 mt-2">
                 <div className="flex justify-between items-center">
                   <span className="text-neutral-400 text-sm font-semibold">Subtotal</span>
-                  <span className="text-neutral-300 font-bold text-sm">{formatPrice(orderDetails.total)}</span>
+                  <span className="text-neutral-350 font-bold text-sm">{formatPrice(orderDetails.total)}</span>
                 </div>
                 <div className="flex justify-between items-center pt-3 border-t border-neutral-850/60 mt-3">
                   <span className="text-neutral-350 text-sm font-bold">Total da Conta</span>
@@ -346,7 +373,7 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
 
           {/* Coluna da Direita: Adicionar Novos Consumos (Apenas Aberto) */}
           {currentStatus === 'OPEN' && (
-            <div className="md:col-span-5 border-t md:border-t-0 md:border-l border-neutral-850 pt-6 md:pt-0 md:pl-6 flex flex-col gap-4">
+            <div className={`md:col-span-7 border-t md:border-t-0 md:border-l border-neutral-850 pt-6 md:pt-0 md:pl-6 ${activeTab !== 'add' ? 'hidden md:flex' : 'flex'} flex-col gap-4`}>
               <h4 className="text-white text-xs font-bold uppercase tracking-wider text-neutral-450">Lançar Consumo</h4>
 
               {categories.length > 0 && (
@@ -358,7 +385,7 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
               )}
 
               {/* Grid de Produtos */}
-              <div className="grid grid-cols-2 gap-2 max-h-[45vh] overflow-y-auto pr-1">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 max-h-[55vh] md:max-h-[58vh] overflow-y-auto pr-1">
                 {availableProducts.map((p) => {
                   const isAdding = addingProductId === p.id;
                   const canAdd = p.available && !isAdding;
@@ -368,7 +395,7 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
                       type="button"
                       disabled={!canAdd}
                       onClick={() => handleInstantAdd(p)}
-                      className={`text-left rounded-xl border p-3 transition-all duration-200 flex flex-col justify-between h-20 group relative overflow-hidden ${
+                      className={`text-left rounded-2xl border p-4 transition-all duration-200 flex flex-col justify-between min-h-[96px] md:min-h-[112px] h-auto group relative overflow-hidden ${
                         !p.available 
                           ? 'border-neutral-900 bg-neutral-950/40 opacity-40 select-none cursor-not-allowed'
                           : 'border-neutral-850 bg-neutral-950 hover:border-orange-500/30 cursor-pointer active:scale-98'
@@ -379,23 +406,23 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
                         <span className="absolute inset-0 bg-orange-500/0 group-hover:bg-orange-500/5 transition-colors" />
                       )}
 
-                      <p className="text-white text-xs font-semibold truncate w-full relative z-10">{p.name}</p>
-                      <div className="flex items-center justify-between w-full mt-1.5 relative z-10">
+                      <p className="text-white text-xs sm:text-sm font-bold line-clamp-2 w-full relative z-10 leading-snug">{p.name}</p>
+                      <div className="flex items-center justify-between w-full mt-2.5 relative z-10">
                         {p.available ? (
                           <>
-                            <span className="text-orange-400 text-[10px] font-bold">{formatPrice(p.price)}</span>
-                            <div className="w-5 h-5 rounded-lg bg-neutral-900 border border-neutral-800 flex items-center justify-center text-orange-400 group-hover:bg-orange-500 group-hover:text-white transition-all shrink-0">
+                            <span className="text-orange-400 text-xs sm:text-sm font-bold">{formatPrice(p.price)}</span>
+                            <div className="w-8 h-8 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center justify-center text-orange-400 group-hover:bg-orange-500 group-hover:text-white group-hover:scale-105 transition-all duration-200 shrink-0">
                               {isAdding ? (
-                                <Loader2 size={10} className="animate-spin text-white" />
+                                <Loader2 size={14} className="animate-spin text-white" />
                               ) : (
-                                <Plus size={10} />
+                                <Plus size={14} />
                               )}
                             </div>
                           </>
                         ) : (
                           <>
-                            <span className="text-neutral-500 text-[10px] font-bold">{formatPrice(p.price)}</span>
-                            <span className="text-[8px] font-black uppercase tracking-wider bg-red-500/10 border border-red-500/20 text-red-400 px-1.5 py-0.5 rounded">
+                            <span className="text-neutral-550 text-xs sm:text-sm font-bold">{formatPrice(p.price)}</span>
+                            <span className="text-[9px] font-black uppercase tracking-wider bg-red-500/10 border border-red-500/20 text-red-400 px-2 py-1 rounded-md">
                               Sem Estoque
                             </span>
                           </>
