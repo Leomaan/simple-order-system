@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import ConfirmModal from '../ui/ConfirmModal';
 import Button from '../ui/Button';
+import { formatErrorMessage } from '../util/errorUtil';
 
 export default function CloseOrderButton({ orderId, onSuccess, onError }) {
   const [showConfirm, setShowConfirm] = useState(false);
@@ -14,8 +15,7 @@ export default function CloseOrderButton({ orderId, onSuccess, onError }) {
       setShowConfirm(false);
       onSuccess?.();
     } catch (err) {
-      const msg = err.response?.data?.message;
-      onError?.(Array.isArray(msg) ? msg.join(', ') : msg || 'Erro ao fechar pedido');
+      onError?.(formatErrorMessage(err));
       setShowConfirm(false);
     } finally {
       setLoading(false);

@@ -7,6 +7,8 @@ import OrderCard from './OrderCard';
 import { STATUS_MAP } from '../constants/orderConstants';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
+import ErrorMessage from '../ui/ErrorMessage';
+import { formatErrorMessage } from '../util/errorUtil';
 
 export default function OrderSection() {
   const { orders, loading, fetchOrders, createOrder, deleteOrder, updateOrder, totalPages, currentPage, setPage } = useOrders('OPEN');
@@ -19,8 +21,10 @@ export default function OrderSection() {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [tableValue, setTableValue] = useState('');
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
   const handleOpenForm = (order = null) => {
+    setError('');
     if (order) {
       setEditing(order);
       setTableValue(order.table);
@@ -33,6 +37,7 @@ export default function OrderSection() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
+    setError('');
     try {
       if (editing) {
         await updateOrder(editing.id, { table: Number(tableValue) });
@@ -43,7 +48,7 @@ export default function OrderSection() {
       }
       setTableValue('');
     } catch (err) {
-      alert(err.response?.data?.message || "Erro na operação");
+      setError(formatErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -56,7 +61,14 @@ export default function OrderSection() {
         <ConfirmModal
           title="Excluir pedido?"
           message="Tem certeza de que deseja excluir este pedido? Esta ação não pode ser desfeita."
-          onConfirm={async () => { await deleteOrder(deleting); setDeleting(null); }}
+          onConfirm={async () => { 
+            try {
+              await deleteOrder(deleting); 
+              setDeleting(null); 
+            } catch (err) {
+              setError(formatErrorMessage(err));
+            }
+          }}
           onCancel={() => setDeleting(null)}
         />
       )}
@@ -92,35 +104,39 @@ export default function OrderSection() {
       {(showForm || editing) && (
         <form 
           onSubmit={handleSubmit} 
-          className="glass-panel border border-orange-500/20 rounded-2xl p-5 mb-8 flex flex-col sm:flex-row sm:items-end gap-4 animate-in slide-in-from-top-4 duration-300"
+          className="glass-panel border border-orange-500/20 rounded-2xl p-5 mb-8 flex flex-col gap-4 animate-in slide-in-from-top-4 duration-300"
         >
-          <div className="flex-1 w-full">
-            <Input
-              autoFocus
-              type="number"
-              label={editing ? `Editando Mesa ${editing.table}` : 'Número da Mesa'}
-              value={tableValue}
-              onChange={(e) => setTableValue(e.target.value)}
-              placeholder="Ex: 12"
-              required
-            />
+          <div className="flex flex-col sm:flex-row sm:items-end gap-4 w-full">
+            <div className="flex-1 w-full">
+              <Input
+                autoFocus
+                type="number"
+                label={editing ? `Editando Mesa ${editing.table}` : 'Número da Mesa'}
+                value={tableValue}
+                onChange={(e) => setTableValue(e.target.value)}
+                placeholder="Ex: 12"
+                required
+              />
+            </div>
+            <div className="flex gap-2 w-full sm:w-auto shrink-0 justify-end">
+              <Button 
+                variant="ghost" 
+                onClick={() => { setShowForm(false); setEditing(null); setError(''); }}
+                className="h-[44px] px-4 text-xs font-semibold"
+              >
+                Cancelar
+              </Button>
+              <Button 
+                type="submit" 
+                loading={saving}
+                className="h-[44px] px-6 text-xs font-bold uppercase tracking-wider shadow-md shadow-orange-500/10"
+              >
+                {editing ? 'Atualizar' : 'Abrir Pedido'}
+              </Button>
+            </div>
           </div>
-          <div className="flex gap-2 w-full sm:w-auto shrink-0 justify-end">
-            <Button 
-              variant="ghost" 
-              onClick={() => { setShowForm(false); setEditing(null); }}
-              className="h-[44px] px-4 text-xs font-semibold"
-            >
-              Cancelar
-            </Button>
-            <Button 
-              type="submit" 
-              loading={saving}
-              className="h-[44px] px-6 text-xs font-bold uppercase tracking-wider shadow-md shadow-orange-500/10"
-            >
-              {editing ? 'Atualizar' : 'Abrir Pedido'}
-            </Button>
-          </div>
+
+          <ErrorMessage message={error} />
         </form>
       )}
 

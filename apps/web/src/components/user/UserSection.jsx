@@ -5,6 +5,7 @@ import ConfirmModal from '../ui/ConfirmModal';
 import Input from '../ui/Input';
 import Button from '../ui/Button';
 import ErrorMessage from '../ui/ErrorMessage';
+import { formatErrorMessage } from '../util/errorUtil';
 
 const roleLabel = { ADMIN: 'Admin', WAITER: 'Garçom' };
 const emptyForm = { name: '', email: '', password: '', role: 'WAITER' };
@@ -54,8 +55,7 @@ export default function UserSection() {
       }
       closeForm();
     } catch (err) {
-      const msg = err.response?.data?.message;
-      setError(Array.isArray(msg) ? msg.join(', ') : msg || 'Erro ao salvar usuário');
+      setError(formatErrorMessage(err));
     } finally {
       setSaving(false);
     }

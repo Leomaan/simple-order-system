@@ -30,7 +30,91 @@ export function getDetailRows(log) {
   if (produto) rows.push({ icon: ICONS.product, label: 'Item', value: String(produto), variant: 'neutral' });
   if (usuarioAlvo) rows.push({ icon: ICONS.person, label: 'Usuário', value: String(usuarioAlvo), variant: 'neutral' });
 
+  const categoryLabels = {
+    FOOD: 'Comida',
+    DRINK: 'Bebida',
+    SNACK: 'Lanche',
+    DESSERT: 'Sobremesa',
+    SIDE: 'Acompanhamento',
+  };
+
   switch (log.action) {
+    case 'UPDATE_PRODUCT':
+      if (d.price != null) {
+        rows.push({
+          icon: ICONS.money,
+          label: 'Novo Preço',
+          value: `R$ ${Number(d.price).toFixed(2)}`,
+          variant: 'warning'
+        });
+      }
+      if (d.category != null) {
+        rows.push({
+          icon: ICONS.tag,
+          label: 'Nova Categoria',
+          value: categoryLabels[d.category] || d.category,
+          variant: 'neutral'
+        });
+      }
+      if (d.available != null) {
+        rows.push({
+          icon: ICONS.info,
+          label: 'Disponibilidade',
+          value: d.available ? 'Disponível' : 'Indisponível',
+          variant: d.available ? 'success' : 'danger'
+        });
+      }
+      break;
+
+    case 'CREATE_PRODUCT':
+      if (d.price != null) {
+        rows.push({
+          icon: ICONS.money,
+          label: 'Preço',
+          value: `R$ ${Number(d.price).toFixed(2)}`,
+          variant: 'success'
+        });
+      }
+      if (d.category != null) {
+        rows.push({
+          icon: ICONS.tag,
+          label: 'Categoria',
+          value: categoryLabels[d.category] || d.category,
+          variant: 'neutral'
+        });
+      }
+      break;
+
+    case 'UPDATE_USER':
+      if (d.role != null) {
+        rows.push({
+          icon: ICONS.person,
+          label: 'Novo Cargo',
+          value: d.role === 'ADMIN' ? 'Admin' : 'Garçom',
+          variant: 'warning'
+        });
+      }
+      if (d.active != null) {
+        rows.push({
+          icon: ICONS.info,
+          label: 'Status',
+          value: d.active ? 'Ativo' : 'Inativo',
+          variant: d.active ? 'success' : 'danger'
+        });
+      }
+      break;
+
+    case 'CREATE_USER':
+      if (d.role != null) {
+        rows.push({
+          icon: ICONS.person,
+          label: 'Cargo',
+          value: d.role === 'ADMIN' ? 'Admin' : 'Garçom',
+          variant: 'neutral'
+        });
+      }
+      break;
+
     case 'UPDATE_ORDER_ITEM':
       if (d.change) {
         const text = String(d.change);
@@ -58,7 +142,7 @@ export function getDetailRows(log) {
           icon: ICONS.money, 
           label: 'Total', 
           value: `R$ ${Number(d.total).toFixed(2)}`, 
-          variant: 'success' // Cor Verde
+          variant: 'success'
         });
       }
       break;
@@ -67,8 +151,6 @@ export function getDetailRows(log) {
       if (d.oldTable) rows.push({ icon: ICONS.table, label: 'Anterior', value: `Mesa ${d.oldTable}`, variant: 'neutral' });
       if (d.newTable) rows.push({ icon: ICONS.table, label: 'Nova', value: `Mesa ${d.newTable}`, variant: 'warning' });
       break;
-      
-    // ... outros cases
   }
 
   return rows;

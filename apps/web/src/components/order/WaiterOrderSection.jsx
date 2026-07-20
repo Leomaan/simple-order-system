@@ -5,6 +5,7 @@ import ConfirmModal from '../ui/ConfirmModal';
 import OrderDetailModal from './OrderDetailModal';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
+import { formatErrorMessage } from '../util/errorUtil';
 
 const statusLabel = {
   OPEN:   { label: 'Aberto',  color: 'text-green-400 bg-green-400/10 border-green-400/20' },
@@ -35,8 +36,7 @@ export default function WaiterOrderSection() {
       setTable('');
       setShowForm(false);
     } catch (err) {
-      const msg = err.response?.data?.message;
-      setError(Array.isArray(msg) ? msg.join(', ') : msg || 'Erro ao criar pedido');
+      setError(formatErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -48,8 +48,7 @@ export default function WaiterOrderSection() {
       await deleteOrder(deleting);
       setDeleting(null);
     } catch (err) {
-      const msg = err.response?.data?.message;
-      setError(Array.isArray(msg) ? msg.join(', ') : msg || 'Erro ao excluir pedido');
+      setError(formatErrorMessage(err));
       setDeleting(null);
     } finally {
       setDeleteLoading(false);

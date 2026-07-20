@@ -5,6 +5,7 @@ import CategoryFilter from "../ui/CategoryFilter";
 import Input from "../ui/Input";
 import Button from "../ui/Button";
 import ErrorMessage from "../ui/ErrorMessage";
+import { formatErrorMessage } from "../util/errorUtil";
 import { Utensils, Beer, Popcorn, CakeSlice, Soup, Search } from "lucide-react";
 
 const CATEGORIES = ["FOOD", "DRINK", "SNACK", "DESSERT", "SIDE"];
@@ -86,10 +87,7 @@ export default function ProductSection() {
       }
       closeForm();
     } catch (err) {
-      const msg = err.response?.data?.message;
-      setError(
-        Array.isArray(msg) ? msg.join(", ") : msg || "Erro ao salvar produto"
-      );
+      setError(formatErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -100,7 +98,8 @@ export default function ProductSection() {
     try {
       await deleteProduct(deleting);
       setDeleting(null);
-    } catch {
+    } catch (err) {
+      setError(formatErrorMessage(err));
       setDeleting(null);
     } finally {
       setDeleteLoading(false);

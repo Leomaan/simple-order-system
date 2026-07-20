@@ -6,6 +6,7 @@ import QuantityControl from '../ui/QuantityControl';
 import CloseOrderButton from './CloseOrderButton';
 import Button from '../ui/Button';
 import ErrorMessage from '../ui/ErrorMessage';
+import { formatErrorMessage } from '../util/errorUtil';
 import { Ticket, Plus, Copy, Check, Loader2, RefreshCw } from 'lucide-react';
 
 export default function OrderDetailModal({ order, products, onClose, onUpdate }) {
@@ -83,8 +84,7 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
       await fetchDetails();
       onUpdate?.();
     } catch (err) {
-      const msg = err.response?.data?.message;
-      setError(Array.isArray(msg) ? msg.join(', ') : msg || 'Erro ao adicionar item');
+      setError(formatErrorMessage(err));
     } finally {
       setAddingProductId(null);
     }
@@ -92,13 +92,14 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
 
   const handleChangeQty = async (item, newQty) => {
     setChangingQty(item.id);
+    setError('');
     try {
       if (newQty <= 0) await removeItem(item.id);
       else await changeQuantity(item.id, newQty);
       await fetchDetails();
       onUpdate?.();
     } catch (err) {
-      setError(err.response?.data?.message || 'Erro ao alterar quantidade');
+      setError(formatErrorMessage(err));
     } finally {
       setChangingQty(null);
     }
@@ -111,7 +112,7 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
       await api.post('/payment/pix', { orderId: order.id });
       await fetchDetails();
     } catch (err) {
-      setError(err.response?.data?.message || 'Erro ao gerar PIX');
+      setError(formatErrorMessage(err));
     } finally {
       setGeneratingPix(false);
     }
@@ -125,7 +126,7 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
       await fetchDetails();
       onUpdate?.();
     } catch (err) {
-      setError(err.response?.data?.message || 'Erro ao simular confirmação');
+      setError(formatErrorMessage(err));
     } finally {
       setSimulatingConfirm(false);
     }
