@@ -22,24 +22,31 @@ export const create = asyncHandler(async (req, res) => {
  
 export const update = asyncHandler(async (req, res) => {
   const oldUser = await userService.findById(req.params.id);
-  const oldVal = oldUser.toJSON();
+  const oldVal = {
+    name: String(oldUser.name),
+    role: String(oldUser.role),
+    active: Boolean(oldUser.active)
+  };
 
   const user = await userService.updateUser(req.params.id, req.body, req.user.userId);
-  const newVal = user.toJSON();
+  const newVal = {
+    name: String(user.name),
+    role: String(user.role),
+    active: Boolean(user.active)
+  };
 
-  const changes = { name: newVal.name };
+  const diff = {};
   if (req.body.role !== undefined && oldVal.role !== newVal.role) {
-    changes.role = newVal.role;
+    diff.role = { old: oldVal.role, new: newVal.role };
   }
-  if (req.body.active !== undefined && Boolean(oldVal.active) !== Boolean(newVal.active)) {
-    changes.active = Boolean(newVal.active);
+  if (req.body.active !== undefined && oldVal.active !== newVal.active) {
+    diff.active = { old: oldVal.active, new: newVal.active };
   }
   if (req.body.name !== undefined && oldVal.name !== newVal.name) {
-    changes.name = newVal.name;
-    changes.oldName = oldVal.name;
+    diff.name = { old: oldVal.name, new: newVal.name };
   }
 
-  await log({ user: req.user, action: 'UPDATE_USER', entity: 'User', entityId: user.id, details: changes });
+  await log({ user: req.user, action: 'UPDATE_USER', entity: 'User', entityId: user.id, details: { name: newVal.name, diff } });
   res.status(200).json({ success: true, data: user });
 });
  

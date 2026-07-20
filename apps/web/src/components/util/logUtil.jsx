@@ -39,32 +39,59 @@ export function getDetailRows(log) {
   };
 
   switch (log.action) {
-    case 'UPDATE_PRODUCT':
-      if (d.price != null) {
+    case 'UPDATE_PRODUCT': {
+      const diff = d.diff || {};
+      if (diff.name) {
         rows.push({
-          icon: ICONS.money,
-          label: 'Novo Preço',
-          value: `R$ ${Number(d.price).toFixed(2)}`,
-          variant: 'warning'
-        });
-      }
-      if (d.category != null) {
-        rows.push({
-          icon: ICONS.tag,
-          label: 'Nova Categoria',
-          value: categoryLabels[d.category] || d.category,
+          icon: ICONS.product,
+          label: 'Nome',
+          value: `${diff.name.old} ➔ ${diff.name.new}`,
           variant: 'neutral'
         });
       }
-      if (d.available != null) {
+      if (diff.price) {
+        rows.push({
+          icon: ICONS.money,
+          label: 'Preço',
+          value: `R$ ${Number(diff.price.old).toFixed(2)} ➔ R$ ${Number(diff.price.new).toFixed(2)}`,
+          variant: 'warning'
+        });
+      }
+      if (diff.category) {
+        const oldCat = categoryLabels[diff.category.old] || diff.category.old;
+        const newCat = categoryLabels[diff.category.new] || diff.category.new;
+        rows.push({
+          icon: ICONS.tag,
+          label: 'Categoria',
+          value: `${oldCat} ➔ ${newCat}`,
+          variant: 'neutral'
+        });
+      }
+      if (diff.available) {
+        const oldStatus = diff.available.old ? 'Disponível' : 'Indisponível';
+        const newStatus = diff.available.new ? 'Disponível' : 'Indisponível';
         rows.push({
           icon: ICONS.info,
           label: 'Disponibilidade',
-          value: d.available ? 'Disponível' : 'Indisponível',
-          variant: d.available ? 'success' : 'danger'
+          value: `${oldStatus} ➔ ${newStatus}`,
+          variant: diff.available.new ? 'success' : 'danger'
         });
       }
+
+      // Compatibilidade retroativa para logs antigos sem objeto diff
+      if (!d.diff) {
+        if (d.price != null) {
+          rows.push({ icon: ICONS.money, label: 'Novo Preço', value: `R$ ${Number(d.price).toFixed(2)}`, variant: 'warning' });
+        }
+        if (d.category != null) {
+          rows.push({ icon: ICONS.tag, label: 'Nova Categoria', value: categoryLabels[d.category] || d.category, variant: 'neutral' });
+        }
+        if (d.available != null) {
+          rows.push({ icon: ICONS.info, label: 'Disponibilidade', value: d.available ? 'Disponível' : 'Indisponível', variant: d.available ? 'success' : 'danger' });
+        }
+      }
       break;
+    }
 
     case 'CREATE_PRODUCT':
       if (d.price != null) {
@@ -85,24 +112,28 @@ export function getDetailRows(log) {
       }
       break;
 
-    case 'UPDATE_USER':
-      if (d.role != null) {
-        rows.push({
-          icon: ICONS.person,
-          label: 'Novo Cargo',
-          value: d.role === 'ADMIN' ? 'Admin' : 'Garçom',
-          variant: 'warning'
-        });
+    case 'UPDATE_USER': {
+      const diff = d.diff || {};
+      if (diff.name) {
+        rows.push({ icon: ICONS.person, label: 'Nome', value: `${diff.name.old} ➔ ${diff.name.new}`, variant: 'neutral' });
       }
-      if (d.active != null) {
-        rows.push({
-          icon: ICONS.info,
-          label: 'Status',
-          value: d.active ? 'Ativo' : 'Inativo',
-          variant: d.active ? 'success' : 'danger'
-        });
+      if (diff.role) {
+        const oldR = diff.role.old === 'ADMIN' ? 'Admin' : 'Garçom';
+        const newR = diff.role.new === 'ADMIN' ? 'Admin' : 'Garçom';
+        rows.push({ icon: ICONS.person, label: 'Cargo', value: `${oldR} ➔ ${newR}`, variant: 'warning' });
+      }
+      if (diff.active) {
+        const oldA = diff.active.old ? 'Ativo' : 'Inativo';
+        const newA = diff.active.new ? 'Ativo' : 'Inativo';
+        rows.push({ icon: ICONS.info, label: 'Status', value: `${oldA} ➔ ${newA}`, variant: diff.active.new ? 'success' : 'danger' });
+      }
+
+      if (!d.diff) {
+        if (d.role != null) rows.push({ icon: ICONS.person, label: 'Novo Cargo', value: d.role === 'ADMIN' ? 'Admin' : 'Garçom', variant: 'warning' });
+        if (d.active != null) rows.push({ icon: ICONS.info, label: 'Status', value: d.active ? 'Ativo' : 'Inativo', variant: d.active ? 'success' : 'danger' });
       }
       break;
+    }
 
     case 'CREATE_USER':
       if (d.role != null) {

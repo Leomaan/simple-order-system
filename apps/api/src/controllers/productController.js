@@ -21,26 +21,33 @@ export const getById = asyncHandler(async (req, res) => {
  
 export const update = asyncHandler(async (req, res) => {
   const oldProduct = await productService.findById(req.params.id);
-  const oldVal = oldProduct.toJSON();
+  const oldVal = {
+    name: String(oldProduct.name),
+    price: Number(oldProduct.price),
+    category: String(oldProduct.category),
+    available: Boolean(oldProduct.available)
+  };
 
   const product = await productService.updateProduct(req.params.id, req.body);
-  const newVal = product.toJSON();
+  const newVal = {
+    name: String(product.name),
+    price: Number(product.price),
+    category: String(product.category),
+    available: Boolean(product.available)
+  };
 
-  // Guarda apenas os campos que realmente mudaram
-  const changes = { name: newVal.name };
-
-  if (req.body.price !== undefined && Number(oldVal.price) !== Number(newVal.price)) {
-    changes.price = Number(newVal.price);
+  const diff = {};
+  if (req.body.price !== undefined && oldVal.price !== newVal.price) {
+    diff.price = { old: oldVal.price, new: newVal.price };
   }
-  if (req.body.available !== undefined && Boolean(oldVal.available) !== Boolean(newVal.available)) {
-    changes.available = Boolean(newVal.available);
+  if (req.body.available !== undefined && oldVal.available !== newVal.available) {
+    diff.available = { old: oldVal.available, new: newVal.available };
   }
   if (req.body.category !== undefined && oldVal.category !== newVal.category) {
-    changes.category = newVal.category;
+    diff.category = { old: oldVal.category, new: newVal.category };
   }
   if (req.body.name !== undefined && oldVal.name !== newVal.name) {
-    changes.name = newVal.name;
-    changes.oldName = oldVal.name;
+    diff.name = { old: oldVal.name, new: newVal.name };
   }
 
   await log({ 
@@ -48,7 +55,7 @@ export const update = asyncHandler(async (req, res) => {
     action: 'UPDATE_PRODUCT', 
     entity: 'Product', 
     entityId: product.id, 
-    details: changes 
+    details: { name: newVal.name, diff } 
   });
 
   res.status(200).json({ success: true, data: product });
