@@ -71,7 +71,7 @@ export default function OrderSection() {
       )}
 
       {/* Header */}
-      <header className="flex items-center justify-between mb-8">
+      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 md:mb-8">
         <div>
           <h2 className="text-2xl font-bold text-white tracking-tight">Painel de Pedidos</h2>
           <p className="text-neutral-500 text-sm">Gerencie o fluxo de mesas e consumo em tempo real</p>
@@ -79,7 +79,7 @@ export default function OrderSection() {
         <Button
           onClick={() => handleOpenForm()}
           variant="primary"
-          className="flex items-center gap-2"
+          className="w-full sm:w-auto py-3 px-6 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-orange-500/10"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
@@ -92,7 +92,7 @@ export default function OrderSection() {
       {(showForm || editing) && (
         <form 
           onSubmit={handleSubmit} 
-          className="glass-panel border border-orange-500/20 rounded-2xl p-6 mb-8 flex flex-col md:flex-row items-end gap-4 animate-in slide-in-from-top-4 duration-300"
+          className="glass-panel border border-orange-500/20 rounded-2xl p-5 mb-8 flex flex-col sm:flex-row sm:items-end gap-4 animate-in slide-in-from-top-4 duration-300"
         >
           <div className="flex-1 w-full">
             <Input
@@ -105,16 +105,18 @@ export default function OrderSection() {
               required
             />
           </div>
-          <div className="flex gap-2 w-full md:w-auto shrink-0 justify-end mt-2 md:mt-0">
+          <div className="flex gap-2 w-full sm:w-auto shrink-0 justify-end">
             <Button 
               variant="ghost" 
               onClick={() => { setShowForm(false); setEditing(null); }}
+              className="h-[44px] px-4 text-xs font-semibold"
             >
               Cancelar
             </Button>
             <Button 
               type="submit" 
               loading={saving}
+              className="h-[44px] px-6 text-xs font-bold uppercase tracking-wider shadow-md shadow-orange-500/10"
             >
               {editing ? 'Atualizar' : 'Abrir Pedido'}
             </Button>

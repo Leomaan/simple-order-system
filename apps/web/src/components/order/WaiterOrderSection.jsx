@@ -101,9 +101,9 @@ export default function WaiterOrderSection() {
       {showForm && (
         <form 
           onSubmit={handleCreate} 
-          className="glass-panel border border-neutral-800 rounded-2xl p-6 mb-8 flex flex-col md:flex-row items-end gap-4 animate-in slide-in-from-top-4 duration-300"
+          className="glass-panel border border-neutral-800 rounded-2xl p-5 mb-8 flex flex-col sm:flex-row sm:items-end gap-4 animate-in slide-in-from-top-4 duration-300"
         >
-          <div className="flex-1 w-full md:max-w-xs">
+          <div className="flex-1 w-full">
             <Input
               type="number"
               label="Número da mesa"
@@ -119,7 +119,7 @@ export default function WaiterOrderSection() {
           <Button 
             type="submit" 
             loading={saving}
-            className="w-full md:w-auto mt-2 md:mt-0"
+            className="w-full sm:w-auto h-[44px] px-6 text-xs font-bold uppercase tracking-wider shrink-0 shadow-md shadow-orange-500/10"
           >
             Abrir mesa
           </Button>
