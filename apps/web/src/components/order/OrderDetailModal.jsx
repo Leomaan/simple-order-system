@@ -187,9 +187,8 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
           </div>
 
           {/* Sub-barra destacada com data e hora */}
-          <div className="bg-neutral-950/80 border border-neutral-850/80 rounded-xl px-3.5 py-2 flex items-center justify-between text-xs text-neutral-400">
+          <div className="bg-neutral-950/80 border border-neutral-850/80 rounded-xl px-3.5 py-2 text-xs text-neutral-400">
             <span className="font-medium">Aberto em: <strong className="text-white font-semibold">{new Date(orderDetails?.createdAt || order.createdAt).toLocaleString('pt-BR')}</strong></span>
-            <span className="text-orange-400 font-bold text-[11px] uppercase tracking-wider">Garçom Online</span>
           </div>
         </header>
 
