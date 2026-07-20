@@ -20,8 +20,37 @@ export const getById = asyncHandler(async (req, res) => {
 });
  
 export const update = asyncHandler(async (req, res) => {
+  const oldProduct = await productService.findById(req.params.id);
+  const oldVal = oldProduct.toJSON();
+
   const product = await productService.updateProduct(req.params.id, req.body);
-  await log({ user: req.user, action: 'UPDATE_PRODUCT', entity: 'Product', entityId: product.id, details: req.body });
+  const newVal = product.toJSON();
+
+  // Guarda apenas os campos que realmente mudaram
+  const changes = { name: newVal.name };
+
+  if (req.body.price !== undefined && Number(oldVal.price) !== Number(newVal.price)) {
+    changes.price = Number(newVal.price);
+  }
+  if (req.body.available !== undefined && Boolean(oldVal.available) !== Boolean(newVal.available)) {
+    changes.available = Boolean(newVal.available);
+  }
+  if (req.body.category !== undefined && oldVal.category !== newVal.category) {
+    changes.category = newVal.category;
+  }
+  if (req.body.name !== undefined && oldVal.name !== newVal.name) {
+    changes.name = newVal.name;
+    changes.oldName = oldVal.name;
+  }
+
+  await log({ 
+    user: req.user, 
+    action: 'UPDATE_PRODUCT', 
+    entity: 'Product', 
+    entityId: product.id, 
+    details: changes 
+  });
+
   res.status(200).json({ success: true, data: product });
 });
  
