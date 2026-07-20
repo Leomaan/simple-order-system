@@ -74,51 +74,53 @@ export default function ProductView() {
             <p className="text-neutral-550 font-medium">Nenhum produto cadastrado nesta categoria.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
             {sortedProducts.map((p) => {
               const IconComponent = categoryIcon[p.category] || Utensils;
               return (
                 <div
                   key={p.id}
-                  className={`glass-card rounded-2xl p-4 sm:p-5 flex flex-col gap-3 transition-all duration-200 ${
+                  className={`glass-card rounded-2xl p-4 flex flex-col justify-between gap-3 transition-all duration-200 min-h-[140px] ${
                     p.available
                       ? 'border-neutral-850 hover:border-neutral-700'
                       : 'border-neutral-900/55 opacity-40 select-none'
                   }`}
                 >
                   {/* Linha Superior: Ícone, Nome, Categoria e Preço */}
-                  <div className="flex items-start justify-between gap-3 w-full">
-                    <div className="flex items-start gap-3 min-w-0 flex-1">
-                      <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-neutral-800/80 to-neutral-900/80 border border-neutral-800 flex items-center justify-center text-orange-400 shrink-0 shadow-inner mt-0.5">
-                        <IconComponent size={18} />
+                  <div>
+                    <div className="flex items-start justify-between gap-2 w-full mb-2">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-neutral-800/80 to-neutral-900/80 border border-neutral-800 flex items-center justify-center text-orange-400 shrink-0 shadow-inner">
+                          <IconComponent size={16} />
+                        </div>
+
+                        <div className="min-w-0">
+                          <h3 className="text-white font-bold text-sm leading-snug line-clamp-2">{p.name}</h3>
+                          <p className="text-neutral-550 text-[9px] uppercase tracking-wider mt-0.5 font-bold">
+                            {categoryLabel[p.category]}
+                          </p>
+                        </div>
                       </div>
 
-                      <div className="min-w-0 flex-1">
-                        <h3 className="text-white font-bold text-base leading-tight break-words">{p.name}</h3>
-                        <p className="text-neutral-550 text-[10px] uppercase tracking-wider mt-1 font-bold">
-                          {categoryLabel[p.category]}
-                        </p>
+                      <div className="text-right shrink-0 select-none">
+                        <span className="text-orange-400 font-black text-sm sm:text-base whitespace-nowrap block">
+                          R$ {Number(p.price).toFixed(2)}
+                        </span>
                       </div>
                     </div>
 
-                    <div className="text-right shrink-0 select-none">
-                      <span className="text-orange-400 font-black text-base sm:text-lg whitespace-nowrap block">
-                        R$ {Number(p.price).toFixed(2)}
-                      </span>
-                    </div>
+                    {/* Descrição */}
+                    {p.description && (
+                      <p className="text-neutral-400 text-xs leading-relaxed line-clamp-2 bg-neutral-950/30 p-2 rounded-xl border border-neutral-850/40 mt-1">
+                        {p.description}
+                      </p>
+                    )}
                   </div>
-
-                  {/* Descrição */}
-                  {p.description && (
-                    <p className="text-neutral-400 text-xs sm:text-sm leading-relaxed line-clamp-3 bg-neutral-950/30 p-2.5 rounded-xl border border-neutral-850/40">
-                      {p.description}
-                    </p>
-                  )}
 
                   {/* Badge de status caso esteja indisponível */}
                   {!p.available && (
                     <div className="pt-2 border-t border-neutral-850/60">
-                      <span className="text-[10px] font-bold uppercase tracking-wider bg-red-500/15 text-red-400 border border-red-500/20 px-2.5 py-1 rounded-lg inline-block">
+                      <span className="text-[9px] font-bold uppercase tracking-wider bg-red-500/15 text-red-400 border border-red-500/20 px-2 py-0.5 rounded-lg inline-block">
                         ● Indisponível no momento
                       </span>
                     </div>

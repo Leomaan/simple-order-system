@@ -145,51 +145,51 @@ export default function WaiterOrderSection() {
 
       {/* Lista */}
       {loading ? (
-        <div className="space-y-3">
-          {[1, 2, 3].map(i => <div key={i} className="h-24 bg-neutral-900/50 border border-neutral-800 rounded-2xl animate-pulse" />)}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+          {[1, 2, 3, 4].map(i => <div key={i} className="h-32 bg-neutral-900/50 border border-neutral-800 rounded-2xl animate-pulse" />)}
         </div>
       ) : orders.length === 0 ? (
         <div className="text-center py-20 bg-neutral-900/10 rounded-3xl border border-dashed border-neutral-800">
           <p className="text-neutral-500 font-medium">Nenhum pedido encontrado nesta categoria.</p>
         </div>
       ) : (
-        <div className="flex flex-col gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
           {orders.map((o) => {
             const orderTotal = o.OrderItems?.reduce((sum, item) => sum + Number(item.totalPrice), 0) || 0;
             return (
               <div
                 key={o.id}
                 onClick={() => o.status === 'OPEN' ? setSelectedOrder(o) : null}
-                className={`glass-card glass-card-hover rounded-2xl p-4 sm:p-5 flex flex-col gap-3 transition-all ${
+                className={`glass-card glass-card-hover rounded-2xl p-3.5 sm:p-4 flex flex-col justify-between gap-3 transition-all min-h-[130px] ${
                   o.status === 'OPEN' ? 'cursor-pointer hover:border-neutral-600' : 'opacity-70'
                 }`}
               >
                 {/* Linha Superior: Mesa + Status */}
                 <div className="flex items-center justify-between w-full">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-400 font-black text-sm shrink-0">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-400 font-black text-xs shrink-0">
                       {o.table}
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-white font-extrabold text-base leading-tight whitespace-nowrap">Mesa {o.table}</span>
-                      <span className="text-neutral-550 text-[10px] uppercase tracking-wider font-semibold">
+                      <span className="text-white font-extrabold text-sm sm:text-base leading-tight whitespace-nowrap">Mesa {o.table}</span>
+                      <span className="text-neutral-550 text-[9px] uppercase tracking-wider font-semibold">
                         #{o.id} · {new Date(o.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
                   </div>
 
-                  <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg border whitespace-nowrap ${statusLabel[o.status].color}`}>
+                  <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-lg border whitespace-nowrap ${statusLabel[o.status].color}`}>
                     {statusLabel[o.status].label}
                   </span>
                 </div>
 
                 {/* Linha Inferior: Total & Ações */}
-                <div className="flex items-center justify-between pt-3 border-t border-neutral-850/60 mt-1">
+                <div className="flex items-center justify-between pt-2.5 border-t border-neutral-850/60 mt-1">
                   <div>
                     {orderTotal > 0 ? (
-                      <div className="flex items-baseline gap-1.5">
-                        <span className="text-neutral-550 text-[10px] font-bold uppercase">Total:</span>
-                        <span className="text-emerald-400 font-black text-base sm:text-lg">
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-neutral-550 text-[9px] font-bold uppercase">Total:</span>
+                        <span className="text-emerald-400 font-black text-sm sm:text-base">
                           {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(orderTotal)}
                         </span>
                       </div>
@@ -198,19 +198,16 @@ export default function WaiterOrderSection() {
                     )}
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
                     {o.status === 'OPEN' && (
-                      <>
-                        <span className="hidden sm:inline text-orange-400 text-[11px] font-bold">Gerenciar itens →</span>
-                        <Button
-                          variant="ghost"
-                          onClick={(e) => { e.stopPropagation(); setDeleting(o.id); }}
-                          className="text-xs py-1.5 px-3 text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20 rounded-xl"
-                          title="Excluir mesa vazia"
-                        >
-                          Excluir
-                        </Button>
-                      </>
+                      <Button
+                        variant="ghost"
+                        onClick={(e) => { e.stopPropagation(); setDeleting(o.id); }}
+                        className="text-[11px] py-1 px-2.5 text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20 rounded-xl"
+                        title="Excluir mesa vazia"
+                      >
+                        Excluir
+                      </Button>
                     )}
                   </div>
                 </div>

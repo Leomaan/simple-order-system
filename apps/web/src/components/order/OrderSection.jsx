@@ -142,15 +142,17 @@ export default function OrderSection() {
       </div>
 
       {/* Lista */}
-      <div className="space-y-3">
-        {loading ? (
-          [1, 2, 3].map(i => <div key={i} className="h-20 bg-neutral-900/50 border border-neutral-800 rounded-2xl animate-pulse" />)
-        ) : orders.length === 0 ? (
-          <div className="text-center py-20 bg-neutral-900/10 rounded-3xl border border-dashed border-neutral-800">
-            <p className="text-neutral-550 font-medium">Nenhum pedido encontrado nesta categoria.</p>
-          </div>
-        ) : (
-          orders.map(o => (
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+          {[1, 2, 3, 4].map(i => <div key={i} className="h-32 bg-neutral-900/50 border border-neutral-800 rounded-2xl animate-pulse" />)}
+        </div>
+      ) : orders.length === 0 ? (
+        <div className="text-center py-20 bg-neutral-900/10 rounded-3xl border border-dashed border-neutral-800">
+          <p className="text-neutral-550 font-medium">Nenhum pedido encontrado nesta categoria.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+          {orders.map(o => (
             <OrderCard 
               key={o.id} 
               order={o} 
@@ -158,9 +160,9 @@ export default function OrderSection() {
               onEdit={handleOpenForm}
               onDelete={setDeleting}
             />
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* Paginação */}
       {totalPages > 1 && (

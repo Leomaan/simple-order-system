@@ -253,9 +253,9 @@ export default function ProductSection() {
 
       {/* Lista */}
       {loading ? (
-        <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-28 bg-neutral-900/50 border border-neutral-800 rounded-2xl animate-pulse" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-36 bg-neutral-900/50 border border-neutral-800 rounded-2xl animate-pulse" />
           ))}
         </div>
       ) : sortedProducts.length === 0 ? (
@@ -263,45 +263,46 @@ export default function ProductSection() {
           <p className="text-neutral-500 font-medium">Nenhum produto cadastrado nesta categoria.</p>
         </div>
       ) : (
-        <div className="flex flex-col gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
           {sortedProducts.map((p) => {
             const IconComponent = categoryIcon[p.category] || Utensils;
             return (
               <div
                 key={p.id}
-                className="glass-card glass-card-hover rounded-2xl p-4 sm:p-5 flex flex-col gap-3 transition-all"
+                className="glass-card glass-card-hover rounded-2xl p-4 flex flex-col justify-between gap-3 transition-all min-h-[150px]"
               >
                 {/* Linha Superior: Ícone, Nome, Categoria e Preço */}
-                <div className="flex items-start justify-between gap-3 w-full">
-                  <div className="flex items-start gap-3 min-w-0 flex-1">
-                    <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-neutral-800/80 to-neutral-900/80 border border-neutral-800 flex items-center justify-center text-orange-400 shrink-0 shadow-inner mt-0.5">
-                      <IconComponent size={18} />
+                <div>
+                  <div className="flex items-start justify-between gap-2 w-full mb-2">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-neutral-800/80 to-neutral-900/80 border border-neutral-800 flex items-center justify-center text-orange-400 shrink-0 shadow-inner">
+                        <IconComponent size={16} />
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="text-white font-bold text-sm leading-snug line-clamp-2">{p.name}</h3>
+                        <p className="text-neutral-550 text-[9px] uppercase tracking-wider font-bold mt-0.5">
+                          {categoryLabel[p.category]}
+                        </p>
+                      </div>
                     </div>
 
-                    <div className="min-w-0 flex-1">
-                      <h3 className="text-white font-bold text-base leading-tight break-words">{p.name}</h3>
-                      <p className="text-neutral-550 text-[10px] uppercase tracking-wider mt-1 font-bold">
-                        {categoryLabel[p.category]}
-                      </p>
+                    <div className="text-right shrink-0 select-none">
+                      <span className="text-orange-400 font-black text-sm sm:text-base whitespace-nowrap block">
+                        R$ {Number(p.price).toFixed(2)}
+                      </span>
                     </div>
                   </div>
 
-                  <div className="text-right shrink-0 select-none">
-                    <span className="text-orange-400 font-black text-base sm:text-lg whitespace-nowrap block">
-                      R$ {Number(p.price).toFixed(2)}
-                    </span>
-                  </div>
+                  {/* Descrição */}
+                  {p.description && (
+                    <p className="text-neutral-400 text-xs leading-relaxed line-clamp-2 bg-neutral-950/30 p-2 rounded-xl border border-neutral-850/40 mt-1">
+                      {p.description}
+                    </p>
+                  )}
                 </div>
 
-                {/* Descrição */}
-                {p.description && (
-                  <p className="text-neutral-400 text-xs sm:text-sm leading-relaxed line-clamp-3 bg-neutral-950/30 p-2.5 rounded-xl border border-neutral-850/40">
-                    {p.description}
-                  </p>
-                )}
-
                 {/* Linha Inferior: Badge de Disponibilidade + Ações */}
-                <div className="flex items-center justify-between pt-3 border-t border-neutral-850/60 mt-1 flex-wrap gap-2">
+                <div className="flex items-center justify-between pt-2.5 border-t border-neutral-850/60 mt-1 flex-wrap gap-1.5">
                   <button
                     type="button"
                     title="Clique para alternar a disponibilidade"
@@ -312,7 +313,7 @@ export default function ProductSection() {
                         setError(err.response?.data?.message || "Erro ao alterar disponibilidade");
                       }
                     }}
-                    className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-lg border transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center gap-1.5 ${
+                    className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-lg border transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center gap-1 ${
                       p.available 
                         ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20" 
                         : "bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20"
@@ -322,18 +323,18 @@ export default function ProductSection() {
                     <span>{p.available ? "Disponível" : "Indisponível"}</span>
                   </button>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1">
                     <Button
                       variant="ghost"
                       onClick={() => openEdit(p)}
-                      className="text-xs py-1.5 px-3 border border-neutral-800 hover:border-neutral-700"
+                      className="text-[11px] py-1 px-2.5 border border-neutral-800 hover:border-neutral-700"
                     >
                       Editar
                     </Button>
                     <Button
                       variant="ghost"
                       onClick={() => setDeleting(p.id)}
-                      className="text-xs py-1.5 px-3 text-red-450 hover:text-red-400 hover:bg-red-500/10 border border-red-500/20"
+                      className="text-[11px] py-1 px-2.5 text-red-450 hover:text-red-400 hover:bg-red-500/10 border border-red-500/20"
                     >
                       Excluir
                     </Button>
