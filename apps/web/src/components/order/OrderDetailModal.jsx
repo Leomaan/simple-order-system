@@ -149,34 +149,48 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
       >
         
         {/* Header */}
-        <header className="flex items-center justify-between border-b border-neutral-800 pb-4">
-          <div>
+        <header className="flex flex-col gap-3 border-b border-neutral-800 pb-4">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <h3 className="text-white font-bold text-xl tracking-tight">Mesa {order.table}</h3>
+              <div className="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-400 font-black text-sm shrink-0">
+                {order.table}
+              </div>
+              <div>
+                <h3 className="text-white font-black text-xl tracking-tight leading-tight">Mesa {order.table}</h3>
+                <p className="text-neutral-500 text-xs font-semibold">Pedido #{order.id}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
               {currentStatus === 'OPEN' && (
-                <span className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold px-2.5 py-0.5 rounded-full text-[10px] uppercase tracking-wider select-none animate-pulse">
+                <span className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold px-3 py-1 rounded-xl text-xs uppercase tracking-wider select-none animate-pulse">
                   ● Aberto
                 </span>
               )}
               {currentStatus === 'CLOSED' && (
-                <span className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 font-bold px-2.5 py-0.5 rounded-full text-[10px] uppercase tracking-wider select-none animate-pulse">
+                <span className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 font-bold px-3 py-1 rounded-xl text-xs uppercase tracking-wider select-none animate-pulse">
                   ● Aguardando Pagamento
                 </span>
               )}
               {currentStatus === 'PAID' && (
-                <span className="flex items-center gap-1.5 bg-blue-500/10 border border-blue-500/20 text-blue-400 font-bold px-2.5 py-0.5 rounded-full text-[10px] uppercase tracking-wider select-none">
+                <span className="flex items-center gap-1.5 bg-blue-500/10 border border-blue-500/20 text-blue-400 font-bold px-3 py-1 rounded-xl text-xs uppercase tracking-wider select-none">
                   ✓ Pago
                 </span>
               )}
+              <button 
+                onClick={onClose} 
+                className="text-neutral-450 hover:text-white text-3xl leading-none transition-colors cursor-pointer select-none p-1"
+              >
+                &times;
+              </button>
             </div>
-            <p className="text-neutral-550 text-xs mt-1">Pedido #{order.id} · Aberto em {new Date(orderDetails?.createdAt || order.createdAt).toLocaleString('pt-BR')}</p>
           </div>
-          <button 
-            onClick={onClose} 
-            className="text-neutral-450 hover:text-white text-3xl leading-none transition-colors cursor-pointer select-none"
-          >
-            &times;
-          </button>
+
+          {/* Sub-barra destacada com data e hora */}
+          <div className="bg-neutral-950/80 border border-neutral-850/80 rounded-xl px-3.5 py-2 flex items-center justify-between text-xs text-neutral-400">
+            <span className="font-medium">Aberto em: <strong className="text-white font-semibold">{new Date(orderDetails?.createdAt || order.createdAt).toLocaleString('pt-BR')}</strong></span>
+            <span className="text-orange-400 font-bold text-[11px] uppercase tracking-wider">Garçom Online</span>
+          </div>
         </header>
 
         {/* Tabs de navegação no mobile (Apenas se o pedido estiver aberto) */}
@@ -384,8 +398,8 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
                 />
               )}
 
-              {/* Grid de Produtos */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 max-h-[55vh] md:max-h-[58vh] overflow-y-auto pr-1">
+              {/* Grid de Produtos (3 cards por linha no mobile) */}
+              <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 max-h-[55vh] md:max-h-[58vh] overflow-y-auto pr-1">
                 {availableProducts.map((p) => {
                   const isAdding = addingProductId === p.id;
                   const canAdd = p.available && !isAdding;
@@ -395,10 +409,10 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
                       type="button"
                       disabled={!canAdd}
                       onClick={() => handleInstantAdd(p)}
-                      className={`text-left rounded-2xl border p-4 transition-all duration-200 flex flex-col justify-between min-h-[96px] md:min-h-[112px] h-auto group relative overflow-hidden ${
+                      className={`text-left rounded-2xl border p-2.5 sm:p-3.5 transition-all duration-150 flex flex-col justify-between min-h-[90px] sm:min-h-[105px] h-auto group relative overflow-hidden active:scale-95 ${
                         !p.available 
                           ? 'border-neutral-900 bg-neutral-950/40 opacity-40 select-none cursor-not-allowed'
-                          : 'border-neutral-850 bg-neutral-950 hover:border-orange-500/30 cursor-pointer active:scale-98'
+                          : 'border-neutral-850 bg-neutral-950 hover:border-orange-500/40 hover:shadow-md hover:shadow-orange-500/5 cursor-pointer'
                       }`}
                     >
                       {/* Efeito hover de fundo */}
@@ -406,23 +420,23 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
                         <span className="absolute inset-0 bg-orange-500/0 group-hover:bg-orange-500/5 transition-colors" />
                       )}
 
-                      <p className="text-white text-xs sm:text-sm font-bold line-clamp-2 w-full relative z-10 leading-snug">{p.name}</p>
-                      <div className="flex items-center justify-between w-full mt-2.5 relative z-10">
+                      <p className="text-white text-xs sm:text-sm font-bold line-clamp-2 w-full relative z-10 leading-tight break-words">{p.name}</p>
+                      <div className="flex items-center justify-between w-full mt-2 relative z-10">
                         {p.available ? (
                           <>
-                            <span className="text-orange-400 text-xs sm:text-sm font-bold">{formatPrice(p.price)}</span>
-                            <div className="w-8 h-8 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center justify-center text-orange-400 group-hover:bg-orange-500 group-hover:text-white group-hover:scale-105 transition-all duration-200 shrink-0">
+                            <span className="text-orange-400 text-xs font-bold whitespace-nowrap">{formatPrice(p.price)}</span>
+                            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center justify-center text-orange-400 group-hover:bg-orange-500 group-hover:text-white group-hover:scale-105 transition-all duration-200 shrink-0">
                               {isAdding ? (
-                                <Loader2 size={14} className="animate-spin text-white" />
+                                <Loader2 size={13} className="animate-spin text-white" />
                               ) : (
-                                <Plus size={14} />
+                                <Plus size={13} />
                               )}
                             </div>
                           </>
                         ) : (
                           <>
-                            <span className="text-neutral-550 text-xs sm:text-sm font-bold">{formatPrice(p.price)}</span>
-                            <span className="text-[9px] font-black uppercase tracking-wider bg-red-500/10 border border-red-500/20 text-red-400 px-2 py-1 rounded-md">
+                            <span className="text-neutral-550 text-xs font-bold whitespace-nowrap">{formatPrice(p.price)}</span>
+                            <span className="text-[8px] font-black uppercase tracking-wider bg-red-500/10 border border-red-500/20 text-red-400 px-1.5 py-0.5 rounded">
                               Sem Estoque
                             </span>
                           </>
