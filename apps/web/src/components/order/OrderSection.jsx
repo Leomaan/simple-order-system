@@ -143,7 +143,7 @@ export default function OrderSection() {
 
       {/* Lista */}
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3.5">
           {[1, 2, 3, 4].map(i => <div key={i} className="h-32 bg-neutral-900/50 border border-neutral-800 rounded-2xl animate-pulse" />)}
         </div>
       ) : orders.length === 0 ? (
@@ -151,7 +151,7 @@ export default function OrderSection() {
           <p className="text-neutral-550 font-medium">Nenhum pedido encontrado nesta categoria.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3.5">
           {orders.map(o => (
             <OrderCard 
               key={o.id} 

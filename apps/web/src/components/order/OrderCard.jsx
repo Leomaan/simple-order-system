@@ -8,39 +8,39 @@ export default function OrderCard({ order, onClick, onEdit, onDelete }) {
   return (
     <div
       onClick={() => onClick(order)}
-      className="group glass-card glass-card-hover rounded-2xl p-3.5 sm:p-4 flex flex-col justify-between gap-3 cursor-pointer transition-all min-h-[130px]"
+      className="group glass-card glass-card-hover rounded-2xl p-3 sm:p-3.5 flex flex-col justify-between gap-2.5 cursor-pointer transition-all min-h-[120px]"
     >
       {/* Top Row: Table badge + Status */}
-      <div className="flex items-center justify-between w-full">
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-500 font-extrabold text-xs select-none shrink-0">
+      <div className="flex items-center justify-between gap-1 w-full">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="w-8 h-8 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-500 font-extrabold text-xs select-none shrink-0">
             {order.table}
           </div>
-          <div className="flex flex-col">
-            <span className="text-white font-extrabold text-sm sm:text-base leading-tight whitespace-nowrap">Mesa {order.table}</span>
-            <span className="text-neutral-550 text-[9px] uppercase tracking-wider font-semibold">
+          <div className="flex flex-col min-w-0">
+            <span className="text-white font-extrabold text-xs sm:text-sm leading-tight whitespace-nowrap">Mesa {order.table}</span>
+            <span className="text-neutral-550 text-[9px] uppercase tracking-wider font-semibold truncate">
               #{order.id} · {new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
             </span>
           </div>
         </div>
 
-        <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-lg border whitespace-nowrap ${status.color}`}>
+        <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-lg border whitespace-nowrap shrink-0 ${status.color}`}>
           {status.label}
         </span>
       </div>
 
       {/* Bottom Row: Total & Actions */}
-      <div className="flex items-center justify-between pt-2.5 border-t border-neutral-850/60 mt-1">
+      <div className="flex items-center justify-between pt-2 border-t border-neutral-850/60 mt-0.5">
         <div>
           {orderTotal > 0 ? (
             <div className="flex items-baseline gap-1">
               <span className="text-neutral-550 text-[9px] font-bold uppercase">Total:</span>
-              <span className="text-emerald-400 font-black text-sm sm:text-base">
+              <span className="text-emerald-400 font-bold text-xs sm:text-sm">
                 {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(orderTotal)}
               </span>
             </div>
           ) : (
-            <span className="text-neutral-550 text-xs italic">Sem consumo</span>
+            <span className="text-neutral-550 text-[10px] italic">Sem consumo</span>
           )}
         </div>
 

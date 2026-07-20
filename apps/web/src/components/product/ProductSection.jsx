@@ -253,9 +253,9 @@ export default function ProductSection() {
 
       {/* Lista */}
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3.5">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-36 bg-neutral-900/50 border border-neutral-800 rounded-2xl animate-pulse" />
+            <div key={i} className="h-44 bg-neutral-900/50 border border-neutral-800 rounded-2xl animate-pulse" />
           ))}
         </div>
       ) : sortedProducts.length === 0 ? (
@@ -263,46 +263,43 @@ export default function ProductSection() {
           <p className="text-neutral-500 font-medium">Nenhum produto cadastrado nesta categoria.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3.5">
           {sortedProducts.map((p) => {
             const IconComponent = categoryIcon[p.category] || Utensils;
             return (
               <div
                 key={p.id}
-                className="glass-card glass-card-hover rounded-2xl p-4 flex flex-col justify-between gap-3 transition-all min-h-[150px]"
+                className="glass-card glass-card-hover rounded-2xl p-3 sm:p-4 flex flex-col justify-between gap-2.5 transition-all min-h-[165px]"
               >
                 {/* Linha Superior: Ícone, Nome, Categoria e Preço */}
-                <div>
-                  <div className="flex items-start justify-between gap-2 w-full mb-2">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-neutral-800/80 to-neutral-900/80 border border-neutral-800 flex items-center justify-center text-orange-400 shrink-0 shadow-inner">
-                        <IconComponent size={16} />
-                      </div>
-                      <div className="min-w-0">
-                        <h3 className="text-white font-bold text-sm leading-snug line-clamp-2">{p.name}</h3>
-                        <p className="text-neutral-550 text-[9px] uppercase tracking-wider font-bold mt-0.5">
-                          {categoryLabel[p.category]}
-                        </p>
-                      </div>
+                <div className="flex flex-col gap-1.5 min-w-0">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-neutral-800/80 to-neutral-900/80 border border-neutral-800 flex items-center justify-center text-orange-400 shrink-0 shadow-inner">
+                      <IconComponent size={15} />
                     </div>
 
-                    <div className="text-right shrink-0 select-none">
-                      <span className="text-orange-400 font-black text-sm sm:text-base whitespace-nowrap block">
-                        R$ {Number(p.price).toFixed(2)}
-                      </span>
-                    </div>
+                    <span className="text-orange-400 font-bold text-xs sm:text-sm whitespace-nowrap block">
+                      R$ {Number(p.price).toFixed(2)}
+                    </span>
+                  </div>
+
+                  <div>
+                    <h3 className="text-white font-bold text-xs sm:text-sm leading-snug line-clamp-2">{p.name}</h3>
+                    <p className="text-neutral-550 text-[9px] uppercase tracking-wider font-bold mt-0.5">
+                      {categoryLabel[p.category]}
+                    </p>
                   </div>
 
                   {/* Descrição */}
                   {p.description && (
-                    <p className="text-neutral-400 text-xs leading-relaxed line-clamp-2 bg-neutral-950/30 p-2 rounded-xl border border-neutral-850/40 mt-1">
+                    <p className="text-neutral-400 text-[10px] leading-snug line-clamp-2 bg-neutral-950/30 p-1.5 rounded-lg border border-neutral-850/40">
                       {p.description}
                     </p>
                   )}
                 </div>
 
-                {/* Linha Inferior: Badge de Disponibilidade + Ações */}
-                <div className="flex items-center justify-between pt-2.5 border-t border-neutral-850/60 mt-1 flex-wrap gap-1.5">
+                {/* Área Inferior: Badge Ocupando Largura Total + Botões Centralizados */}
+                <div className="flex flex-col gap-2 pt-2 border-t border-neutral-850/60 mt-0.5">
                   <button
                     type="button"
                     title="Clique para alternar a disponibilidade"
@@ -313,7 +310,7 @@ export default function ProductSection() {
                         setError(err.response?.data?.message || "Erro ao alterar disponibilidade");
                       }
                     }}
-                    className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-lg border transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center gap-1 ${
+                    className={`w-full text-[9px] font-bold uppercase tracking-wider py-1 px-2 rounded-lg border transition-all hover:scale-[1.02] active:scale-95 cursor-pointer flex items-center justify-center gap-1.5 ${
                       p.available 
                         ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20" 
                         : "bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20"
@@ -323,18 +320,18 @@ export default function ProductSection() {
                     <span>{p.available ? "Disponível" : "Indisponível"}</span>
                   </button>
 
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center justify-center gap-1.5 w-full">
                     <Button
                       variant="ghost"
                       onClick={() => openEdit(p)}
-                      className="text-[11px] py-1 px-2.5 border border-neutral-800 hover:border-neutral-700"
+                      className="flex-1 text-[10px] py-1 px-2 border border-neutral-800 hover:border-neutral-700 text-center"
                     >
                       Editar
                     </Button>
                     <Button
                       variant="ghost"
                       onClick={() => setDeleting(p.id)}
-                      className="text-[11px] py-1 px-2.5 text-red-450 hover:text-red-400 hover:bg-red-500/10 border border-red-500/20"
+                      className="flex-1 text-[10px] py-1 px-2 text-red-450 hover:text-red-400 hover:bg-red-500/10 border border-red-500/20 text-center"
                     >
                       Excluir
                     </Button>

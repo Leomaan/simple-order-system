@@ -74,44 +74,40 @@ export default function ProductView() {
             <p className="text-neutral-550 font-medium">Nenhum produto cadastrado nesta categoria.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3.5">
             {sortedProducts.map((p) => {
               const IconComponent = categoryIcon[p.category] || Utensils;
               return (
                 <div
                   key={p.id}
-                  className={`glass-card rounded-2xl p-4 flex flex-col justify-between gap-3 transition-all duration-200 min-h-[140px] ${
+                  className={`glass-card rounded-2xl p-3 sm:p-4 flex flex-col justify-between gap-2.5 transition-all duration-200 min-h-[140px] ${
                     p.available
                       ? 'border-neutral-850 hover:border-neutral-700'
                       : 'border-neutral-900/55 opacity-40 select-none'
                   }`}
                 >
                   {/* Linha Superior: Ícone, Nome, Categoria e Preço */}
-                  <div>
-                    <div className="flex items-start justify-between gap-2 w-full mb-2">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-neutral-800/80 to-neutral-900/80 border border-neutral-800 flex items-center justify-center text-orange-400 shrink-0 shadow-inner">
-                          <IconComponent size={16} />
-                        </div>
-
-                        <div className="min-w-0">
-                          <h3 className="text-white font-bold text-sm leading-snug line-clamp-2">{p.name}</h3>
-                          <p className="text-neutral-550 text-[9px] uppercase tracking-wider mt-0.5 font-bold">
-                            {categoryLabel[p.category]}
-                          </p>
-                        </div>
+                  <div className="flex flex-col gap-1.5 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-neutral-800/80 to-neutral-900/80 border border-neutral-800 flex items-center justify-center text-orange-400 shrink-0 shadow-inner">
+                        <IconComponent size={15} />
                       </div>
 
-                      <div className="text-right shrink-0 select-none">
-                        <span className="text-orange-400 font-black text-sm sm:text-base whitespace-nowrap block">
-                          R$ {Number(p.price).toFixed(2)}
-                        </span>
-                      </div>
+                      <span className="text-orange-400 font-bold text-xs sm:text-sm whitespace-nowrap block">
+                        R$ {Number(p.price).toFixed(2)}
+                      </span>
+                    </div>
+
+                    <div>
+                      <h3 className="text-white font-bold text-xs sm:text-sm leading-snug line-clamp-2">{p.name}</h3>
+                      <p className="text-neutral-550 text-[9px] uppercase tracking-wider mt-0.5 font-bold">
+                        {categoryLabel[p.category]}
+                      </p>
                     </div>
 
                     {/* Descrição */}
                     {p.description && (
-                      <p className="text-neutral-400 text-xs leading-relaxed line-clamp-2 bg-neutral-950/30 p-2 rounded-xl border border-neutral-850/40 mt-1">
+                      <p className="text-neutral-400 text-[10px] leading-snug line-clamp-2 bg-neutral-950/30 p-1.5 rounded-lg border border-neutral-850/40">
                         {p.description}
                       </p>
                     )}
@@ -120,7 +116,7 @@ export default function ProductView() {
                   {/* Badge de status caso esteja indisponível */}
                   {!p.available && (
                     <div className="pt-2 border-t border-neutral-850/60">
-                      <span className="text-[9px] font-bold uppercase tracking-wider bg-red-500/15 text-red-400 border border-red-500/20 px-2 py-0.5 rounded-lg inline-block">
+                      <span className="w-full text-[9px] font-bold uppercase tracking-wider bg-red-500/15 text-red-400 border border-red-500/20 px-2 py-1 rounded-lg flex items-center justify-center gap-1">
                         ● Indisponível no momento
                       </span>
                     </div>
