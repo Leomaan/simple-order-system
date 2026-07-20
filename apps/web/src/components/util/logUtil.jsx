@@ -102,7 +102,10 @@ export function formatRelativeTime(dateStr) {
   const diffSec = Math.max(0, Math.floor(diffMs / 1000));
   const diffMin = Math.floor(diffSec / 60);
   const diffHr = Math.floor(diffMin / 60);
-  const diffDays = Math.floor(diffHr / 24);
+
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const dateStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const calendarDays = Math.round((todayStart - dateStart) / (1000 * 60 * 60 * 24));
 
   let relative = '';
   if (diffSec < 10) {
@@ -113,14 +116,12 @@ export function formatRelativeTime(dateStr) {
     relative = 'há 1 min';
   } else if (diffMin < 60) {
     relative = `há ${diffMin} min`;
-  } else if (diffHr === 1) {
-    relative = 'há 1 hora';
-  } else if (diffHr < 24) {
-    relative = `há ${diffHr} horas`;
-  } else if (diffDays === 1) {
+  } else if (calendarDays === 0) {
+    relative = diffHr === 1 ? 'há 1 hora' : `há ${diffHr} horas`;
+  } else if (calendarDays === 1) {
     relative = 'ontem';
   } else {
-    relative = `há ${diffDays} dias`;
+    relative = `há ${calendarDays} dias`;
   }
 
   const day = String(date.getDate()).padStart(2, '0');

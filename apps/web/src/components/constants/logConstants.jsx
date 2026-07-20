@@ -106,13 +106,19 @@ export function getActionStyle(action) {
 }
 
 export function formatRelativeTime(dateStr) {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60_000);
-  const hours = Math.floor(diff / 3_600_000);
-  const days = Math.floor(diff / 86_400_000);
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const mins = Math.floor(diffMs / 60_000);
+  const hours = Math.floor(mins / 60);
 
-  if (mins < 1) return { relative: 'agora', full: new Date(dateStr).toLocaleString('pt-BR') };
-  if (mins < 60) return { relative: `${mins}m atrás`, full: new Date(dateStr).toLocaleString('pt-BR') };
-  if (hours < 24) return { relative: `${hours}h atrás`, full: new Date(dateStr).toLocaleString('pt-BR') };
-  return { relative: `${days}d atrás`, full: new Date(dateStr).toLocaleString('pt-BR') };
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const dateStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const calendarDays = Math.round((todayStart - dateStart) / (1000 * 60 * 60 * 24));
+
+  if (mins < 1) return { relative: 'agora', full: date.toLocaleString('pt-BR') };
+  if (mins < 60) return { relative: `${mins}m atrás`, full: date.toLocaleString('pt-BR') };
+  if (calendarDays === 0) return { relative: `${hours}h atrás`, full: date.toLocaleString('pt-BR') };
+  if (calendarDays === 1) return { relative: 'ontem', full: date.toLocaleString('pt-BR') };
+  return { relative: `${calendarDays}d atrás`, full: date.toLocaleString('pt-BR') };
 }
