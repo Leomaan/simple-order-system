@@ -269,7 +269,7 @@ export default function ProductSection() {
             return (
               <div
                 key={p.id}
-                className="glass-card glass-card-hover rounded-2xl p-3 sm:p-4 flex flex-col justify-between gap-2.5 transition-all min-h-[165px]"
+                className="group glass-card glass-card-hover rounded-2xl p-3 sm:p-4 flex flex-col justify-between gap-2.5 transition-all min-h-[165px]"
               >
                 {/* Linha Superior: Ícone, Nome, Categoria e Preço */}
                 <div className="flex flex-col gap-1.5 min-w-0">
@@ -298,7 +298,7 @@ export default function ProductSection() {
                   )}
                 </div>
 
-                {/* Área Inferior: Badge Ocupando Largura Total + Botões Centralizados */}
+                {/* Área Inferior: Badge Ocupando Largura Total + Botões Aparecendo no Hover */}
                 <div className="flex flex-col gap-2 pt-2 border-t border-neutral-850/60 mt-0.5">
                   <button
                     type="button"
@@ -320,7 +320,7 @@ export default function ProductSection() {
                     <span>{p.available ? "Disponível" : "Indisponível"}</span>
                   </button>
 
-                  <div className="flex items-center justify-center gap-1.5 w-full">
+                  <div className="flex items-center justify-center gap-1.5 w-full sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200">
                     <Button
                       variant="ghost"
                       onClick={() => openEdit(p)}
