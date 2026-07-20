@@ -73,7 +73,7 @@ export default function ReportSection() {
       {/* Filtro de período */}
       <section className="glass-panel border border-neutral-800 rounded-2xl p-6 flex flex-col gap-6">
         <h3 className="text-white font-bold text-lg">Busca por Período</h3>
-        <form className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end">
+        <form className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-end">
           <Input
             type="date"
             label="Data Inicial (De)"
@@ -95,19 +95,20 @@ export default function ReportSection() {
               onChange={(e) => setStatusFilter(e.target.value)}
               className="w-full bg-neutral-900 border border-neutral-800 text-white rounded-xl py-2.5 px-4 text-sm outline-none focus:border-orange-500 transition-colors"
             >
-              <option value="">Todos</option>
+              <option value="">Todos os status</option>
               <option value="OPEN">Aberto</option>
               <option value="PAID">Pago</option>
               <option value="CLOSED">Fechado</option>
             </select>
           </div>
-          <div className="flex gap-2">
+
+          <div className="col-span-1 sm:col-span-2 lg:col-span-3 flex flex-col sm:flex-row gap-3 pt-2">
             <Button
               type="submit"
               onClick={handleRevenue}
               disabled={loading || !from || !to}
               variant="primary"
-              className="flex-1 text-xs"
+              className="w-full py-3 text-xs font-bold uppercase tracking-wider shadow-md shadow-orange-500/10"
             >
               Ver Faturamento
             </Button>
@@ -116,7 +117,7 @@ export default function ReportSection() {
               onClick={handleOrders}
               disabled={loading || !from || !to}
               variant="secondary"
-              className="flex-1 text-xs"
+              className="w-full py-3 text-xs font-bold uppercase tracking-wider"
             >
               Ver Pedidos
             </Button>
@@ -151,17 +152,22 @@ export default function ReportSection() {
                 {orderReport.totalOrders} pedido(s) encontrado(s) · <span className="text-white">{orderReport.status === 'ALL' ? 'Todos os status' : statusLabel[orderReport.status]}</span>
               </p>
             </div>
-            <div className="flex flex-col gap-2 max-h-64 overflow-y-auto pr-1">
+            <div className="flex flex-col gap-2 max-h-72 overflow-y-auto pr-1">
               {orderReport.orders.map((o) => (
-                <div key={o.id} className="flex items-center justify-between bg-neutral-950 border border-neutral-850 rounded-xl px-4 py-3">
-                  <div>
-                    <p className="text-white text-sm font-semibold">Mesa {o.table}</p>
-                    <p className="text-neutral-500 text-[10px] uppercase tracking-wider mt-1">
-                      {new Date(o.createdAt).toLocaleDateString('pt-BR')} ·{' '}
-                      {new Date(o.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                    </p>
+                <div key={o.id} className="flex items-center justify-between bg-neutral-950 border border-neutral-850 rounded-xl p-3.5 sm:p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-400 font-black text-xs shrink-0">
+                      {o.table}
+                    </div>
+                    <div>
+                      <p className="text-white text-sm font-extrabold whitespace-nowrap">Mesa {o.table}</p>
+                      <p className="text-neutral-550 text-[10px] uppercase tracking-wider mt-0.5">
+                        {new Date(o.createdAt).toLocaleDateString('pt-BR')} ·{' '}
+                        {new Date(o.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
                   </div>
-                  <span className="text-xs text-neutral-400 font-semibold bg-neutral-900 border border-neutral-800 px-3 py-1 rounded-lg">
+                  <span className="text-xs text-neutral-300 font-bold bg-neutral-900 border border-neutral-800 px-3 py-1 rounded-lg shrink-0">
                     {statusLabel[o.status]}
                   </span>
                 </div>

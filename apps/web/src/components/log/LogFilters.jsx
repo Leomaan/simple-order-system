@@ -64,12 +64,12 @@ export default function LogFilters({ filters, setFilters, onFilter, onClear, loa
         </div>
       </div>
 
-      <div className="flex gap-2.5 justify-end mt-5">
+      <div className="flex flex-col sm:flex-row gap-2.5 justify-end mt-5">
         {hasFilters && (
           <Button 
             variant="ghost" 
             onClick={onClear} 
-            className="text-xs"
+            className="w-full sm:w-auto text-xs py-2.5"
           >
             Limpar Filtros
           </Button>
@@ -78,7 +78,7 @@ export default function LogFilters({ filters, setFilters, onFilter, onClear, loa
           type="submit" 
           loading={loading}
           variant="primary"
-          className="text-xs px-6"
+          className="w-full sm:w-auto text-xs py-2.5 px-6 font-bold uppercase tracking-wider shadow-md shadow-orange-500/10"
         >
           Filtrar Auditoria
         </Button>

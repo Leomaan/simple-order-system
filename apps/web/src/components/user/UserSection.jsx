@@ -88,7 +88,7 @@ export default function UserSection() {
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 md:mb-8">
         <div>
           <h2 className="text-2xl font-bold text-white tracking-tight">Usuários do Sistema</h2>
           <p className="text-neutral-500 text-sm">Gerencie o acesso de garçons e administradores</p>
@@ -96,6 +96,7 @@ export default function UserSection() {
         <Button
           onClick={showForm ? closeForm : openCreate}
           variant={showForm ? 'secondary' : 'primary'}
+          className="w-full sm:w-auto py-3 text-xs font-bold uppercase tracking-wider shadow-lg shadow-orange-500/10"
         >
           {showForm ? 'Cancelar' : '+ Novo usuário'}
         </Button>
@@ -165,7 +166,7 @@ export default function UserSection() {
       {/* Lista */}
       {loading ? (
         <div className="space-y-3">
-          {[1, 2, 3].map(i => <div key={i} className="h-20 bg-neutral-900/50 border border-neutral-800 rounded-2xl animate-pulse" />)}
+          {[1, 2, 3].map(i => <div key={i} className="h-24 bg-neutral-900/50 border border-neutral-800 rounded-2xl animate-pulse" />)}
         </div>
       ) : users.length === 0 ? (
         <div className="text-center py-20 bg-neutral-900/10 rounded-3xl border border-dashed border-neutral-800">
@@ -174,31 +175,45 @@ export default function UserSection() {
       ) : (
         <div className="flex flex-col gap-3">
           {users.map((u) => (
-            <div key={u.id} className="glass-card glass-card-hover rounded-2xl px-5 py-4 flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-2.5">
-                  <p className="text-white font-semibold">{u.name}</p>
-                  {u.isSuperAdmin && (
-                    <span className="text-[9px] font-bold uppercase tracking-wider bg-orange-500/15 text-orange-400 border border-orange-500/10 px-2 py-0.5 rounded-md">SuperAdmin</span>
-                  )}
-                  {!u.active && (
-                    <span className="text-[9px] font-bold uppercase tracking-wider bg-red-500/15 text-red-400 border border-red-500/10 px-2 py-0.5 rounded-md">Inativo</span>
-                  )}
+            <div key={u.id} className="glass-card glass-card-hover rounded-2xl p-4 sm:p-5 flex flex-col gap-3 transition-all">
+              {/* Linha Superior: Nome, Badges e Cargo */}
+              <div className="flex items-start justify-between gap-3 w-full">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 rounded-full bg-neutral-800 border border-neutral-750 flex items-center justify-center text-neutral-300 font-bold text-sm shrink-0">
+                    {u.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-white font-extrabold text-base leading-tight break-words">{u.name}</p>
+                      {u.isSuperAdmin && (
+                        <span className="text-[9px] font-bold uppercase tracking-wider bg-orange-500/15 text-orange-400 border border-orange-500/20 px-2 py-0.5 rounded-md">SuperAdmin</span>
+                      )}
+                      {!u.active && (
+                        <span className="text-[9px] font-bold uppercase tracking-wider bg-red-500/15 text-red-400 border border-red-500/20 px-2 py-0.5 rounded-md">Inativo</span>
+                      )}
+                    </div>
+                    <p className="text-neutral-450 text-xs mt-1 truncate">{u.email}</p>
+                  </div>
                 </div>
-                <p className="text-neutral-500 text-xs mt-1.5">{u.email} · <span className="font-semibold text-neutral-400">{roleLabel[u.role]}</span></p>
+
+                <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg border whitespace-nowrap ${
+                  u.role === 'ADMIN' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-sky-500/10 text-sky-400 border-sky-500/20'
+                }`}>
+                  {roleLabel[u.role]}
+                </span>
               </div>
-              <div className="flex items-center gap-1.5">
-                {!u.isSuperAdmin && u.id !== currentUser?.userId && (
-                  <>
-                    <Button variant="ghost" onClick={() => openEdit(u)} className="text-xs py-1.5 px-3">
-                      Editar
-                    </Button>
-                    <Button variant="ghost" onClick={() => setDeleting(u)} className="text-xs py-1.5 px-3 text-red-400 hover:text-red-300 hover:bg-red-500/5">
-                      Excluir
-                    </Button>
-                  </>
-                )}
-              </div>
+
+              {/* Linha Inferior: Ações */}
+              {!u.isSuperAdmin && u.id !== currentUser?.userId && (
+                <div className="flex items-center justify-end gap-2 pt-3 border-t border-neutral-850/60 mt-1">
+                  <Button variant="ghost" onClick={() => openEdit(u)} className="text-xs py-1.5 px-3.5 border border-neutral-800 hover:border-neutral-700">
+                    Editar
+                  </Button>
+                  <Button variant="ghost" onClick={() => setDeleting(u)} className="text-xs py-1.5 px-3.5 text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20">
+                    Excluir
+                  </Button>
+                </div>
+              )}
             </div>
           ))}
         </div>

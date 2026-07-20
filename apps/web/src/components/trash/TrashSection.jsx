@@ -162,61 +162,60 @@ export default function TrashSection() {
             {items.map((item) => (
               <div
                 key={item.id}
-                className="glass-card glass-card-hover rounded-2xl px-5 py-4 flex items-center justify-between"
+                className="glass-card glass-card-hover rounded-2xl p-4 sm:p-5 flex flex-col gap-3 transition-all"
               >
-                {/* Meta details */}
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2.5">
-                    <p className="text-white font-semibold truncate">{getDeletedLabel(item)}</p>
-                    <span className="text-[9px] font-bold uppercase tracking-wider bg-red-500/10 text-red-400 border border-red-500/20 px-2 py-0.5 rounded-md">
-                      Excluído
-                    </span>
+                {/* Linha Superior: Nome/Label + Badge Excluído */}
+                <div className="flex items-start justify-between gap-3 w-full">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-white font-extrabold text-base leading-tight break-words">{getDeletedLabel(item)}</h3>
+                    <p className="text-neutral-450 text-xs mt-1 leading-relaxed">
+                      {activeTab === 'products' && (
+                        <>
+                          Preço: <span className="text-neutral-300 font-semibold">R$ {Number(item.price).toFixed(2)}</span> · Categoria: <span className="text-neutral-300 font-semibold">{item.category}</span>
+                        </>
+                      )}
+                      {activeTab === 'users' && (
+                        <>
+                          Cargo: <span className="text-neutral-300 font-semibold">{item.role}</span> · E-mail: <span className="text-neutral-300 font-semibold">{item.email}</span>
+                        </>
+                      )}
+                      {activeTab === 'orders' && (
+                        <>
+                          Total: <span className="text-neutral-300 font-semibold">R$ {Number(item.total || 0).toFixed(2)}</span> · Status: <span className="text-neutral-300 font-semibold">{item.status}</span>
+                        </>
+                      )}
+                    </p>
                   </div>
-                  <p className="text-neutral-500 text-xs mt-1.5 leading-relaxed">
-                    {activeTab === 'products' && (
-                      <>
-                        Preço: <span className="text-neutral-400 font-semibold">R$ {Number(item.price).toFixed(2)}</span> · Categoria: <span className="text-neutral-400 font-semibold">{item.category}</span>
-                      </>
-                    )}
-                    {activeTab === 'users' && (
-                      <>
-                        Cargo: <span className="text-neutral-400 font-semibold">{item.role}</span> · Cadastro em: <span className="text-neutral-400 font-semibold">{new Date(item.createdAt).toLocaleDateString('pt-BR')}</span>
-                      </>
-                    )}
-                    {activeTab === 'orders' && (
-                      <>
-                        Total: <span className="text-neutral-400 font-semibold">R$ {Number(item.total || 0).toFixed(2)}</span> · Status no momento: <span className="text-neutral-400 font-semibold">{item.status}</span>
-                      </>
-                    )}
-                    {item.deletedAt && (
-                      <>
-                        {' · '}Excluído em:{' '}
-                        <span className="text-neutral-450 font-semibold">
-                          {new Date(item.deletedAt).toLocaleString('pt-BR')}
-                        </span>
-                      </>
-                    )}
-                  </p>
+
+                  <span className="text-[10px] font-bold uppercase tracking-wider bg-red-500/10 text-red-400 border border-red-500/20 px-2.5 py-1 rounded-lg shrink-0 select-none">
+                    Excluído
+                  </span>
                 </div>
 
-                {/* Actions */}
-                <div className="flex items-center gap-2.5 shrink-0 ml-4">
-                  <Button
-                    variant="ghost"
-                    onClick={() => handleRestore(item)}
-                    disabled={actionLoading}
-                    className="text-xs py-1.5 px-3 hover:bg-emerald-500/5 text-emerald-450 hover:text-emerald-400 border border-transparent hover:border-emerald-500/10"
-                  >
-                    Restaurar
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    onClick={() => setConfirmingDelete(item)}
-                    disabled={actionLoading}
-                    className="text-xs py-1.5 px-3 text-red-450 hover:text-red-400 hover:bg-red-500/5"
-                  >
-                    Excluir Definitivamente
-                  </Button>
+                {/* Linha Inferior: Data de exclusão + Ações */}
+                <div className="flex items-center justify-between pt-3 border-t border-neutral-850/60 mt-1 flex-wrap gap-2">
+                  <span className="text-neutral-550 text-[10px] uppercase font-semibold tracking-wider">
+                    {item.deletedAt ? `Excluído em ${new Date(item.deletedAt).toLocaleString('pt-BR')}` : ''}
+                  </span>
+
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      onClick={() => handleRestore(item)}
+                      disabled={actionLoading}
+                      className="text-xs py-1.5 px-3.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20"
+                    >
+                      Restaurar
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      onClick={() => setConfirmingDelete(item)}
+                      disabled={actionLoading}
+                      className="text-xs py-1.5 px-3.5 text-red-400 hover:bg-red-500/10 border border-red-500/20"
+                    >
+                      Excluir Definitivamente
+                    </Button>
+                  </div>
                 </div>
               </div>
             ))}
