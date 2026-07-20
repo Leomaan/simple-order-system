@@ -8,37 +8,43 @@ export default function OrderCard({ order, onClick, onEdit, onDelete }) {
   return (
     <div
       onClick={() => onClick(order)}
-      className="group glass-card glass-card-hover rounded-2xl px-5 py-4 flex items-center justify-between cursor-pointer"
+      className="group glass-card glass-card-hover rounded-2xl p-4 sm:p-5 flex flex-col gap-3 cursor-pointer transition-all"
     >
-      <div className="flex items-center gap-4">
-        <div className="w-11 h-11 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-500 font-extrabold text-sm select-none">
-          {order.table}
-        </div>
-        <div>
-          <div className="flex items-center gap-2">
-            <p className="text-white font-semibold">Mesa {order.table}</p>
-            {orderTotal > 0 && (
-              <>
-                <span className="text-neutral-650 text-xs">·</span>
-                <span className="text-emerald-400 text-xs font-bold">
-                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(orderTotal)}
-                </span>
-              </>
-            )}
+      {/* Top Row: Table badge + Status */}
+      <div className="flex items-center justify-between w-full">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-500 font-extrabold text-sm select-none shrink-0">
+            {order.table}
           </div>
-          <p className="text-neutral-550 text-[10px] uppercase tracking-wider mt-1">
-            {new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} •{' '}
-            {new Date(order.createdAt).toLocaleDateString('pt-BR')}
-          </p>
+          <div className="flex flex-col">
+            <span className="text-white font-extrabold text-base leading-tight whitespace-nowrap">Mesa {order.table}</span>
+            <span className="text-neutral-550 text-[10px] uppercase tracking-wider font-semibold">
+              #{order.id} · {new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          </div>
         </div>
-      </div>
 
-      <div className="flex items-center gap-4">
-        <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${status.color}`}>
+        <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg border whitespace-nowrap ${status.color}`}>
           {status.label}
         </span>
-        
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200">
+      </div>
+
+      {/* Bottom Row: Total & Actions */}
+      <div className="flex items-center justify-between pt-3 border-t border-neutral-850/60 mt-1">
+        <div>
+          {orderTotal > 0 ? (
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-neutral-550 text-[10px] font-bold uppercase">Total:</span>
+              <span className="text-emerald-400 font-black text-base sm:text-lg">
+                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(orderTotal)}
+              </span>
+            </div>
+          ) : (
+            <span className="text-neutral-550 text-xs italic">Sem consumo</span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200">
           {order.status === 'OPEN' && (
             <button
               onClick={(e) => { e.stopPropagation(); onEdit(order); }}

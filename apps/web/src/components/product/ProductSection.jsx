@@ -118,9 +118,7 @@ export default function ProductSection() {
           loading={deleteLoading}
         />
       )}
-
-      {/* Header */}
-      <header className="flex items-center justify-between mb-8">
+      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 md:mb-8">
         <div>
           <h2 className="text-2xl font-bold text-white tracking-tight">Cardápio & Produtos</h2>
           <p className="text-neutral-500 text-sm">Gerencie os itens disponíveis para venda</p>
@@ -128,77 +126,90 @@ export default function ProductSection() {
         <Button
           onClick={showForm ? closeForm : openCreate}
           variant={showForm ? "secondary" : "primary"}
+          className="w-full sm:w-auto py-3 text-xs font-bold uppercase tracking-wider shadow-lg shadow-orange-500/10"
         >
           {showForm ? "Cancelar" : "+ Novo produto"}
         </Button>
       </header>
 
-      {/* Formulário */}
+      {/* Form Criar / Editar */}
       {showForm && (
         <form
           onSubmit={handleSubmit}
           className="glass-panel border border-neutral-800 rounded-2xl p-6 mb-8 flex flex-col gap-5 animate-in slide-in-from-top-4 duration-300"
         >
-          <h3 className="text-white font-bold text-lg">
-            {editing ? "Editar Produto" : "Novo Produto"}
-          </h3>
+          <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+            <h3 className="text-white font-bold text-base">
+              {editing ? "Editar Produto" : "Novo Produto"}
+            </h3>
+            <button
+              type="button"
+              onClick={closeForm}
+              className="text-neutral-500 hover:text-white text-xl"
+            >
+              &times;
+            </button>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
-              label="Nome do Produto"
+              label="Nome do produto"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               required
-              placeholder="Ex: X-Burguer Artesanal"
+              placeholder="Ex: Coca-Cola 350ml"
             />
-
             <Input
               label="Preço (R$)"
               type="number"
               step="0.01"
+              min="0"
               value={form.price}
               onChange={(e) => setForm({ ...form, price: e.target.value })}
               required
-              placeholder="0.00"
+              placeholder="Ex: 6.50"
             />
+          </div>
 
-            <div className="flex flex-col gap-1.5 w-full">
-              <label className="text-neutral-450 text-xs font-bold uppercase tracking-wider select-none">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-2">
                 Categoria
               </label>
               <select
                 value={form.category}
                 onChange={(e) => setForm({ ...form, category: e.target.value })}
-                className="w-full bg-neutral-900 border border-neutral-800 text-white rounded-xl py-2.5 px-4 text-sm outline-none focus:border-orange-500 transition-colors"
+                className="w-full bg-neutral-900 border border-neutral-800 text-white rounded-xl p-3 text-xs outline-none focus:border-orange-500 transition-colors"
               >
-                {CATEGORIES.map((c) => (
-                  <option key={c} value={c}>
-                    {categoryLabel[c]}
+                {CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {categoryLabel[cat]}
                   </option>
                 ))}
               </select>
             </div>
 
-            <Input
-              label="Descrição (Ingredientes/Detalhes)"
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-              placeholder="Ex: Pão brioche, blend 150g, queijo cheddar, maionese"
-            />
-
-            <div className="flex flex-col gap-1.5 justify-center mt-4 md:mt-6">
-              <label className="flex items-center gap-2.5 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={form.available}
-                  onChange={(e) => setForm({ ...form, available: e.target.checked })}
-                  className="w-4 h-4 rounded border-neutral-800 bg-neutral-900 text-orange-500 focus:ring-0 focus:ring-offset-0 outline-none cursor-pointer"
-                />
-                <span className="text-white text-xs font-bold uppercase tracking-wider">
-                  Disponível para Venda
-                </span>
-              </label>
+            <div>
+              <Input
+                label="Descrição (opcional)"
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                placeholder="Ex: Lata 350ml trincando de gelada"
+              />
             </div>
+          </div>
+
+          <div className="flex items-center gap-3 pt-1">
+            <input
+              type="checkbox"
+              id="available"
+              checked={form.available}
+              onChange={(e) => setForm({ ...form, available: e.target.checked })}
+              className="w-4 h-4 accent-orange-500 rounded cursor-pointer"
+            />
+            <label htmlFor="available" className="text-xs font-semibold text-neutral-300 cursor-pointer select-none">
+              Produto disponível para venda imediata
+            </label>
           </div>
 
           <ErrorMessage message={error} />
@@ -234,7 +245,7 @@ export default function ProductSection() {
               setSearchQuery(e.target.value);
               fetchProducts(filterCategory, e.target.value);
             }}
-            className="w-full bg-neutral-900 border border-neutral-800 text-white rounded-xl py-2 pl-9 pr-4 text-xs outline-none focus:border-orange-500 transition-colors"
+            className="w-full bg-neutral-900 border border-neutral-800 text-white rounded-xl py-2.5 pl-9 pr-4 text-xs outline-none focus:border-orange-500 transition-colors"
           />
           <Search size={14} className="absolute left-3 top-3 text-neutral-500" />
         </div>
@@ -244,7 +255,7 @@ export default function ProductSection() {
       {loading ? (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-20 bg-neutral-900/50 border border-neutral-800 rounded-2xl animate-pulse" />
+            <div key={i} className="h-28 bg-neutral-900/50 border border-neutral-800 rounded-2xl animate-pulse" />
           ))}
         </div>
       ) : sortedProducts.length === 0 ? (
@@ -258,62 +269,71 @@ export default function ProductSection() {
             return (
               <div
                 key={p.id}
-                className="glass-card glass-card-hover rounded-2xl px-5 py-4 flex items-center justify-between"
+                className="glass-card glass-card-hover rounded-2xl p-4 sm:p-5 flex flex-col gap-3 transition-all"
               >
-                <div className="flex items-center gap-4 min-w-0">
-                  {/* Miniature Thumbnail */}
-                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-neutral-800/80 to-neutral-900/80 border border-neutral-800 flex items-center justify-center text-orange-400 shrink-0 shadow-inner">
-                    <IconComponent size={18} />
+                {/* Linha Superior: Ícone, Nome, Categoria e Preço */}
+                <div className="flex items-start justify-between gap-3 w-full">
+                  <div className="flex items-start gap-3 min-w-0 flex-1">
+                    <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-neutral-800/80 to-neutral-900/80 border border-neutral-800 flex items-center justify-center text-orange-400 shrink-0 shadow-inner mt-0.5">
+                      <IconComponent size={18} />
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-white font-bold text-base leading-tight break-words">{p.name}</h3>
+                      <p className="text-neutral-550 text-[10px] uppercase tracking-wider mt-1 font-bold">
+                        {categoryLabel[p.category]}
+                      </p>
+                    </div>
                   </div>
 
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-white font-semibold">{p.name}</p>
-                      <button
-                        type="button"
-                        title="Clique para alternar a disponibilidade"
-                        onClick={async () => {
-                          try {
-                            await updateProduct(p.id, { available: !p.available });
-                          } catch (err) {
-                            setError(err.response?.data?.message || "Erro ao alterar disponibilidade");
-                          }
-                        }}
-                        className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border transition-all hover:scale-105 active:scale-95 cursor-pointer ${
-                          p.available 
-                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20" 
-                            : "bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20"
-                        }`}
-                      >
-                        {p.available ? "Disponível" : "Indisponível"}
-                      </button>
-                    </div>
-                    {p.description && (
-                      <p className="text-neutral-450 text-xs mt-1 leading-relaxed max-w-lg truncate">
-                        {p.description}
-                      </p>
-                    )}
-                    <p className="text-neutral-550 text-[10px] uppercase tracking-wider mt-1.5 font-bold">
-                      {categoryLabel[p.category]}
-                    </p>
+                  <div className="text-right shrink-0 select-none">
+                    <span className="text-orange-400 font-black text-base sm:text-lg whitespace-nowrap block">
+                      R$ {Number(p.price).toFixed(2)}
+                    </span>
                   </div>
                 </div>
-                <div className="flex items-center gap-5">
-                  <span className="text-orange-400 font-bold text-base whitespace-nowrap">
-                    R$ {Number(p.price).toFixed(2)}
-                  </span>
-                  <div className="flex items-center gap-1.5">
+
+                {/* Descrição */}
+                {p.description && (
+                  <p className="text-neutral-400 text-xs sm:text-sm leading-relaxed line-clamp-3 bg-neutral-950/30 p-2.5 rounded-xl border border-neutral-850/40">
+                    {p.description}
+                  </p>
+                )}
+
+                {/* Linha Inferior: Badge de Disponibilidade + Ações */}
+                <div className="flex items-center justify-between pt-3 border-t border-neutral-850/60 mt-1 flex-wrap gap-2">
+                  <button
+                    type="button"
+                    title="Clique para alternar a disponibilidade"
+                    onClick={async () => {
+                      try {
+                        await updateProduct(p.id, { available: !p.available });
+                      } catch (err) {
+                        setError(err.response?.data?.message || "Erro ao alterar disponibilidade");
+                      }
+                    }}
+                    className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-lg border transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center gap-1.5 ${
+                      p.available 
+                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20" 
+                        : "bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20"
+                    }`}
+                  >
+                    <span className={`w-1.5 h-1.5 rounded-full ${p.available ? 'bg-emerald-400' : 'bg-red-400'}`} />
+                    <span>{p.available ? "Disponível" : "Indisponível"}</span>
+                  </button>
+
+                  <div className="flex items-center gap-2">
                     <Button
                       variant="ghost"
                       onClick={() => openEdit(p)}
-                      className="text-xs py-1 px-3"
+                      className="text-xs py-1.5 px-3 border border-neutral-800 hover:border-neutral-700"
                     >
                       Editar
                     </Button>
                     <Button
                       variant="ghost"
                       onClick={() => setDeleting(p.id)}
-                      className="text-xs py-1 px-3 text-red-450 hover:text-red-400 hover:bg-red-500/5"
+                      className="text-xs py-1.5 px-3 text-red-450 hover:text-red-400 hover:bg-red-500/10 border border-red-500/20"
                     >
                       Excluir
                     </Button>
