@@ -4,7 +4,18 @@ import { log } from '../services/auditLogService.js';
  
 export const create = asyncHandler(async (req, res) => {
   const product = await productService.createProduct(req.body);
-  await log({ user: req.user, action: 'CREATE_PRODUCT', entity: 'Product', entityId: product.id, details: { name: product.name } });
+  await log({ 
+    user: req.user, 
+    action: 'CREATE_PRODUCT', 
+    entity: 'Product', 
+    entityId: product.id, 
+    details: { 
+      name: product.name, 
+      price: product.price, 
+      category: product.category, 
+      description: product.description 
+    } 
+  });
   res.status(201).json({ success: true, data: product });
 });
  
@@ -22,22 +33,24 @@ export const getById = asyncHandler(async (req, res) => {
 export const update = asyncHandler(async (req, res) => {
   const oldProduct = await productService.findById(req.params.id);
   const oldVal = {
-    name: String(oldProduct.name),
-    price: Number(oldProduct.price),
-    category: String(oldProduct.category),
-    available: Boolean(oldProduct.available)
+    name: String(oldProduct.name || ''),
+    price: Number(oldProduct.price || 0),
+    category: String(oldProduct.category || ''),
+    available: Boolean(oldProduct.available),
+    description: String(oldProduct.description || '')
   };
 
   const product = await productService.updateProduct(req.params.id, req.body);
   const newVal = {
-    name: String(product.name),
-    price: Number(product.price),
-    category: String(product.category),
-    available: Boolean(product.available)
+    name: String(product.name || ''),
+    price: Number(product.price || 0),
+    category: String(product.category || ''),
+    available: Boolean(product.available),
+    description: String(product.description || '')
   };
 
   const diff = {};
-  if (req.body.price !== undefined && oldVal.price !== newVal.price) {
+  if (req.body.price !== undefined && Math.abs(oldVal.price - newVal.price) > 0.001) {
     diff.price = { old: oldVal.price, new: newVal.price };
   }
   if (req.body.available !== undefined && oldVal.available !== newVal.available) {
@@ -48,6 +61,9 @@ export const update = asyncHandler(async (req, res) => {
   }
   if (req.body.name !== undefined && oldVal.name !== newVal.name) {
     diff.name = { old: oldVal.name, new: newVal.name };
+  }
+  if (req.body.description !== undefined && oldVal.description !== newVal.description) {
+    diff.description = { old: oldVal.description, new: newVal.description };
   }
 
   await log({ 

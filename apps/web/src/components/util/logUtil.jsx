@@ -77,17 +77,31 @@ export function getDetailRows(log) {
           variant: diff.available.new ? 'success' : 'danger'
         });
       }
+      if (diff.description) {
+        const oldD = diff.description.old ? `"${diff.description.old}"` : '(sem descrição)';
+        const newD = diff.description.new ? `"${diff.description.new}"` : '(sem descrição)';
+        rows.push({
+          icon: ICONS.info,
+          label: 'Descrição',
+          value: `${oldD} ➔ ${newD}`,
+          variant: 'neutral'
+        });
+      }
 
-      // Compatibilidade retroativa para logs antigos sem objeto diff
+      // Compatibilidade para logs antigos gravados antes da atualização da auditoria
       if (!d.diff) {
-        if (d.price != null) {
-          rows.push({ icon: ICONS.money, label: 'Novo Preço', value: `R$ ${Number(d.price).toFixed(2)}`, variant: 'warning' });
-        }
-        if (d.category != null) {
-          rows.push({ icon: ICONS.tag, label: 'Nova Categoria', value: categoryLabels[d.category] || d.category, variant: 'neutral' });
-        }
-        if (d.available != null) {
-          rows.push({ icon: ICONS.info, label: 'Disponibilidade', value: d.available ? 'Disponível' : 'Indisponível', variant: d.available ? 'success' : 'danger' });
+        const nonNameKeys = Object.keys(d).filter(k => k !== 'name');
+        if (nonNameKeys.length === 1) {
+          const k = nonNameKeys[0];
+          if (k === 'price' && d.price != null) {
+            rows.push({ icon: ICONS.money, label: 'Preço Atualizado', value: `R$ ${Number(d.price).toFixed(2)}`, variant: 'warning' });
+          } else if (k === 'category' && d.category != null) {
+            rows.push({ icon: ICONS.tag, label: 'Categoria Atualizada', value: categoryLabels[d.category] || d.category, variant: 'neutral' });
+          } else if (k === 'available' && d.available != null) {
+            rows.push({ icon: ICONS.info, label: 'Disponibilidade', value: d.available ? 'Disponível' : 'Indisponível', variant: d.available ? 'success' : 'danger' });
+          } else if (k === 'description' && d.description != null) {
+            rows.push({ icon: ICONS.info, label: 'Descrição', value: `"${d.description}"`, variant: 'neutral' });
+          }
         }
       }
       break;
@@ -107,6 +121,14 @@ export function getDetailRows(log) {
           icon: ICONS.tag,
           label: 'Categoria',
           value: categoryLabels[d.category] || d.category,
+          variant: 'neutral'
+        });
+      }
+      if (d.description) {
+        rows.push({
+          icon: ICONS.info,
+          label: 'Descrição',
+          value: `"${d.description}"`,
           variant: 'neutral'
         });
       }
