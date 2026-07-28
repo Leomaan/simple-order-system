@@ -23,7 +23,7 @@ const Product = sequelize.define('Product',{
     },
     category:{
         type: DataTypes.ENUM('FOOD', 'DRINK', 'SNACK', 'DESSERT', 'SIDE'),
-        aLLOWNULL: false,
+        allowNull: false,
     },
     deletedAt: {
     type: DataTypes.DATE,
