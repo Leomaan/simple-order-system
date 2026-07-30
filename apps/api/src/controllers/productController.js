@@ -1,6 +1,7 @@
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import * as productService from '../services/productService.js';
 import { log } from '../services/auditLogService.js';
+import logger from '../util/logger.js';
  
 export const create = asyncHandler(async (req, res) => {
   const product = await productService.createProduct(req.body);
@@ -16,6 +17,7 @@ export const create = asyncHandler(async (req, res) => {
       description: product.description 
     } 
   });
+  logger.info('Novo produto cadastrado', { context: 'product_controller', productId: product.id, name: product.name });
   res.status(201).json({ success: true, data: product });
 });
  
@@ -74,23 +76,27 @@ export const update = asyncHandler(async (req, res) => {
     details: { name: newVal.name, diff } 
   });
 
+  logger.info('Produto atualizado', { context: 'product_controller', productId: product.id, updatedBy: req.user?.id });
   res.status(200).json({ success: true, data: product });
 });
  
 export const remove = asyncHandler(async (req, res) => {
   const product = await productService.deleteProduct(req.params.id);
   await log({ user: req.user, action: 'DELETE_PRODUCT', entity: 'Product', entityId: Number(req.params.id), details: { name: product.name } });
+  logger.warn('Produto removido (Soft Delete)', { context: 'product_controller', productId: req.params.id });
   res.status(200).json({ success: true, message: 'product removed' });
 });
  
 export const restore = asyncHandler(async (req, res) => {
   const product = await productService.restoreProduct(req.params.id);
   await log({ user: req.user, action: 'RESTORE_PRODUCT', entity: 'Product', entityId: product.id, details: { name: product.name } });
+  logger.info('Produto restaurado', { context: 'product_controller', productId: product.id });
   res.status(200).json({ success: true, data: product });
 });
  
 export const permanentDelete = asyncHandler(async (req, res) => {
   const product = await productService.permanentDeleteProduct(req.params.id);
   await log({ user: req.user, action: 'PERMANENT_DELETE_PRODUCT', entity: 'Product', entityId: Number(req.params.id), details: { name: product.name } });
+  logger.warn('Produto excluído permanentemente', { context: 'product_controller', productId: req.params.id });
   res.status(200).json({ success: true, message: 'product permanently deleted' });
 });

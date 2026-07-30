@@ -6,6 +6,7 @@ import cookieParser from 'cookie-parser';
 
 import { generalLimiter } from './middleware/rateLimiter.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import { httpLogger } from './middleware/httpLogger.js';
 import { swaggerSpec } from './config/swagger.js';
 import swaggerUi from 'swagger-ui-express';
 import { csrfProtection } from './middleware/csrf.js';
@@ -19,6 +20,7 @@ import auditLogRoutes from './routes/auditlogsRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import settingsRoutes from './routes/settingsRoutes.js';
+import healthRoutes from './routes/healthRoutes.js';
 
 const app = e();
 
@@ -44,6 +46,7 @@ app.use(cors({
   credentials: true,
 }));
 app.use(generalLimiter);
+app.use(httpLogger);
 
 app.use(cookieParser());
 app.use(csrfProtection);
@@ -57,6 +60,7 @@ if (process.env.NODE_ENV !== 'production' || process.env.ENABLE_SWAGGER === 'tru
   }));
 }
 
+app.use('/health', healthRoutes);
 app.use('/product', productRoutes);
 app.use('/order', orderRoutes);
 app.use('/order-item', orderItemRoutes);
@@ -66,7 +70,6 @@ app.use('/audit', auditLogRoutes);
 app.use('/report', reportRoutes);
 app.use('/payment', paymentRoutes);
 app.use('/settings', settingsRoutes);
-
 
 app.use(errorHandler);
 

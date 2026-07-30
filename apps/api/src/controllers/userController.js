@@ -1,6 +1,7 @@
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import * as userService from '../services/userService.js';
 import { log } from '../services/auditLogService.js';
+import logger from '../util/logger.js';
  
 export const getAll = asyncHandler(async (req, res) => {
   const onlyDeleted = req.query.onlyDeleted === 'true';
@@ -17,6 +18,7 @@ export const getById = asyncHandler(async (req, res) => {
 export const create = asyncHandler(async (req, res) => {
   const user = await userService.createUser(req.body);
   await log({ user: req.user, action: 'CREATE_USER', entity: 'User', entityId: user.id, details: { name: user.name, role: user.role } });
+  logger.info('Novo usuário cadastrado', { context: 'user_controller', createdUserId: user.id, role: user.role });
   res.status(201).json({ success: true, data: user });
 });
  
@@ -47,23 +49,27 @@ export const update = asyncHandler(async (req, res) => {
   }
 
   await log({ user: req.user, action: 'UPDATE_USER', entity: 'User', entityId: user.id, details: { name: newVal.name, diff } });
+  logger.info('Usuário atualizado', { context: 'user_controller', updatedUserId: user.id, updatedBy: req.user?.id });
   res.status(200).json({ success: true, data: user });
 });
  
 export const remove = asyncHandler(async (req, res) => {
   const user = await userService.deleteUser(req.params.id, req.user.userId);
   await log({ user: req.user, action: 'DELETE_USER', entity: 'User', entityId: Number(req.params.id), details: { name: user.name } });
+  logger.warn('Usuário desativado/removido (Soft Delete)', { context: 'user_controller', targetUserId: req.params.id, removedBy: req.user?.id });
   res.status(200).json({ success: true, message: 'usuário removido' });
 });
  
 export const restore = asyncHandler(async (req, res) => {
   const user = await userService.restoreUser(req.params.id);
   await log({ user: req.user, action: 'RESTORE_USER', entity: 'User', entityId: user.id, details: { name: user.name } });
+  logger.info('Usuário restaurado', { context: 'user_controller', restoredUserId: user.id });
   res.status(200).json({ success: true, data: user });
 });
  
 export const permanentDelete = asyncHandler(async (req, res) => {
   const user = await userService.permanentDeleteUser(req.params.id, req.user.userId);
   await log({ user: req.user, action: 'PERMANENT_DELETE_USER', entity: 'User', entityId: Number(req.params.id), details: { name: user.name } });
+  logger.warn('Usuário excluído permanentemente', { context: 'user_controller', targetUserId: req.params.id, deletedBy: req.user?.id });
   res.status(200).json({ success: true, message: 'usuário permanentemente deletado' });
 });

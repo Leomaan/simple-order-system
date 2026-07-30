@@ -1,6 +1,7 @@
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import * as authService from '../services/authService.js';
 import crypto from 'crypto';
+import logger from '../util/logger.js';
 
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -42,6 +43,8 @@ export const login = asyncHandler(async (req, res) => {
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 
+  logger.info('Login realizado com sucesso', { context: 'auth_controller', email: req.body.email, role: result.role, ip });
+
   res.status(200).json({
     success: true,
     data: { role: result.role, name: result.name, csrfToken }, 
@@ -64,6 +67,8 @@ export const refresh = asyncHandler(async (req, res) => {
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 
+  logger.info('Token de acesso renovado com sucesso', { context: 'auth_controller', role: result.role });
+
   res.status(200).json({
     success: true,
     data: { role: result.role, name: result.name, csrfToken },
@@ -79,6 +84,8 @@ export const logout = asyncHandler(async (req, res) => {
   res.clearCookie('accessToken', cookieOptions);
   res.clearCookie('refreshToken', cookieOptions);
   res.clearCookie('XSRF-TOKEN', getCsrfCookieOptions(req));
+
+  logger.info('Logout realizado com sucesso', { context: 'auth_controller', userId: req.user?.id, ip });
 
   res.status(200).json({ success: true, message: 'logout realizado com sucesso' });
 });

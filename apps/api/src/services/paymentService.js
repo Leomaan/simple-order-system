@@ -4,10 +4,7 @@ import Product from '../models/product.js';
 import { AppError } from '../middleware/appError.js';
 import { log } from './auditLogService.js';
 import { getSettings } from './settingsService.js';
-
-/**
- * Service to handle integration with Payment Gateways (e.g., Mercado Pago)
- */
+import logger from '../util/logger.js';
 
 /**
  * Creates a PIX payment for a specific order.
@@ -35,7 +32,7 @@ export async function createPixPayment(orderId) {
   const accessToken = settings?.mercadoPagoAccessToken || process.env.MERCADO_PAGO_ACCESS_TOKEN;
   if (!accessToken || accessToken.includes('your_mercado_pago_access_token')) {
     // Return a mocked payment details if the integration token is not configured yet
-    console.warn('Mercado Pago Access Token is not set. Returning mock payment details.');
+    logger.warn('Token de acesso do Mercado Pago não configurado. Retornando dados de pagamento mock.', { context: 'payment_service' });
     
     const mockPayment = {
       paymentId: `mock_${Date.now()}`,
@@ -115,7 +112,7 @@ export async function createPixPayment(orderId) {
       paymentExpiresAt
     };
   } catch (error) {
-    console.error('Failed to create Mercado Pago payment:', error);
+    logger.error('Falha ao criar pagamento no Mercado Pago', { context: 'payment_service', error: error.message, stack: error.stack });
     throw new AppError(`Error creating PIX payment: ${error.message}`, 500);
   }
 }
@@ -136,7 +133,7 @@ export async function processWebhook(webhookPayload, user = { name: 'webhook_sys
     const settings = await getSettings();
     const accessToken = settings?.mercadoPagoAccessToken || process.env.MERCADO_PAGO_ACCESS_TOKEN;
     if (!accessToken || accessToken.includes('your_mercado_pago_access_token')) {
-      console.warn('Webhook received but Access Token not set. Processing as demo/mock update.');
+      logger.warn('Webhook recebido sem Token de Acesso do Mercado Pago configurado. Processando como mock.', { context: 'payment_service' });
       // In local development, if we want to manually simulate a webhook approval:
       return await approveMockPayment(paymentId, user);
     }
@@ -175,7 +172,7 @@ export async function processWebhook(webhookPayload, user = { name: 'webhook_sys
         }
       }
     } catch (error) {
-      console.error('Error processing webhook payment verification:', error);
+      logger.error('Erro ao verificar pagamento do webhook no Mercado Pago', { context: 'payment_service', error: error.message, stack: error.stack });
       throw new AppError(`Webhook process failed: ${error.message}`, 500);
     }
   }

@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import logger from '../util/logger.js';
 
 export function csrfProtection(req, res, next) {
   if (process.env.NODE_ENV === 'test') {
@@ -21,7 +22,12 @@ export function csrfProtection(req, res, next) {
   const csrfCookie = req.cookies['XSRF-TOKEN'];
 
   if (!csrfHeader || !csrfCookie || csrfHeader !== csrfCookie) {
-    console.warn(`[CSRF Warning] Falha na validação: Header = "${csrfHeader}", Cookie = "${csrfCookie}"`);
+    logger.warn('Falha na validação de segurança CSRF', {
+      context: 'csrf_middleware',
+      method: req.method,
+      path: req.originalUrl,
+      ip: req.ip || req.headers['x-forwarded-for']
+    });
     return res.status(403).json({
       success: false,
       message: 'Acesso negado: Validação de segurança CSRF falhou.'

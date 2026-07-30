@@ -2,8 +2,8 @@ import { asyncHandler } from '../middleware/asyncHandler.js';
 import * as settingsService from '../services/settingsService.js';
 import { updateSettingsSchema } from '@simple-order/schemas';
 import { AppError } from '../middleware/appError.js';
+import logger from '../util/logger.js';
 
-// Helper function to mask sensitive credentials
 function maskValue(val, visibleStart = 8, visibleEnd = 4) {
   if (!val) return '';
   if (val.length <= (visibleStart + visibleEnd)) return '********';
@@ -55,6 +55,8 @@ export const update = asyncHandler(async (req, res) => {
   if (data.mercadoPagoWebhookSecret) {
     data.mercadoPagoWebhookSecret = maskValue(data.mercadoPagoWebhookSecret, 2, 2);
   }
+
+  logger.info('Configurações do sistema atualizadas', { context: 'settings_controller', updatedBy: req.user?.id });
 
   res.status(200).json({ success: true, data });
 });

@@ -1,4 +1,5 @@
 import AuditLog from '../models/auditLog.js';
+import logger from '../util/logger.js';
 
 export async function log({ user, action, entity = null, entityId = null, details = null, ip = null }) {
   try {
@@ -13,7 +14,7 @@ export async function log({ user, action, entity = null, entityId = null, detail
       ip,
     });
   } catch (err) {
-    console.error('Erro ao salvar log:', err.message);
+    logger.error('Erro ao salvar log de auditoria no banco de dados', { context: 'audit_log_service', error: err.message });
   }
 }
 
