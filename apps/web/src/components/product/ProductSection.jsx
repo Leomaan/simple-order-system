@@ -250,11 +250,11 @@ export default function ProductSection() {
         </div>
       </div>
 
-      {/* Lista */}
+      {/* Lista de Produtos (Cards estilo iFood para Gerenciamento Admin) */}
       {loading ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3.5">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-44 bg-neutral-900/50 border border-neutral-800 rounded-2xl animate-pulse" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="h-64 bg-neutral-900/50 border border-neutral-800 rounded-2xl animate-pulse" />
           ))}
         </div>
       ) : sortedProducts.length === 0 ? (
@@ -262,78 +262,99 @@ export default function ProductSection() {
           <p className="text-neutral-500 font-medium">Nenhum produto cadastrado nesta categoria.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {sortedProducts.map((p) => {
             const IconComponent = categoryIcon[p.category] || Utensils;
+            const categoryGradient = {
+              FOOD: "from-orange-500/20 via-amber-500/10 to-neutral-900 text-orange-400 border-orange-500/30",
+              DRINK: "from-cyan-500/20 via-blue-500/10 to-neutral-900 text-cyan-400 border-cyan-500/30",
+              SNACK: "from-amber-500/20 via-yellow-500/10 to-neutral-900 text-amber-400 border-amber-500/30",
+              DESSERT: "from-pink-500/20 via-rose-500/10 to-neutral-900 text-pink-400 border-pink-500/30",
+              SIDE: "from-emerald-500/20 via-teal-500/10 to-neutral-900 text-emerald-400 border-emerald-500/30",
+            }[p.category] || "from-neutral-800 to-neutral-900 text-orange-400 border-neutral-800";
+
             return (
               <div
                 key={p.id}
-                className="group glass-card glass-card-hover rounded-2xl p-3 sm:p-4 flex flex-col justify-between gap-2.5 transition-all min-h-[165px]"
+                className={`group relative glass-card rounded-2xl overflow-hidden flex flex-col justify-between border transition-all duration-300 shadow-xl ${
+                  p.available
+                    ? 'border-neutral-800 hover:border-orange-500/50 hover:shadow-orange-500/5'
+                    : 'border-neutral-900 opacity-60 bg-neutral-950/40'
+                }`}
               >
-                {/* Linha Superior: Ícone, Nome, Categoria e Preço */}
-                <div className="flex flex-col gap-1.5 min-w-0">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-neutral-800/80 to-neutral-900/80 border border-neutral-800 flex items-center justify-center text-orange-400 shrink-0 shadow-inner">
-                      <IconComponent size={15} />
+                {/* Top Banner Ilustrado / Imagem iFood Style */}
+                <div className={`h-28 w-full relative bg-gradient-to-b ${categoryGradient} flex items-center justify-center overflow-hidden border-b border-neutral-850/50`}>
+                  {p.imageUrl ? (
+                    <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center gap-1">
+                      <div className="w-12 h-12 rounded-2xl bg-neutral-900/80 border border-neutral-750 flex items-center justify-center shadow-lg backdrop-blur-md">
+                        <IconComponent size={24} />
+                      </div>
                     </div>
-
-                    <span className="text-orange-400 font-bold text-xs sm:text-sm whitespace-nowrap block">
-                      R$ {Number(p.price).toFixed(2)}
-                    </span>
-                  </div>
-
-                  <div>
-                    <h3 className="text-white font-bold text-xs sm:text-sm leading-snug line-clamp-2">{p.name}</h3>
-                    <p className="text-neutral-550 text-[9px] uppercase tracking-wider font-bold mt-0.5">
-                      {categoryLabel[p.category]}
-                    </p>
-                  </div>
-
-                  {/* Descrição */}
-                  {p.description && (
-                    <p className="text-neutral-400 text-[10px] leading-snug line-clamp-2 bg-neutral-950/30 p-1.5 rounded-lg border border-neutral-850/40">
-                      {p.description}
-                    </p>
                   )}
+
+                  {/* Badge de Categoria */}
+                  <span className="absolute top-3 left-3 text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-lg bg-neutral-950/80 text-neutral-300 border border-neutral-800 backdrop-blur-md shadow-md">
+                    {categoryLabel[p.category]}
+                  </span>
+
+                  {/* Preço em Destaque no Header */}
+                  <span className="absolute bottom-3 right-3 text-sm font-extrabold px-3 py-1 rounded-xl bg-orange-500/90 text-white shadow-lg backdrop-blur-md">
+                    R$ {Number(p.price).toFixed(2)}
+                  </span>
                 </div>
 
-                {/* Área Inferior: Badge Ocupando Largura Total + Botões Aparecendo no Hover */}
-                <div className="flex flex-col gap-2 pt-2 border-t border-neutral-850/60 mt-0.5">
-                  <button
-                    type="button"
-                    title="Clique para alternar a disponibilidade"
-                    onClick={async () => {
-                      try {
-                        await updateProduct(p.id, { available: !p.available });
-                      } catch (err) {
-                        setError(err.response?.data?.message || "Erro ao alterar disponibilidade");
-                      }
-                    }}
-                    className={`w-full text-[9px] font-bold uppercase tracking-wider py-1 px-2 rounded-lg border transition-all hover:scale-[1.02] active:scale-95 cursor-pointer flex items-center justify-center gap-1.5 ${
-                      p.available 
-                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20" 
-                        : "bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20"
-                    }`}
-                  >
-                    <span className={`w-1.5 h-1.5 rounded-full ${p.available ? 'bg-emerald-400' : 'bg-red-400'}`} />
-                    <span>{p.available ? "Disponível" : "Indisponível"}</span>
-                  </button>
+                {/* Corpo do Card: Nome e Descrição */}
+                <div className="p-4 flex-1 flex flex-col justify-between gap-3">
+                  <div>
+                    <h3 className="text-white font-bold text-base leading-tight mb-1.5 group-hover:text-orange-400 transition-colors">
+                      {p.name}
+                    </h3>
+                    <p className="text-neutral-400 text-xs leading-relaxed line-clamp-2 min-h-[32px]">
+                      {p.description || "Sem descrição informada."}
+                    </p>
+                  </div>
 
-                  <div className="flex items-center justify-center gap-1.5 w-full sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200">
-                    <Button
-                      variant="ghost"
-                      onClick={() => openEdit(p)}
-                      className="flex-1 text-[10px] py-1 px-2 border border-neutral-800 hover:border-neutral-700 text-center"
-                    >
-                      Editar
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      onClick={() => setDeleting(p.id)}
-                      className="flex-1 text-[10px] py-1 px-2 text-red-450 hover:text-red-400 hover:bg-red-500/10 border border-red-500/20 text-center"
-                    >
-                      Excluir
-                    </Button>
+                  {/* Painel de Controle de Admin (Status + Editar + Excluir) */}
+                  <div className="flex flex-col gap-2 pt-3 border-t border-neutral-850">
+                    <div className="flex items-center justify-between gap-2">
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            await updateProduct(p.id, { available: !p.available });
+                          } catch (err) {
+                            setError(err.response?.data?.message || "Erro ao alterar disponibilidade");
+                          }
+                        }}
+                        className={`flex-1 text-[10px] font-extrabold uppercase tracking-wider py-1.5 px-3 rounded-xl border transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                          p.available
+                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20"
+                            : "bg-rose-500/10 text-rose-400 border-rose-500/30 hover:bg-rose-500/20"
+                        }`}
+                      >
+                        <span className={`w-2 h-2 rounded-full ${p.available ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'}`} />
+                        <span>{p.available ? "Disponível" : "Indisponível"}</span>
+                      </button>
+
+                      <div className="flex items-center gap-1.5">
+                        <Button
+                          variant="ghost"
+                          onClick={() => openEdit(p)}
+                          className="text-xs py-1.5 px-3 border border-neutral-800 hover:border-neutral-700 font-semibold"
+                        >
+                          Editar
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          onClick={() => setDeleting(p.id)}
+                          className="text-xs py-1.5 px-3 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 border border-rose-500/20 font-semibold"
+                        >
+                          Excluir
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
