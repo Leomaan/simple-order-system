@@ -1,8 +1,11 @@
 import 'dotenv/config';
+import http from 'http';
 import app from './src/app.js';
 import { sequelize } from './src/models/index.js';
 import { Op } from 'sequelize';
 import RefreshToken from './src/models/refreshToken.js';
+import { initSocket } from './src/util/socket.js';
+import logger from './src/util/logger.js';
 
 const PORT = process.env.PORT || 3000;
 const force = process.argv.includes('--force');
@@ -11,11 +14,11 @@ async function bootstrap() {
   try {
     if (process.env.NODE_ENV !== 'production') {
       await sequelize.sync({ force });
-      if (force) console.log('Banco resetado com sucesso!');
-      console.log('Banco conectado e sincronizado com sucesso!');
+      if (force) logger.info('Banco resetado com sucesso!');
+      logger.info('Banco conectado e sincronizado com sucesso!');
     } else {
       await sequelize.authenticate();
-      console.log('Banco conectado com sucesso (Produção)!');
+      logger.info('Banco conectado com sucesso (Produção)!');
     }
 
     // Limpeza de refresh tokens expirados na inicialização
@@ -28,21 +31,24 @@ async function bootstrap() {
         }
       });
       if (deleted > 0) {
-        console.log(`Limpeza: ${deleted} tokens de atualização expirados removidos.`);
+        logger.info(`Limpeza: ${deleted} tokens de atualização expirados removidos.`);
       }
     } catch (cleanErr) {
-      console.warn('Alerta: Falha ao limpar tokens expirados:', cleanErr.message);
+      logger.warn('Alerta: Falha ao limpar tokens expirados:', { error: cleanErr.message });
     }
 
-    const server = app.listen(PORT, () =>
-      console.log(`Servidor rodando na porta ${PORT}`)
+    const httpServer = http.createServer(app);
+    initSocket(httpServer);
+
+    const server = httpServer.listen(PORT, () =>
+      logger.info(`Servidor rodando na porta ${PORT} com WebSocket (Socket.IO) ativado!`)
     );
 
     process.on('SIGTERM', async () => {
-      console.log(' Encerrando servidor...');
+      logger.info('Encerrando servidor...');
       server.close(async () => {
         await sequelize.close();
-        console.log('Servidor encerrado com sucesso!');
+        logger.info('Servidor encerrado com sucesso!');
         process.exit(0);
       });
     });
