@@ -6,6 +6,7 @@ import Input from '../ui/Input';
 import Button from '../ui/Button';
 import ErrorMessage from '../ui/ErrorMessage';
 import { formatErrorMessage } from '../util/errorUtil';
+import { Plus, X } from 'lucide-react';
 
 const roleLabel = { ADMIN: 'Admin', WAITER: 'Garçom' };
 const emptyForm = { name: '', email: '', password: '', role: 'WAITER' };
@@ -96,9 +97,10 @@ export default function UserSection() {
         <Button
           onClick={showForm ? closeForm : openCreate}
           variant={showForm ? 'secondary' : 'primary'}
-          className="w-full sm:w-auto py-3 text-xs font-bold uppercase tracking-wider shadow-lg shadow-orange-500/10"
+          className="w-full sm:w-auto py-3 px-5 text-xs font-bold uppercase tracking-wider shadow-lg shadow-orange-500/10 flex items-center justify-center gap-2"
         >
-          {showForm ? 'Cancelar' : '+ Novo usuário'}
+          {showForm ? <X size={16} /> : <Plus size={16} />}
+          <span>{showForm ? 'Cancelar' : 'Novo usuário'}</span>
         </Button>
       </div>
 

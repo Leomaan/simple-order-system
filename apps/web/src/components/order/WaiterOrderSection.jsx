@@ -85,14 +85,15 @@ export default function WaiterOrderSection() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 md:mb-8">
         <div>
           <h2 className="text-2xl font-bold text-white tracking-tight">Mesas & Pedidos</h2>
-          <p className="text-neutral-500 text-sm">Abra novas mesas e adicione consumos</p>
+          <p className="text-neutral-500 text-sm">Abra novas mesas e gerencie consumos em tempo real</p>
         </div>
         <Button
           onClick={() => setShowForm(!showForm)}
           variant={showForm ? 'secondary' : 'primary'}
-          className="w-full sm:w-auto py-3 text-xs font-bold uppercase tracking-wider shadow-lg shadow-orange-500/10"
+          className="w-full sm:w-auto py-3 px-5 text-xs font-bold uppercase tracking-wider shadow-lg shadow-orange-500/10 flex items-center justify-center gap-2"
         >
-          {showForm ? 'Cancelar' : '+ Abrir mesa'}
+          {showForm ? <X size={16} /> : <Plus size={16} />}
+          <span>{showForm ? 'Cancelar' : 'Abrir mesa'}</span>
         </Button>
       </div>
 
@@ -118,9 +119,10 @@ export default function WaiterOrderSection() {
           <Button 
             type="submit" 
             loading={saving}
-            className="w-full sm:w-auto h-[44px] px-6 text-xs font-bold uppercase tracking-wider shrink-0 shadow-md shadow-orange-500/10"
+            className="w-full sm:w-auto h-[44px] px-6 text-xs font-bold uppercase tracking-wider shrink-0 shadow-md shadow-orange-500/10 flex items-center justify-center gap-2"
           >
-            Abrir mesa
+            <Plus size={16} />
+            <span>Abrir mesa</span>
           </Button>
         </form>
       )}
@@ -142,69 +144,95 @@ export default function WaiterOrderSection() {
         ))}
       </div>
 
-      {/* Lista */}
+      {/* Lista de Pedidos / Mesas (Cards Grandes & Organizados Estilo PDV) */}
       {loading ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3.5">
-          {[1, 2, 3, 4].map(i => <div key={i} className="h-32 bg-neutral-900/50 border border-neutral-800 rounded-2xl animate-pulse" />)}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {[1, 2, 3, 4, 5, 6].map(i => <div key={i} className="h-56 bg-neutral-900/50 border border-neutral-800 rounded-2xl animate-pulse" />)}
         </div>
       ) : orders.length === 0 ? (
         <div className="text-center py-20 bg-neutral-900/10 rounded-3xl border border-dashed border-neutral-800">
           <p className="text-neutral-500 font-medium">Nenhum pedido encontrado nesta categoria.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {orders.map((o) => {
             const orderTotal = o.OrderItems?.reduce((sum, item) => sum + Number(item.totalPrice), 0) || 0;
+            const itemCount = o.OrderItems?.length || 0;
+
             return (
               <div
                 key={o.id}
                 onClick={() => o.status === 'OPEN' ? setSelectedOrder(o) : null}
-                className={`glass-card glass-card-hover rounded-2xl p-3 sm:p-3.5 flex flex-col justify-between gap-2.5 transition-all min-h-[135px] ${
-                  o.status === 'OPEN' ? 'cursor-pointer hover:border-neutral-600' : 'opacity-70'
+                className={`group relative glass-card rounded-2xl p-5 flex flex-col justify-between gap-4 border transition-all duration-300 shadow-xl ${
+                  o.status === 'OPEN'
+                    ? 'border-neutral-800 hover:border-orange-500/50 hover:shadow-orange-500/5 cursor-pointer'
+                    : 'border-neutral-900 opacity-60 bg-neutral-950/40'
                 }`}
               >
-                {/* Linha Superior: Mesa + Valor do Pedido */}
-                <div className="flex items-start justify-between gap-1.5 w-full">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className="w-8 h-8 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-400 font-black text-xs shrink-0">
+                {/* Banner de Topo do Card da Mesa */}
+                <div className="flex items-start justify-between gap-3 pb-3 border-b border-neutral-850">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-400 font-black text-lg shrink-0 shadow-inner">
                       {o.table}
                     </div>
-                    <div className="flex flex-col min-w-0">
-                      <span className="text-white font-extrabold text-xs sm:text-sm leading-tight whitespace-nowrap">Mesa {o.table}</span>
-                      <span className="text-neutral-550 text-[9px] uppercase tracking-wider font-semibold truncate">
-                        #{o.id} · {new Date(o.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                      </span>
+                    <div>
+                      <h3 className="text-white font-extrabold text-base leading-tight">Mesa {o.table}</h3>
+                      <p className="text-neutral-500 text-xs font-semibold mt-0.5">
+                        Pedido #{o.id} · {new Date(o.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                      </p>
                     </div>
                   </div>
 
-                  <div className="text-right shrink-0">
+                  {/* Tag de Status */}
+                  <span className={`text-[10px] font-extrabold uppercase tracking-wider py-1 px-3 rounded-xl border shrink-0 ${statusLabel[o.status].color}`}>
+                    {statusLabel[o.status].label}
+                  </span>
+                </div>
+
+                {/* Resumo de Consumo e Total */}
+                <div className="flex items-center justify-between bg-neutral-950/40 p-3.5 rounded-xl border border-neutral-850">
+                  <div>
+                    <span className="text-neutral-400 text-xs font-medium block">Consumo Atual</span>
+                    <span className="text-neutral-500 text-[10px]">
+                      {itemCount > 0 ? `${itemCount} ${itemCount === 1 ? 'item' : 'itens'} no pedido` : 'Nenhum item lançado'}
+                    </span>
+                  </div>
+
+                  <div className="text-right">
                     {orderTotal > 0 ? (
-                      <span className="text-emerald-400 font-bold text-xs sm:text-sm whitespace-nowrap block">
+                      <span className="text-emerald-400 font-extrabold text-base block">
                         {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(orderTotal)}
                       </span>
                     ) : (
-                      <span className="text-neutral-550 text-[10px] italic block">Sem consumo</span>
+                      <span className="text-neutral-500 text-xs italic font-medium block">R$ 0,00</span>
                     )}
                   </div>
                 </div>
 
-                {/* Área Inferior: Status em Largura Total + Ações */}
-                <div className="flex flex-col gap-2 pt-2 border-t border-neutral-850/60 mt-0.5">
-                  <span className={`w-full text-[9px] font-bold uppercase tracking-wider py-1 px-2 rounded-lg border text-center block ${statusLabel[o.status].color}`}>
-                    {statusLabel[o.status].label}
-                  </span>
-
-                  {o.status === 'OPEN' && (
-                    <div className="flex items-center justify-center gap-1.5 w-full">
+                {/* Botões de Ação */}
+                <div className="flex items-center justify-between gap-2 pt-1">
+                  {o.status === 'OPEN' ? (
+                    <>
+                      <Button
+                        variant="primary"
+                        onClick={(e) => { e.stopPropagation(); setSelectedOrder(o); }}
+                        className="flex-1 text-xs py-2 px-3 font-bold uppercase tracking-wider"
+                      >
+                        Ver Consumo
+                      </Button>
                       <Button
                         variant="ghost"
                         onClick={(e) => { e.stopPropagation(); setDeleting(o.id); }}
-                        className="w-full text-[10px] py-1 px-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20 rounded-lg text-center"
+                        className="text-xs py-2 px-3 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 border border-rose-500/20 font-semibold"
                         title="Excluir mesa vazia"
                       >
                         Excluir
                       </Button>
-                    </div>
+                    </>
+                  ) : (
+                    <span className="w-full text-center text-xs text-neutral-500 py-1.5 italic">
+                      Mesa encerrada
+                    </span>
                   )}
                 </div>
               </div>
