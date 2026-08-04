@@ -144,23 +144,23 @@ export default function WaiterOrderSection() {
         ))}
       </div>
 
-      {/* Lista de Pedidos / Mesas (Cards Grandes & Impactantes Estilo POS/PDV) */}
+      {/* Lista de Pedidos / Mesas (Mesma estrutura, tamanho e organização do Cardápio) */}
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="h-72 bg-neutral-900/50 border border-neutral-800 rounded-3xl animate-pulse" />
+            <div key={i} className="h-64 bg-neutral-900/50 border border-neutral-800 rounded-2xl animate-pulse" />
           ))}
         </div>
       ) : orders.length === 0 ? (
-        <div className="text-center py-20 bg-neutral-900/10 rounded-3xl border border-dashed border-neutral-800">
+        <div className="text-center py-16 bg-neutral-900/10 rounded-2xl border border-dashed border-neutral-800">
           <p className="text-neutral-500 font-medium">Nenhum pedido encontrado nesta categoria.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {orders.map((o) => {
             const orderTotal = o.OrderItems?.reduce((sum, item) => sum + Number(item.totalPrice), 0) || 0;
             const itemCount = o.OrderItems?.reduce((sum, item) => sum + Number(item.quantity), 0) || 0;
-            const itemNames = o.OrderItems?.map((i) => i.Product?.name || i.productName || 'Item').slice(0, 3).join(', ');
+            const itemNames = o.OrderItems?.map((i) => i.Product?.name || i.productName || 'Item').slice(0, 2).join(', ');
 
             const isOpen = o.status === 'OPEN';
 
@@ -168,88 +168,81 @@ export default function WaiterOrderSection() {
               <div
                 key={o.id}
                 onClick={() => (isOpen ? setSelectedOrder(o) : null)}
-                className={`group relative glass-card rounded-3xl overflow-hidden flex flex-col justify-between border transition-all duration-300 shadow-2xl ${
+                className={`group relative glass-card rounded-2xl overflow-hidden flex flex-col justify-between border transition-all duration-300 shadow-xl ${
                   isOpen
-                    ? 'border-neutral-800 hover:border-orange-500/60 hover:shadow-orange-500/10 cursor-pointer'
+                    ? 'border-neutral-800 hover:border-orange-500/50 hover:shadow-orange-500/5 cursor-pointer'
                     : 'border-neutral-900 opacity-60 bg-neutral-950/40 select-none'
                 }`}
               >
-                {/* Top Banner de Destaque da Mesa */}
-                <div className="h-28 w-full relative bg-gradient-to-b from-orange-500/20 via-amber-500/10 to-neutral-900 p-5 flex items-center justify-between border-b border-neutral-850/60">
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-2xl bg-neutral-900/90 border border-orange-500/30 flex items-center justify-center text-orange-400 font-black text-2xl shadow-xl backdrop-blur-md">
+                {/* Top Banner de Destaque da Mesa (Identico ao produto: h-28) */}
+                <div className="h-28 w-full relative bg-gradient-to-b from-orange-500/20 via-amber-500/10 to-neutral-900 flex items-center justify-center overflow-hidden border-b border-neutral-850/50">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-neutral-900/80 border border-neutral-750 flex items-center justify-center shadow-lg backdrop-blur-md text-orange-400 font-black text-xl">
                       {o.table}
-                    </div>
-                    <div>
-                      <h3 className="text-white font-extrabold text-xl leading-tight">Mesa {o.table}</h3>
-                      <p className="text-neutral-400 text-xs font-medium mt-0.5">
-                        Pedido #{o.id} · {new Date(o.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                      </p>
                     </div>
                   </div>
 
-                  {/* Badge de Status */}
-                  <span className={`text-[11px] font-extrabold uppercase tracking-wider py-1.5 px-3.5 rounded-xl border backdrop-blur-md shadow-md ${statusLabel[o.status].color}`}>
+                  {/* Badge de Status (Top Left) */}
+                  <span className={`absolute top-3 left-3 text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-lg border backdrop-blur-md shadow-md ${statusLabel[o.status].color}`}>
                     {statusLabel[o.status].label}
+                  </span>
+
+                  {/* Preço em Destaque no Header (Bottom Right) */}
+                  <span className="absolute bottom-3 right-3 text-sm font-extrabold px-3 py-1 rounded-xl bg-orange-500/90 text-white shadow-lg backdrop-blur-md">
+                    {orderTotal > 0
+                      ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(orderTotal)
+                      : 'R$ 0,00'}
                   </span>
                 </div>
 
-                {/* Corpo do Card: Resumo de Consumo */}
-                <div className="p-5 flex-1 flex flex-col justify-between gap-4">
-                  <div className="bg-neutral-950/60 p-4 rounded-2xl border border-neutral-850 flex items-center justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <span className="text-neutral-400 text-xs font-semibold uppercase tracking-wider block">Consumo Atual</span>
-                      <p className="text-neutral-300 text-xs truncate mt-1">
-                        {itemCount > 0
-                          ? `${itemCount} ${itemCount === 1 ? 'item' : 'itens'}${itemNames ? ` (${itemNames}${o.OrderItems.length > 3 ? '...' : ''})` : ''}`
-                          : 'Nenhum consumo lançado'}
-                      </p>
-                    </div>
-
-                    <div className="text-right shrink-0">
-                      {orderTotal > 0 ? (
-                        <span className="text-emerald-400 font-black text-xl block leading-tight">
-                          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(orderTotal)}
-                        </span>
-                      ) : (
-                        <span className="text-neutral-500 text-xs italic font-medium block">R$ 0,00</span>
-                      )}
-                    </div>
+                {/* Corpo do Card: Nome e Descrição (Identico ao produto) */}
+                <div className="p-4 flex-1 flex flex-col justify-between gap-3">
+                  <div>
+                    <h3 className="text-white font-bold text-base leading-tight mb-1.5 group-hover:text-orange-400 transition-colors">
+                      Mesa {o.table}
+                    </h3>
+                    <p className="text-neutral-400 text-xs leading-relaxed line-clamp-2 min-h-[32px]">
+                      {itemCount > 0
+                        ? `${itemCount} ${itemCount === 1 ? 'item' : 'itens'}${itemNames ? `: ${itemNames}${o.OrderItems.length > 2 ? '...' : ''}` : ''}`
+                        : 'Nenhum consumo lançado nesta mesa.'}
+                    </p>
                   </div>
 
-                  {/* Botões Grandes de Ação (Touch-Friendly) */}
-                  <div className="flex items-center gap-2 pt-1">
-                    {isOpen ? (
-                      <>
-                        <Button
-                          variant="primary"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedOrder(o);
-                          }}
-                          className="flex-1 h-12 text-xs font-extrabold uppercase tracking-wider shadow-lg shadow-orange-500/15"
-                        >
-                          Ver Consumo / Adicionar
-                        </Button>
-                        {itemCount === 0 && (
+                  {/* Painel Inferior de Controle */}
+                  <div className="flex flex-col gap-2 pt-3 border-t border-neutral-850">
+                    <div className="flex items-center justify-between gap-2">
+                      {isOpen ? (
+                        <>
                           <Button
-                            variant="ghost"
+                            variant="primary"
                             onClick={(e) => {
                               e.stopPropagation();
-                              setDeleting(o.id);
+                              setSelectedOrder(o);
                             }}
-                            className="h-12 px-4 text-xs font-bold text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 border border-rose-500/20 rounded-xl"
-                            title="Excluir mesa vazia"
+                            className="flex-1 text-xs py-1.5 px-3 font-bold uppercase tracking-wider"
                           >
-                            Excluir
+                            Ver Consumo
                           </Button>
-                        )}
-                      </>
-                    ) : (
-                      <span className="w-full text-center text-xs font-semibold text-neutral-500 py-3 bg-neutral-950/30 rounded-xl border border-neutral-850">
-                        Mesa Encerrada
-                      </span>
-                    )}
+                          {itemCount === 0 && (
+                            <Button
+                              variant="ghost"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeleting(o.id);
+                              }}
+                              className="text-xs py-1.5 px-3 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 border border-rose-500/20 font-semibold"
+                              title="Excluir mesa vazia"
+                            >
+                              Excluir
+                            </Button>
+                          )}
+                        </>
+                      ) : (
+                        <span className="w-full text-center text-xs text-neutral-500 py-1 italic">
+                          Mesa Encerrada
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
