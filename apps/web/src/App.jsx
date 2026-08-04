@@ -1,5 +1,8 @@
 import { RouterProvider } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { SocketProvider } from './context/SocketContext';
+import { ToastProvider } from './context/ToastContext';
+import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import OfflineStatusBanner from './components/ui/OfflineStatusBanner';
 import { router } from './routes';
@@ -16,11 +19,17 @@ const queryClient = new QueryClient({
 
 export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <OfflineStatusBanner />
-      <AuthProvider>
-        <RouterProvider router={router} />
-      </AuthProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <ToastProvider>
+          <OfflineStatusBanner />
+          <SocketProvider>
+            <AuthProvider>
+              <RouterProvider router={router} />
+            </AuthProvider>
+          </SocketProvider>
+        </ToastProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
