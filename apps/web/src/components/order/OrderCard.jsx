@@ -1,65 +1,98 @@
 import React from 'react';
 import { STATUS_MAP } from '../constants/orderConstants';
+import Button from '../ui/Button';
 
 export default function OrderCard({ order, onClick, onEdit, onDelete }) {
-  const status = STATUS_MAP[order.status];
+  const status = STATUS_MAP[order.status] || { label: order.status, color: 'text-neutral-400 border-neutral-800' };
   const orderTotal = order.OrderItems?.reduce((sum, item) => sum + Number(item.totalPrice), 0) || 0;
-  
+  const itemCount = order.OrderItems?.reduce((sum, item) => sum + Number(item.quantity), 0) || 0;
+  const itemNames = order.OrderItems?.map((i) => i.Product?.name || i.productName || 'Item').slice(0, 2).join(', ');
+
+  const isOpen = order.status === 'OPEN';
+
   return (
     <div
       onClick={() => onClick(order)}
-      className="group glass-card glass-card-hover rounded-2xl p-3 sm:p-3.5 flex flex-col justify-between gap-2.5 cursor-pointer transition-all min-h-[135px]"
+      className={`group relative glass-card rounded-2xl overflow-hidden flex flex-col justify-between border transition-all duration-300 shadow-xl ${
+        isOpen
+          ? 'border-neutral-800 hover:border-orange-500/50 hover:shadow-orange-500/5 cursor-pointer'
+          : 'border-neutral-900 opacity-60 bg-neutral-950/40 select-none'
+      }`}
     >
-      {/* Linha Superior: Mesa + Valor do Pedido */}
-      <div className="flex items-start justify-between gap-1.5 w-full">
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="w-8 h-8 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-500 font-extrabold text-xs select-none shrink-0">
+      {/* Top Banner de Destaque da Mesa (Identico ao produto: h-28) */}
+      <div className="h-28 w-full relative bg-gradient-to-b from-orange-500/20 via-amber-500/10 to-neutral-900 flex items-center justify-center overflow-hidden border-b border-neutral-850/50">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-neutral-900/80 border border-neutral-750 flex items-center justify-center shadow-lg backdrop-blur-md text-orange-400 font-black text-xl">
             {order.table}
           </div>
-          <div className="flex flex-col min-w-0">
-            <span className="text-white font-extrabold text-xs sm:text-sm leading-tight whitespace-nowrap">Mesa {order.table}</span>
-            <span className="text-neutral-550 text-[9px] uppercase tracking-wider font-semibold truncate">
-              #{order.id} · {new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-            </span>
-          </div>
         </div>
 
-        <div className="text-right shrink-0">
-          {orderTotal > 0 ? (
-            <span className="text-emerald-400 font-bold text-xs sm:text-sm whitespace-nowrap block">
-              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(orderTotal)}
-            </span>
-          ) : (
-            <span className="text-neutral-550 text-[10px] italic block">Sem consumo</span>
-          )}
-        </div>
-      </div>
-
-      {/* Área Inferior: Status em Largura Total + Ações Centralizadas */}
-      <div className="flex flex-col gap-2 pt-2 border-t border-neutral-850/60 mt-0.5">
-        <span className={`w-full text-[9px] font-bold uppercase tracking-wider py-1 px-2 rounded-lg border text-center block ${status.color}`}>
+        {/* Badge de Status (Top Left) */}
+        <span className={`absolute top-3 left-3 text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-lg border backdrop-blur-md shadow-md ${status.color}`}>
           {status.label}
         </span>
 
-        <div className="flex items-center justify-center gap-1.5 w-full sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200">
-          {order.status === 'OPEN' && (
-            <button
-              onClick={(e) => { e.stopPropagation(); onEdit(order); }}
-              className="flex-1 py-1 px-2 text-[10px] font-semibold text-neutral-300 hover:text-white bg-neutral-900 border border-neutral-800 hover:border-neutral-700 rounded-lg transition-all cursor-pointer active:scale-95 text-center"
-              title="Editar Mesa"
+        {/* Preço em Destaque no Header (Bottom Right) */}
+        <span className="absolute bottom-3 right-3 text-sm font-extrabold px-3 py-1 rounded-xl bg-orange-500/90 text-white shadow-lg backdrop-blur-md">
+          {orderTotal > 0
+            ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(orderTotal)
+            : 'R$ 0,00'}
+        </span>
+      </div>
+
+      {/* Corpo do Card: Nome e Descrição (Identico ao produto) */}
+      <div className="p-4 flex-1 flex flex-col justify-between gap-3">
+        <div>
+          <h3 className="text-white font-bold text-base leading-tight mb-1.5 group-hover:text-orange-400 transition-colors">
+            Mesa {order.table}
+          </h3>
+          <p className="text-neutral-400 text-xs leading-relaxed line-clamp-2 min-h-[32px]">
+            {itemCount > 0
+              ? `${itemCount} ${itemCount === 1 ? 'item' : 'itens'}${itemNames ? `: ${itemNames}${order.OrderItems.length > 2 ? '...' : ''}` : ''}`
+              : 'Nenhum consumo lançado nesta mesa.'}
+          </p>
+        </div>
+
+        {/* Painel Inferior de Controle Admin */}
+        <div className="flex flex-col gap-2 pt-3 border-t border-neutral-850">
+          <div className="flex items-center justify-between gap-2">
+            <Button
+              variant="primary"
+              onClick={(e) => {
+                e.stopPropagation();
+                onClick(order);
+              }}
+              className="flex-1 text-xs py-1.5 px-2 font-bold uppercase tracking-wider"
             >
-              Editar
-            </button>
-          )}
-          {order.status !== 'CLOSED' && (
-            <button
-              onClick={(e) => { e.stopPropagation(); onDelete(order.id); }}
-              className="flex-1 py-1 px-2 text-[10px] font-semibold text-red-400 hover:text-red-300 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 rounded-lg transition-all cursor-pointer active:scale-95 text-center"
-              title="Excluir Pedido"
-            >
-              Excluir
-            </button>
-          )}
+              Ver Consumo
+            </Button>
+
+            {isOpen && onEdit && (
+              <Button
+                variant="ghost"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(order);
+                }}
+                className="text-xs py-1.5 px-2 border border-neutral-800 hover:border-neutral-700 font-semibold"
+              >
+                Editar
+              </Button>
+            )}
+
+            {order.status !== 'CLOSED' && onDelete && (
+              <Button
+                variant="ghost"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(order.id);
+                }}
+                className="text-xs py-1.5 px-2 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 border border-rose-500/20 font-semibold"
+              >
+                Excluir
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </div>

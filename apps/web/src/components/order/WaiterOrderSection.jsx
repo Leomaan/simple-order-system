@@ -6,6 +6,7 @@ import OrderDetailModal from './OrderDetailModal';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import { formatErrorMessage } from '../util/errorUtil';
+import { Plus, X } from 'lucide-react';
 
 const statusLabel = {
   OPEN:   { label: 'Aberto',  color: 'text-green-400 bg-green-400/10 border-green-400/20' },

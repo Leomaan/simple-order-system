@@ -9,6 +9,7 @@ import Button from '../ui/Button';
 import Input from '../ui/Input';
 import ErrorMessage from '../ui/ErrorMessage';
 import { formatErrorMessage } from '../util/errorUtil';
+import { Plus, X } from 'lucide-react';
 
 export default function OrderSection() {
   const { orders, loading, fetchOrders, createOrder, deleteOrder, updateOrder, totalPages, currentPage, setPage } = useOrders('OPEN');
@@ -89,14 +90,12 @@ export default function OrderSection() {
           <p className="text-neutral-500 text-sm">Gerencie o fluxo de mesas e consumo em tempo real</p>
         </div>
         <Button
-          onClick={() => handleOpenForm()}
-          variant="primary"
-          className="w-full sm:w-auto py-3 px-6 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-orange-500/10"
+          onClick={() => (showForm || editing ? (setShowForm(false), setEditing(null)) : handleOpenForm())}
+          variant={showForm || editing ? 'secondary' : 'primary'}
+          className="w-full sm:w-auto py-3 px-5 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-orange-500/10"
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-          </svg>
-          Novo Pedido
+          {showForm || editing ? <X size={16} /> : <Plus size={16} />}
+          <span>{showForm || editing ? 'Cancelar' : 'Novo pedido'}</span>
         </Button>
       </header>
 
@@ -129,9 +128,10 @@ export default function OrderSection() {
               <Button 
                 type="submit" 
                 loading={saving}
-                className="h-[44px] px-6 text-xs font-bold uppercase tracking-wider shadow-md shadow-orange-500/10"
+                className="h-[44px] px-6 text-xs font-bold uppercase tracking-wider shadow-md shadow-orange-500/10 flex items-center justify-center gap-2"
               >
-                {editing ? 'Atualizar' : 'Abrir Pedido'}
+                <Plus size={16} />
+                <span>{editing ? 'Atualizar' : 'Abrir Pedido'}</span>
               </Button>
             </div>
           </div>
@@ -159,16 +159,18 @@ export default function OrderSection() {
 
       {/* Lista */}
       {loading ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3.5">
-          {[1, 2, 3, 4].map(i => <div key={i} className="h-32 bg-neutral-900/50 border border-neutral-800 rounded-2xl animate-pulse" />)}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="h-64 bg-neutral-900/50 border border-neutral-800 rounded-2xl animate-pulse" />
+          ))}
         </div>
       ) : orders.length === 0 ? (
-        <div className="text-center py-20 bg-neutral-900/10 rounded-3xl border border-dashed border-neutral-800">
+        <div className="text-center py-16 bg-neutral-900/10 rounded-2xl border border-dashed border-neutral-800">
           <p className="text-neutral-550 font-medium">Nenhum pedido encontrado nesta categoria.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3.5">
-          {orders.map(o => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {orders.map((o) => (
             <OrderCard 
               key={o.id} 
               order={o} 
