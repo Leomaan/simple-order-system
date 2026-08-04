@@ -24,6 +24,13 @@ export const SocketProvider = ({ children }) => {
     function handleOrderChange() {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       queryClient.invalidateQueries({ queryKey: ['reports'] });
+      queryClient.invalidateQueries({ queryKey: ['auditLogs'] });
+      queryClient.invalidateQueries({ queryKey: ['audit-logs'] });
+    }
+
+    function handleProductChange() {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['auditLogs'] });
       queryClient.invalidateQueries({ queryKey: ['audit-logs'] });
     }
 
@@ -42,6 +49,12 @@ export const SocketProvider = ({ children }) => {
     socket.on('order_item:updated', handleOrderChange);
     socket.on('order_item:deleted', handleOrderChange);
 
+    // Eventos de produtos em tempo real (Instantâneo)
+    socket.on('product:created', handleProductChange);
+    socket.on('product:updated', handleProductChange);
+    socket.on('product:deleted', handleProductChange);
+    socket.on('product:restored', handleProductChange);
+
     return () => {
       socket.off('connect', onConnect);
       socket.off('disconnect', onDisconnect);
@@ -53,6 +66,10 @@ export const SocketProvider = ({ children }) => {
       socket.off('order_item:created', handleOrderChange);
       socket.off('order_item:updated', handleOrderChange);
       socket.off('order_item:deleted', handleOrderChange);
+      socket.off('product:created', handleProductChange);
+      socket.off('product:updated', handleProductChange);
+      socket.off('product:deleted', handleProductChange);
+      socket.off('product:restored', handleProductChange);
     };
   }, [queryClient]);
 

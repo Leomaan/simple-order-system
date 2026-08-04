@@ -2,6 +2,7 @@ import { asyncHandler } from '../middleware/asyncHandler.js';
 import * as productService from '../services/productService.js';
 import { log } from '../services/auditLogService.js';
 import logger from '../util/logger.js';
+import { emitEvent } from '../util/socket.js';
  
 export const create = asyncHandler(async (req, res) => {
   const product = await productService.createProduct(req.body);
@@ -18,6 +19,8 @@ export const create = asyncHandler(async (req, res) => {
     } 
   });
   logger.info('Novo produto cadastrado', { context: 'product_controller', productId: product.id, name: product.name });
+  
+  emitEvent('product:created', product);
   res.status(201).json({ success: true, data: product });
 });
  
@@ -77,6 +80,8 @@ export const update = asyncHandler(async (req, res) => {
   });
 
   logger.info('Produto atualizado', { context: 'product_controller', productId: product.id, updatedBy: req.user?.id });
+  
+  emitEvent('product:updated', product);
   res.status(200).json({ success: true, data: product });
 });
  
@@ -84,6 +89,8 @@ export const remove = asyncHandler(async (req, res) => {
   const product = await productService.deleteProduct(req.params.id);
   await log({ user: req.user, action: 'DELETE_PRODUCT', entity: 'Product', entityId: Number(req.params.id), details: { name: product.name } });
   logger.warn('Produto removido (Soft Delete)', { context: 'product_controller', productId: req.params.id });
+  
+  emitEvent('product:deleted', { id: Number(req.params.id) });
   res.status(200).json({ success: true, message: 'product removed' });
 });
  
@@ -91,6 +98,8 @@ export const restore = asyncHandler(async (req, res) => {
   const product = await productService.restoreProduct(req.params.id);
   await log({ user: req.user, action: 'RESTORE_PRODUCT', entity: 'Product', entityId: product.id, details: { name: product.name } });
   logger.info('Produto restaurado', { context: 'product_controller', productId: product.id });
+  
+  emitEvent('product:restored', product);
   res.status(200).json({ success: true, data: product });
 });
  
@@ -98,5 +107,7 @@ export const permanentDelete = asyncHandler(async (req, res) => {
   const product = await productService.permanentDeleteProduct(req.params.id);
   await log({ user: req.user, action: 'PERMANENT_DELETE_PRODUCT', entity: 'Product', entityId: Number(req.params.id), details: { name: product.name } });
   logger.warn('Produto excluído permanentemente', { context: 'product_controller', productId: req.params.id });
+  
+  emitEvent('product:deleted', { id: Number(req.params.id) });
   res.status(200).json({ success: true, message: 'product permanently deleted' });
 });
