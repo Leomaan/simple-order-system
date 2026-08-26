@@ -162,10 +162,23 @@ describe('deleteOrder', () => {
     await expect(deleteOrder(99, 'ADMIN')).rejects.toMatchObject({ status: 404 });
   });
 
-  it('deve lançar AppError se pedido estiver fechado', async () => {
-    Order.findByPk.mockResolvedValue({ id: 1, status: 'CLOSED' });
+  it('deve permitir que o ADMIN exclua um pedido fechado/pendente (CLOSED)', async () => {
+    const order = { id: 1, status: 'CLOSED', destroy: vi.fn().mockResolvedValue(true) };
+    Order.findByPk.mockResolvedValue(order);
 
-    await expect(deleteOrder(1, 'ADMIN')).rejects.toMatchObject({ message: 'cannot delete a closed order' });
+    const result = await deleteOrder(1, 'ADMIN');
+
+    expect(order.destroy).toHaveBeenCalledOnce();
+    expect(result).toBe(order);
+  });
+
+  it('deve lançar AppError se pedido já estiver pago (PAID)', async () => {
+    Order.findByPk.mockResolvedValue({ id: 1, status: 'PAID' });
+
+    await expect(deleteOrder(1, 'ADMIN')).rejects.toMatchObject({ 
+      message: 'Não é possível excluir um pedido que já foi pago',
+      status: 400 
+    });
   });
 });
 
