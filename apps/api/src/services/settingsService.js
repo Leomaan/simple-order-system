@@ -35,6 +35,8 @@ export async function getMaskedSettings() {
 
 export async function updateSettings(data, user = null) {
   const currentSettings = await getSettings();
+  const updateData = { ...data };
+
   const isMaskedOrInvalid = (str) => {
     if (!str || typeof str !== 'string') return false;
     return str.includes('*') || str.includes('...') || str.includes('•') || /[^\x20-\x7E]/.test(str);
