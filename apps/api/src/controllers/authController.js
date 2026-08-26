@@ -12,8 +12,6 @@ const cookieOptions = {
 };
 
 const getCsrfCookieOptions = (req) => {
-  // Se for localhost/127.0.0.1, definimos secure como false para que a página 
-  // do frontend rodando em HTTP (localhost:5173) possa ler o cookie via document.cookie
   const isLocal = req.hostname === 'localhost' || req.hostname === '127.0.0.1';
   return {
     httpOnly: false,
