@@ -263,3 +263,65 @@ export async function manualPayOrder(orderId, paymentMethod = 'CASH', user = nul
 
   return order;
 }
+
+/**
+ * Actively checks the payment status on Mercado Pago for a given order.
+ * @param {number} orderId 
+ * @param {object} user 
+ */
+export async function checkPaymentStatus(orderId, user = null) {
+  const order = await Order.findByPk(orderId, {
+    include: [OrderItem]
+  });
+
+  if (!order) throw new AppError('Order not found', 404);
+  if (order.status === 'PAID') return { success: true, status: 'PAID', message: 'Order is already paid' };
+  if (!order.paymentId) throw new AppError('No payment initiated for this order', 400);
+
+  // If it's a mock payment
+  if (order.paymentId.startsWith('mock_')) {
+    return { success: false, status: order.status, message: 'Mock payment pending simulation' };
+  }
+
+  const settings = await getSettings();
+  let accessToken = settings?.mercadoPagoAccessToken || process.env.MERCADO_PAGO_ACCESS_TOKEN;
+  if (accessToken) accessToken = String(accessToken).trim();
+
+  if (!accessToken || accessToken.includes('your_mercado_pago_access_token')) {
+    throw new AppError('Mercado Pago access token not configured', 500);
+  }
+
+  try {
+    const response = await fetch(`https://api.mercadopago.com/v1/payments/${order.paymentId}`, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to query Mercado Pago API');
+    }
+
+    const paymentInfo = await response.json();
+    const status = paymentInfo.status; // 'approved', 'pending', 'rejected', etc.
+
+    if (status === 'approved') {
+      const total = order.OrderItems?.reduce((sum, item) => sum + Number(item.totalPrice), 0) || 0;
+      await order.update({ status: 'PAID', paymentMethod: 'PIX' });
+      await log({
+        user: user || { name: 'status_check_system', role: 'system' },
+        action: 'PAY_ORDER',
+        entity: 'Order',
+        entityId: order.id,
+        details: { table: order.table, order: order.id, paymentId: order.paymentId, status: 'PAID', total }
+      });
+      emitEvent('order:updated', order);
+      return { success: true, status: 'PAID', order };
+    }
+
+    return { success: false, status: status || 'pending', message: `Pagamento ainda em status: ${status}` };
+  } catch (error) {
+    logger.error('Erro ao consultar status do pagamento no Mercado Pago', { context: 'payment_service', error: error.message });
+    throw new AppError(`Erro ao consultar Mercado Pago: ${error.message}`, 500);
+  }
+}

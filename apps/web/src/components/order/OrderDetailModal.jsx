@@ -22,6 +22,7 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
   const [generatingPix, setGeneratingPix] = useState(false);
   const [simulatingConfirm, setSimulatingConfirm] = useState(false);
   const [processingManual, setProcessingManual] = useState(null);
+  const [checkingStatus, setCheckingStatus] = useState(false);
   const [reopening, setReopening] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -56,16 +57,27 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
     let interval;
     if (orderDetails?.status === 'CLOSED' && orderDetails?.paymentId) {
       interval = setInterval(() => {
-        api.get(`/order/${order.id}`)
-          .then(res => {
-            const updated = res.data.data;
-            if (updated.status === 'PAID') {
-              setOrderDetails(updated);
-              onUpdate?.();
-            }
-          })
-          .catch(() => {});
-      }, 4000);
+        // Consultar status ativo no Mercado Pago caso não seja mock
+        if (!orderDetails.paymentId.startsWith('mock_')) {
+          api.get(`/payment/check-status/${order.id}`)
+            .then(res => {
+              if (res.data.data?.status === 'PAID') {
+                fetchDetails();
+                onUpdate?.();
+              }
+            })
+            .catch(() => {});
+        } else {
+          api.get(`/order/${order.id}`)
+            .then(res => {
+              if (res.data.data?.status === 'PAID') {
+                setOrderDetails(res.data.data);
+                onUpdate?.();
+              }
+            })
+            .catch(() => {});
+        }
+      }, 3000);
     }
     return () => {
       if (interval) clearInterval(interval);
@@ -117,6 +129,24 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
       setError(formatErrorMessage(err));
     } finally {
       setGeneratingPix(false);
+    }
+  };
+
+  const handleCheckStatus = async () => {
+    setCheckingStatus(true);
+    setError('');
+    try {
+      const res = await api.get(`/payment/check-status/${order.id}`);
+      if (res.data.data?.status === 'PAID') {
+        await fetchDetails();
+        onUpdate?.();
+      } else {
+        setError(res.data.data?.message || 'Pagamento ainda em processamento pelo Mercado Pago.');
+      }
+    } catch (err) {
+      setError(formatErrorMessage(err));
+    } finally {
+      setCheckingStatus(false);
     }
   };
 
@@ -401,6 +431,17 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
                         </span>
                         <span className="text-orange-300 text-xs font-medium">Aguardando confirmação do pagamento...</span>
                       </div>
+
+                      {/* Botão de Verificação Ativa */}
+                      <Button
+                        onClick={handleCheckStatus}
+                        loading={checkingStatus}
+                        variant="primary"
+                        className="w-full text-xs py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/15"
+                      >
+                        <RefreshCw size={14} className={checkingStatus ? 'animate-spin' : ''} />
+                        <span>Já paguei! Verificar Pagamento</span>
+                      </Button>
 
                       {import.meta.env.DEV && (
                         <Button

@@ -60,3 +60,9 @@ export const manualPayment = asyncHandler(async (req, res) => {
   const result = await paymentService.manualPayOrder(orderId, method, req.user);
   res.status(200).json({ success: true, message: 'Pagamento registrado com sucesso', data: result });
 });
+
+export const checkStatus = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const result = await paymentService.checkPaymentStatus(id, req.user);
+  res.status(200).json({ success: true, data: result });
+});
