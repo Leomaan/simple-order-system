@@ -19,6 +19,7 @@ export function useOrders(initialStatus = '') {
       const res = await api.get(`/order?${params}`);
       return res.data.data;
     },
+    refetchInterval: 5000, // Mantém as mesas sincronizadas em background mesmo com modal fechado
   });
 
   const orders = data?.orders || (Array.isArray(data) ? data : []);
