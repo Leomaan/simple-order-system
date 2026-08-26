@@ -20,8 +20,17 @@ vi.mock('../src/models/product.js', () => ({
   default: { findByPk: vi.fn() }
 }));
 
+vi.mock('../src/services/auditLogService.js', () => ({
+  log: vi.fn().mockResolvedValue(true)
+}));
+
+vi.mock('../src/util/socket.js', () => ({
+  emitEvent: vi.fn()
+}));
+
 vi.mock('../src/db/conn.js', () => ({
   sequelize: {
+    define: vi.fn(),
     transaction: vi.fn((fn) => fn({
       LOCK: {
         UPDATE: 'UPDATE'
