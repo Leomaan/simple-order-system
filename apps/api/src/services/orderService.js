@@ -164,6 +164,57 @@ export async function closeOrder(id, user = null) {
   return result;
 }
 
+export async function reopenOrder(id, user = null) {
+  const order = await Order.findByPk(id, {
+    include: [
+      {
+        model: OrderItem,
+        include: [Product]
+      }
+    ],
+  });
+
+  if (!order) throw new AppError('order not found', 404);
+  if (order.status === 'PAID') throw new AppError('Não é possível reabrir um pedido que já foi pago', 400);
+  if (order.status === 'OPEN') throw new AppError('Este pedido já está aberto', 400);
+
+  // Check if another order is already open for this table
+  const existingOpenOrder = await Order.findOne({
+    where: {
+      table: order.table,
+      status: 'OPEN',
+      id: { [Op.ne]: order.id }
+    }
+  });
+
+  if (existingOpenOrder) {
+    throw new AppError(`A mesa ${order.table} já possui outro pedido aberto (#${existingOpenOrder.id})`, 400);
+  }
+
+  // Clear payment fields when reopening
+  await order.update({
+    status: 'OPEN',
+    paymentMethod: null,
+    paymentId: null,
+    paymentQrCode: null,
+    paymentQrCodeCopy: null,
+    paymentExpiresAt: null
+  });
+
+  await log({
+    user,
+    action: 'REOPEN_ORDER',
+    entity: 'Order',
+    entityId: order.id,
+    details: { table: order.table, order: order.id }
+  });
+
+  logger.info('Pedido reaberto com sucesso', { context: 'order_service', orderId: order.id, table: order.table });
+  emitEvent('order:updated', order);
+
+  return order;
+}
+
 export async function deleteOrder(id, userOrRole) {
   const userRole = typeof userOrRole === 'object' && userOrRole !== null ? userOrRole.role : userOrRole;
   const user = typeof userOrRole === 'object' && userOrRole !== null ? userOrRole : null;

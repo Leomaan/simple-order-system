@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { findAll, findById, createOrder, updateOrder, closeOrder, deleteOrder, restoreOrder, permanentDeleteOrder } from '../src/services/orderService.js';
+import { findAll, findById, createOrder, updateOrder, closeOrder, reopenOrder, deleteOrder, restoreOrder, permanentDeleteOrder } from '../src/services/orderService.js';
 import Order from '../src/models/order.js';
 import OrderItem from '../src/models/orderItem.js';
 
@@ -177,6 +177,38 @@ describe('restoreOrder', () => {
     await restoreOrder(1);
 
     expect(order.restore).toHaveBeenCalledOnce();
+  });
+});
+
+describe('reopenOrder', () => {
+  it('deve reabrir um pedido fechado com sucesso', async () => {
+    const mockOrder = {
+      id: 1,
+      table: 3,
+      status: 'CLOSED',
+      update: vi.fn().mockResolvedValue(true)
+    };
+    Order.findByPk.mockResolvedValue(mockOrder);
+    Order.findOne.mockResolvedValue(null);
+
+    const result = await reopenOrder(1);
+
+    expect(mockOrder.update).toHaveBeenCalledWith(expect.objectContaining({
+      status: 'OPEN',
+      paymentMethod: null,
+      paymentId: null
+    }));
+    expect(result).toBe(mockOrder);
+  });
+
+  it('deve rejeitar reabrir pedido pago', async () => {
+    const mockOrder = { id: 2, status: 'PAID' };
+    Order.findByPk.mockResolvedValue(mockOrder);
+
+    await expect(reopenOrder(2)).rejects.toMatchObject({
+      message: 'Não é possível reabrir um pedido que já foi pago',
+      status: 400
+    });
   });
 });
 

@@ -27,6 +27,11 @@ export const close = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, data: order });
 });
 
+export const reopen = asyncHandler(async (req, res) => {
+  const order = await orderService.reopenOrder(req.params.id, req.user);
+  res.status(200).json({ success: true, message: 'Pedido reaberto com sucesso', data: order });
+});
+
 export const remove = asyncHandler(async (req, res) => {
   await orderService.deleteOrder(req.params.id, req.user);
   res.status(200).json({ success: true, message: 'order removed' });
