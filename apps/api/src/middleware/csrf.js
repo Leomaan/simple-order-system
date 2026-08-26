@@ -12,8 +12,8 @@ export function csrfProtection(req, res, next) {
     return next();
   }
 
-  // Bypass CSRF checks for the login and refresh routes, since session/tokens are being established/renewed
-  const bypassRoutes = ['/auth/login', '/auth/refresh'];
+  // Bypass CSRF checks for login, refresh and external payment webhooks
+  const bypassRoutes = ['/auth/login', '/auth/refresh', '/payment/webhook'];
   if (bypassRoutes.some(route => req.originalUrl.includes(route))) {
     return next();
   }

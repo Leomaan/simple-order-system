@@ -35,17 +35,27 @@ export async function getMaskedSettings() {
 
 export async function updateSettings(data, user = null) {
   const currentSettings = await getSettings();
-  const updateData = { ...data };
+  const isMaskedOrInvalid = (str) => {
+    if (!str || typeof str !== 'string') return false;
+    return str.includes('*') || str.includes('...') || str.includes('•') || /[^\x20-\x7E]/.test(str);
+  };
+
+  if (typeof updateData.mercadoPagoAccessToken === 'string') {
+    updateData.mercadoPagoAccessToken = updateData.mercadoPagoAccessToken.trim();
+  }
+  if (typeof updateData.mercadoPagoWebhookSecret === 'string') {
+    updateData.mercadoPagoWebhookSecret = updateData.mercadoPagoWebhookSecret.trim();
+  }
 
   // Normalize empty strings to null to allow clearing the configuration
   if (updateData.mercadoPagoAccessToken === '') updateData.mercadoPagoAccessToken = null;
   if (updateData.mercadoPagoWebhookSecret === '') updateData.mercadoPagoWebhookSecret = null;
 
   // If credentials contain masking indicators, preserve the existing value
-  if (updateData.mercadoPagoAccessToken && (updateData.mercadoPagoAccessToken.includes('*') || updateData.mercadoPagoAccessToken.includes('...'))) {
+  if (updateData.mercadoPagoAccessToken && isMaskedOrInvalid(updateData.mercadoPagoAccessToken)) {
     updateData.mercadoPagoAccessToken = currentSettings.mercadoPagoAccessToken;
   }
-  if (updateData.mercadoPagoWebhookSecret && (updateData.mercadoPagoWebhookSecret.includes('*') || updateData.mercadoPagoWebhookSecret.includes('...'))) {
+  if (updateData.mercadoPagoWebhookSecret && isMaskedOrInvalid(updateData.mercadoPagoWebhookSecret)) {
     updateData.mercadoPagoWebhookSecret = currentSettings.mercadoPagoWebhookSecret;
   }
 
