@@ -7,7 +7,7 @@ import CloseOrderButton from './CloseOrderButton';
 import Button from '../ui/Button';
 import ErrorMessage from '../ui/ErrorMessage';
 import { formatErrorMessage } from '../util/errorUtil';
-import { Ticket, Plus, Copy, Check, Loader2, RefreshCw } from 'lucide-react';
+import { Ticket, Plus, Copy, Check, Loader2, RefreshCw, RotateCcw, Banknote, CreditCard, CheckCircle2 } from 'lucide-react';
 
 export default function OrderDetailModal({ order, products, onClose, onUpdate }) {
   const [orderDetails, setOrderDetails] = useState(null);
@@ -21,6 +21,8 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
   // Estados de Pagamento
   const [generatingPix, setGeneratingPix] = useState(false);
   const [simulatingConfirm, setSimulatingConfirm] = useState(false);
+  const [processingManual, setProcessingManual] = useState(null);
+  const [reopening, setReopening] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const { addItem, removeItem, changeQuantity, loading } = useOrderItems();
@@ -129,6 +131,34 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
       setError(formatErrorMessage(err));
     } finally {
       setSimulatingConfirm(false);
+    }
+  };
+
+  const handleReopen = async () => {
+    setReopening(true);
+    setError('');
+    try {
+      await api.patch(`/order/${order.id}/reopen`);
+      await fetchDetails();
+      onUpdate?.();
+    } catch (err) {
+      setError(formatErrorMessage(err));
+    } finally {
+      setReopening(false);
+    }
+  };
+
+  const handleManualPayment = async (method) => {
+    setProcessingManual(method);
+    setError('');
+    try {
+      await api.post('/payment/manual', { orderId: order.id, paymentMethod: method });
+      await fetchDetails();
+      onUpdate?.();
+    } catch (err) {
+      setError(formatErrorMessage(err));
+    } finally {
+      setProcessingManual(null);
     }
   };
 
@@ -294,76 +324,124 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
               </div>
             )}
 
-            {/* Seção de Pagamento PIX */}
+            {/* Seção de Pagamento PIX e Métodos Alternativos */}
             {currentStatus === 'CLOSED' && orderDetails && (
-              <div className="mt-2 border-t border-neutral-850 pt-5 flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <h4 className="text-white text-xs font-bold uppercase tracking-wider text-neutral-450">Pagamento</h4>
-                
-                {!orderDetails.paymentId ? (
-                  <Button
-                    onClick={handleGeneratePix}
-                    loading={generatingPix}
-                    variant="primary"
-                    className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold py-3.5 shadow-lg shadow-orange-500/10 text-xs tracking-wider uppercase rounded-xl"
-                  >
-                    Gerar QR Code PIX ({formatPrice(orderDetails.total)})
-                  </Button>
-                ) : (
-                  <div className="flex flex-col gap-4 text-center">
-                    {orderDetails.paymentQrCode && (
-                      <div className="bg-white p-3 rounded-2xl inline-block mx-auto shadow-md">
-                        <img 
-                          src={orderDetails.paymentQrCode} 
-                          alt="PIX QR Code" 
-                          className="w-44 h-44 rounded-lg block"
-                        />
-                      </div>
-                    )}
-                    
-                    <div className="text-left flex flex-col gap-2">
-                      <label className="text-neutral-550 text-[10px] uppercase font-bold tracking-wider">Código PIX Copia e Cola</label>
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          readOnly
-                          value={orderDetails.paymentQrCodeCopy || ''}
-                          className="flex-1 bg-neutral-950 border border-neutral-850 text-neutral-300 rounded-xl px-3 py-2.5 text-xs outline-none truncate"
-                        />
-                        <button
-                          type="button"
-                          onClick={handleCopy}
-                          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                            copied 
-                              ? 'bg-green-500/15 border border-green-500/30 text-green-400' 
-                              : 'bg-neutral-850 border border-neutral-750 text-white hover:bg-neutral-800'
-                          }`}
-                        >
-                          {copied ? <Check size={13} /> : <Copy size={13} />}
-                          <span>{copied ? 'Copiado!' : 'Copiar'}</span>
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-center gap-2.5 mt-2 bg-orange-500/5 border border-orange-500/15 p-3.5 rounded-xl">
-                      <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
-                      </span>
-                      <span className="text-orange-300 text-xs font-medium">Aguardando confirmação do pagamento...</span>
-                    </div>
-
-                    {import.meta.env.DEV && (
-                      <Button
-                        onClick={handleSimulatePayment}
-                        loading={simulatingConfirm}
-                        variant="secondary"
-                        className="text-xs py-2.5 bg-neutral-950 border border-neutral-850 hover:bg-neutral-900 text-neutral-400 hover:text-white rounded-xl"
-                      >
-                        ⚡ Simular Confirmação de Pagamento (Dev)
-                      </Button>
-                    )}
+              <div className="mt-2 border-t border-neutral-850 pt-5 flex flex-col gap-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                {/* Barra de Reabrir Mesa */}
+                <div className="flex items-center justify-between bg-neutral-950/80 border border-neutral-850 p-3 rounded-2xl">
+                  <div className="flex flex-col">
+                    <span className="text-white text-xs font-bold">Conta Fechada</span>
+                    <span className="text-neutral-500 text-[11px]">Deseja lançar mais itens?</span>
                   </div>
-                )}
+                  <Button
+                    variant="ghost"
+                    onClick={handleReopen}
+                    loading={reopening}
+                    className="text-xs py-1.5 px-3 border border-neutral-750 text-neutral-300 hover:text-white hover:border-neutral-600 flex items-center gap-1.5 font-semibold"
+                  >
+                    <RotateCcw size={13} />
+                    <span>Reabrir Mesa</span>
+                  </Button>
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  <h4 className="text-white text-xs font-bold uppercase tracking-wider text-neutral-450 flex items-center gap-1.5">
+                    <span>Opção 1: Pagamento via PIX (Mercado Pago)</span>
+                  </h4>
+                  
+                  {!orderDetails.paymentId ? (
+                    <Button
+                      onClick={handleGeneratePix}
+                      loading={generatingPix}
+                      variant="primary"
+                      className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold py-3.5 shadow-lg shadow-orange-500/10 text-xs tracking-wider uppercase rounded-xl"
+                    >
+                      Gerar QR Code PIX ({formatPrice(orderDetails.total)})
+                    </Button>
+                  ) : (
+                    <div className="flex flex-col gap-4 text-center">
+                      {orderDetails.paymentQrCode && (
+                        <div className="bg-white p-3 rounded-2xl inline-block mx-auto shadow-md">
+                          <img 
+                            src={orderDetails.paymentQrCode} 
+                            alt="PIX QR Code" 
+                            className="w-44 h-44 rounded-lg block"
+                          />
+                        </div>
+                      )}
+                      
+                      <div className="text-left flex flex-col gap-2">
+                        <label className="text-neutral-550 text-[10px] uppercase font-bold tracking-wider">Código PIX Copia e Cola</label>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            readOnly
+                            value={orderDetails.paymentQrCodeCopy || ''}
+                            className="flex-1 bg-neutral-950 border border-neutral-850 text-neutral-300 rounded-xl px-3 py-2.5 text-xs outline-none truncate"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleCopy}
+                            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                              copied 
+                                ? 'bg-green-500/15 border border-green-500/30 text-green-400' 
+                                : 'bg-neutral-850 border border-neutral-750 text-white hover:bg-neutral-800'
+                            }`}
+                          >
+                            {copied ? <Check size={13} /> : <Copy size={13} />}
+                            <span>{copied ? 'Copiado!' : 'Copiar'}</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-center gap-2.5 bg-orange-500/5 border border-orange-500/15 p-3 rounded-xl">
+                        <span className="relative flex h-2 w-2">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
+                        </span>
+                        <span className="text-orange-300 text-xs font-medium">Aguardando confirmação do pagamento...</span>
+                      </div>
+
+                      {import.meta.env.DEV && (
+                        <Button
+                          onClick={handleSimulatePayment}
+                          loading={simulatingConfirm}
+                          variant="secondary"
+                          className="text-xs py-2 bg-neutral-950 border border-neutral-850 hover:bg-neutral-900 text-neutral-400 hover:text-white rounded-xl"
+                        >
+                          ⚡ Simular Confirmação de Pagamento (Dev)
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Métodos Manuais / Alternativos */}
+                <div className="flex flex-col gap-2.5 pt-4 border-t border-neutral-850/60">
+                  <h4 className="text-white text-xs font-bold uppercase tracking-wider text-neutral-450">
+                    Opção 2: Receber Manualmente
+                  </h4>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <Button
+                      variant="secondary"
+                      onClick={() => handleManualPayment('CASH')}
+                      loading={processingManual === 'CASH'}
+                      className="py-3 text-xs font-bold uppercase tracking-wider bg-neutral-950 border border-neutral-850 hover:border-emerald-500/40 hover:text-emerald-400 flex items-center justify-center gap-2 rounded-xl"
+                    >
+                      <Banknote size={15} className="text-emerald-400" />
+                      <span>Dinheiro</span>
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      onClick={() => handleManualPayment('CARD')}
+                      loading={processingManual === 'CARD'}
+                      className="py-3 text-xs font-bold uppercase tracking-wider bg-neutral-950 border border-neutral-850 hover:border-blue-500/40 hover:text-blue-400 flex items-center justify-center gap-2 rounded-xl"
+                    >
+                      <CreditCard size={15} className="text-blue-400" />
+                      <span>Cartão</span>
+                    </Button>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -375,12 +453,24 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
                   <h4 className="text-white font-bold text-sm tracking-tight">Pedido Pago com Sucesso!</h4>
                   <p className="text-neutral-500 text-xs leading-relaxed">Mesa quitada e pronta para liberação/fechamento.</p>
                 </div>
-                {orderDetails.paymentId && (
-                  <div className="bg-neutral-950 border border-neutral-850 rounded-2xl p-4 text-xs text-neutral-400 flex flex-col gap-2 text-left">
-                    <div><span className="text-neutral-500">Forma de Pagamento:</span> PIX</div>
-                    <div><span className="text-neutral-500">Código de Transação:</span> <code className="bg-neutral-900 px-1.5 py-0.5 rounded text-neutral-300">{orderDetails.paymentId}</code></div>
+                <div className="bg-neutral-950 border border-neutral-850 rounded-2xl p-4 text-xs text-neutral-400 flex flex-col gap-2 text-left">
+                  <div>
+                    <span className="text-neutral-500 font-semibold">Forma de Pagamento: </span>
+                    <strong className="text-white font-semibold">
+                      {orderDetails.paymentMethod === 'PIX' ? 'PIX (Mercado Pago)' : orderDetails.paymentMethod === 'CARD' ? 'Cartão de Débito / Crédito' : orderDetails.paymentMethod === 'CASH' ? 'Dinheiro' : orderDetails.paymentMethod || 'PIX'}
+                    </strong>
                   </div>
-                )}
+                  {orderDetails.paymentId && (
+                    <div>
+                      <span className="text-neutral-500 font-semibold">Código de Transação: </span>
+                      <code className="bg-neutral-900 px-1.5 py-0.5 rounded text-neutral-300">{orderDetails.paymentId}</code>
+                    </div>
+                  )}
+                  <div>
+                    <span className="text-neutral-500 font-semibold">Valor Total Pago: </span>
+                    <strong className="text-emerald-400 font-bold">{formatPrice(orderDetails.total)}</strong>
+                  </div>
+                </div>
               </div>
             )}
           </div>
