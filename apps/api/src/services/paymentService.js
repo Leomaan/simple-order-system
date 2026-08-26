@@ -5,6 +5,7 @@ import { AppError } from '../middleware/appError.js';
 import { log } from './auditLogService.js';
 import { getSettings } from './settingsService.js';
 import logger from '../util/logger.js';
+import { emitEvent } from '../util/socket.js';
 
 /**
  * Creates a PIX payment for a specific order.
@@ -29,10 +30,18 @@ export async function createPixPayment(orderId) {
   const totalAmount = order.OrderItems.reduce((sum, item) => sum + Number(item.totalPrice), 0);
 
   const settings = await getSettings();
-  const accessToken = settings?.mercadoPagoAccessToken || process.env.MERCADO_PAGO_ACCESS_TOKEN;
-  if (!accessToken || accessToken.includes('your_mercado_pago_access_token')) {
-    // Return a mocked payment details if the integration token is not configured yet
-    logger.warn('Token de acesso do Mercado Pago não configurado. Retornando dados de pagamento mock.', { context: 'payment_service' });
+  let accessToken = settings?.mercadoPagoAccessToken || process.env.MERCADO_PAGO_ACCESS_TOKEN;
+  if (accessToken) accessToken = String(accessToken).trim();
+
+  const isInvalidToken = !accessToken ||
+    accessToken.includes('your_mercado_pago_access_token') ||
+    accessToken.includes('*') ||
+    accessToken.includes('•') ||
+    /[^\x20-\x7E]/.test(accessToken);
+
+  if (isInvalidToken) {
+    // Return a mocked payment details if the integration token is not configured yet or contains masked characters
+    logger.warn('Token de acesso do Mercado Pago não configurado ou contém caracteres de máscara. Retornando dados de pagamento mock.', { context: 'payment_service' });
     
     const mockPayment = {
       paymentId: `mock_${Date.now()}`,
@@ -48,6 +57,8 @@ export async function createPixPayment(orderId) {
       paymentQrCodeCopy: mockPayment.paymentQrCodeCopy,
       paymentExpiresAt: mockPayment.paymentExpiresAt
     });
+
+    emitEvent('order:updated', order);
 
     return mockPayment;
   }
@@ -105,6 +116,8 @@ export async function createPixPayment(orderId) {
       paymentExpiresAt
     });
 
+    emitEvent('order:updated', order);
+
     return {
       paymentId,
       paymentQrCode: qrCode ? `data:image/png;base64,${qrCode}` : null,
@@ -123,18 +136,24 @@ export async function createPixPayment(orderId) {
  * @param {object} user - User metadata from authentication (if system)
  */
 export async function processWebhook(webhookPayload, user = { name: 'webhook_system', role: 'system' }) {
-  const { action, type, data } = webhookPayload;
+  const action = webhookPayload?.action || webhookPayload?.topic;
+  const type = webhookPayload?.type || webhookPayload?.topic;
+  const paymentId = webhookPayload?.data?.id || webhookPayload?.id || webhookPayload?.['data.id'];
 
   // Mercado Pago sends webhooks for payment updates
-  if (type === 'payment' && (action === 'payment.created' || action === 'payment.updated')) {
-    const paymentId = data.id;
-    if (!paymentId) return { success: false, reason: 'No payment ID found in webhook payload' };
-
+  if ((type === 'payment' || action === 'payment.created' || action === 'payment.updated') && paymentId) {
     const settings = await getSettings();
-    const accessToken = settings?.mercadoPagoAccessToken || process.env.MERCADO_PAGO_ACCESS_TOKEN;
-    if (!accessToken || accessToken.includes('your_mercado_pago_access_token')) {
-      logger.warn('Webhook recebido sem Token de Acesso do Mercado Pago configurado. Processando como mock.', { context: 'payment_service' });
-      // In local development, if we want to manually simulate a webhook approval:
+    let accessToken = settings?.mercadoPagoAccessToken || process.env.MERCADO_PAGO_ACCESS_TOKEN;
+    if (accessToken) accessToken = String(accessToken).trim();
+
+    const isInvalidToken = !accessToken ||
+      accessToken.includes('your_mercado_pago_access_token') ||
+      accessToken.includes('*') ||
+      accessToken.includes('•') ||
+      /[^\x20-\x7E]/.test(accessToken);
+
+    if (isInvalidToken) {
+      logger.warn('Webhook recebido sem Token de Acesso do Mercado Pago configurado ou inválido. Processando como mock.', { context: 'payment_service' });
       return await approveMockPayment(paymentId, user);
     }
 
@@ -158,9 +177,9 @@ export async function processWebhook(webhookPayload, user = { name: 'webhook_sys
         const order = await Order.findByPk(orderId, {
           include: [OrderItem]
         });
-        if (order && order.status === 'CLOSED') {
+        if (order && order.status !== 'PAID') {
           const total = order.OrderItems?.reduce((sum, item) => sum + Number(item.totalPrice), 0) || 0;
-          await order.update({ status: 'PAID' });
+          await order.update({ status: 'PAID', paymentMethod: 'PIX' });
           await log({
             user,
             action: 'PAY_ORDER',
@@ -168,6 +187,7 @@ export async function processWebhook(webhookPayload, user = { name: 'webhook_sys
             entityId: order.id,
             details: { table: order.table, order: order.id, paymentId, status: 'PAID', total }
           });
+          emitEvent('order:updated', order);
           return { success: true, orderId, status: 'PAID' };
         }
       }
@@ -190,9 +210,9 @@ export async function approveMockPayment(paymentId, user) {
   });
   if (!order) return { success: false, reason: 'Order with paymentId not found' };
 
-  if (order.status === 'CLOSED') {
+  if (order.status !== 'PAID') {
     const total = order.OrderItems?.reduce((sum, item) => sum + Number(item.totalPrice), 0) || 0;
-    await order.update({ status: 'PAID' });
+    await order.update({ status: 'PAID', paymentMethod: 'PIX' });
     await log({
       user,
       action: 'PAY_ORDER',
@@ -200,8 +220,46 @@ export async function approveMockPayment(paymentId, user) {
       entityId: order.id,
       details: { table: order.table, order: order.id, paymentId, status: 'PAID_MOCK', total }
     });
+    emitEvent('order:updated', order);
     return { success: true, orderId: order.id, status: 'PAID' };
   }
 
-  return { success: true, reason: 'Order already paid or closed' };
+  return { success: true, reason: 'Order already paid' };
+}
+
+/**
+ * Manually confirms payment in CASH or CARD.
+ * @param {number} orderId 
+ * @param {'CASH'|'CARD'|'PIX'} paymentMethod 
+ * @param {object} user 
+ */
+export async function manualPayOrder(orderId, paymentMethod = 'CASH', user = null) {
+  const order = await Order.findByPk(orderId, {
+    include: [OrderItem]
+  });
+
+  if (!order) throw new AppError('Order not found', 404);
+  if (order.status === 'PAID') throw new AppError('Order is already paid', 400);
+  if (!order.OrderItems?.length) throw new AppError('Cannot pay for an empty order', 400);
+
+  const total = order.OrderItems.reduce((sum, item) => sum + Number(item.totalPrice), 0);
+
+  await order.update({
+    status: 'PAID',
+    paymentMethod,
+    paymentExpiresAt: null
+  });
+
+  await log({
+    user,
+    action: 'PAY_ORDER',
+    entity: 'Order',
+    entityId: order.id,
+    details: { table: order.table, order: order.id, paymentMethod, status: 'PAID', total }
+  });
+
+  logger.info('Pagamento manual registrado com sucesso', { context: 'payment_service', orderId: order.id, paymentMethod, total });
+  emitEvent('order:updated', order);
+
+  return order;
 }

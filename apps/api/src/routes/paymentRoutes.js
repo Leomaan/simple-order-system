@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { generatePix, receiveWebhook, simulatePaymentConfirmation } from '../controllers/paymentController.js';
+import { generatePix, receiveWebhook, simulatePaymentConfirmation, manualPayment } from '../controllers/paymentController.js';
 import { requireWaiter } from '../middleware/authenticate.js';
 import { verifyWebhookSignature } from '../middleware/verifyWebhookSignature.js';
 
@@ -10,6 +10,9 @@ routes.post('/pix', requireWaiter, generatePix);
 
 // Webhook receiver (protected by signature verification middleware)
 routes.post('/webhook', verifyWebhookSignature, receiveWebhook);
+
+// Manual payment confirmation (Cash, Card, etc.)
+routes.post('/manual', requireWaiter, manualPayment);
 
 // Helper route to manually confirm payment in dev environments
 routes.post('/simulate-confirm', requireWaiter, simulatePaymentConfirmation);

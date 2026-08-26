@@ -42,3 +42,21 @@ export const simulatePaymentConfirmation = asyncHandler(async (req, res) => {
     res.status(400).json({ success: false, message: result.reason || 'Simulation failed' });
   }
 });
+
+export const manualPayment = asyncHandler(async (req, res) => {
+  const { orderId, paymentMethod } = req.body;
+
+  if (!orderId) {
+    return res.status(400).json({ success: false, message: 'orderId is required' });
+  }
+
+  const validMethods = ['CASH', 'CARD', 'PIX'];
+  const method = paymentMethod ? String(paymentMethod).toUpperCase() : 'CASH';
+
+  if (!validMethods.includes(method)) {
+    return res.status(400).json({ success: false, message: `paymentMethod must be one of: ${validMethods.join(', ')}` });
+  }
+
+  const result = await paymentService.manualPayOrder(orderId, method, req.user);
+  res.status(200).json({ success: true, message: 'Pagamento registrado com sucesso', data: result });
+});
