@@ -169,13 +169,13 @@ describe('PATCH /order/:id/close', () => {
 
 // ─── DELETE /order/:id ─────────────────────────────────────
 describe('DELETE /order/:id', () => {
-  it('deve retornar 400 ao tentar deletar pedido fechado', async () => {
+  it('deve fazer soft delete de pedido fechado/pendente por admin', async () => {
     const res = await request(app)
       .delete(`/order/${orderId}`)
       .set('Authorization', `Bearer ${adminToken}`);
 
-    expect(res.status).toBe(400);
-    expect(res.body.message).toBe('cannot delete a closed order');
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
   });
 
   it('deve fazer soft delete de pedido aberto', async () => {

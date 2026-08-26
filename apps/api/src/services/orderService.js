@@ -222,7 +222,6 @@ export async function deleteOrder(id, userOrRole) {
   const order = await Order.findByPk(id);
 
   if (!order) throw new AppError('order not found', 404);
-  if (order.status === 'PAID') throw new AppError('Não é possível excluir um pedido que já foi pago', 400);
 
   if (userRole !== 'ADMIN') {
     throw new AppError('apenas administradores podem excluir pedidos', 403);

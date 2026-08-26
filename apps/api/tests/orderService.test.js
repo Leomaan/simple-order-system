@@ -172,13 +172,14 @@ describe('deleteOrder', () => {
     expect(result).toBe(order);
   });
 
-  it('deve lançar AppError se pedido já estiver pago (PAID)', async () => {
-    Order.findByPk.mockResolvedValue({ id: 1, status: 'PAID' });
+  it('deve permitir que o ADMIN exclua um pedido pago (PAID)', async () => {
+    const order = { id: 2, status: 'PAID', destroy: vi.fn().mockResolvedValue(true) };
+    Order.findByPk.mockResolvedValue(order);
 
-    await expect(deleteOrder(1, 'ADMIN')).rejects.toMatchObject({ 
-      message: 'Não é possível excluir um pedido que já foi pago',
-      status: 400 
-    });
+    const result = await deleteOrder(2, 'ADMIN');
+
+    expect(order.destroy).toHaveBeenCalledOnce();
+    expect(result).toBe(order);
   });
 });
 
