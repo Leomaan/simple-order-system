@@ -440,7 +440,7 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
                         className="w-full text-xs py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/15"
                       >
                         <RefreshCw size={14} className={checkingStatus ? 'animate-spin' : ''} />
-                        <span>Já paguei! Verificar Pagamento</span>
+                        <span>Verificar Pagamento</span>
                       </Button>
 
                       {import.meta.env.DEV && (
