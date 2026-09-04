@@ -67,8 +67,8 @@ export async function findById(id) {
     include: [
       {
         model: OrderItem,
-        attributes: ['id', 'quantity', 'unitPrice', 'totalPrice'],
-        include: [{ model: Product, attributes: ['name', 'price'] }],
+        attributes: ['id', 'quantity', 'unitPrice', 'totalPrice', 'ProductId'],
+        include: [{ model: Product, attributes: ['id', 'name', 'price'] }],
       },
     ],
   });

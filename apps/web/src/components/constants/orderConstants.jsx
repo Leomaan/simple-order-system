@@ -11,3 +11,9 @@ export const CATEGORY_LABEL = {
   DESSERT: 'Sobremesas',
   SIDE: 'Acompanhamentos',
 };
+
+export const PAYMENT_METHOD_MAP = {
+  PIX: 'PIX',
+  CARD: 'Cartão',
+  CASH: 'Dinheiro',
+};

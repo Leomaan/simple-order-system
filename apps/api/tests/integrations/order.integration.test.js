@@ -190,6 +190,43 @@ describe('DELETE /order/:id', () => {
 
     expect(res.status).toBe(200);
   });
+
+  it('deve fazer soft delete de pedido pago por admin', async () => {
+    const paidOrder = await request(app)
+      .post('/order')
+      .set('Authorization', `Bearer ${waiterToken}`)
+      .send({ table: 77 });
+    const paidOrderId = paidOrder.body.data.id;
+
+    await request(app)
+      .post('/order-item')
+      .set('Authorization', `Bearer ${waiterToken}`)
+      .send({ orderId: paidOrderId, productId, quantity: 1 });
+
+    await request(app)
+      .patch(`/order/${paidOrderId}/close`)
+      .set('Authorization', `Bearer ${waiterToken}`);
+
+    await request(app)
+      .post(`/payment/manual/${paidOrderId}`)
+      .set('Authorization', `Bearer ${waiterToken}`)
+      .send({ paymentMethod: 'CASH' });
+
+    const res = await request(app)
+      .delete(`/order/${paidOrderId}`)
+      .set('Authorization', `Bearer ${adminToken}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+
+    const trashRes = await request(app)
+      .get('/order?onlyDeleted=true')
+      .set('Authorization', `Bearer ${adminToken}`);
+
+    const foundInTrash = trashRes.body.data.find(o => o.id === paidOrderId);
+    expect(foundInTrash).toBeDefined();
+    expect(Number(foundInTrash.total)).toBe(26);
+  });
 });
 
 // ─── PATCH /order/:id/restore ──────────────────────────────

@@ -41,6 +41,13 @@ const Order = sequelize.define('Order',{
     allowNull: true,
     defaultValue: null,
   },
+    total: {
+      type: DataTypes.VIRTUAL,
+      get() {
+        if (!this.OrderItems) return 0;
+        return this.OrderItems.reduce((sum, item) => sum + Number(item.totalPrice || 0), 0);
+      },
+    },
 }, {
   paranoid: true,
 });
