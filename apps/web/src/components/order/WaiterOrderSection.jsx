@@ -3,6 +3,7 @@ import { useOrders } from '../../hooks/useOrder';
 import { useProducts } from '../../hooks/useProduct';
 import ConfirmModal from '../ui/ConfirmModal';
 import OrderDetailModal from './OrderDetailModal';
+import OrderCard from './OrderCard';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import { formatErrorMessage } from '../util/errorUtil';
@@ -17,20 +18,28 @@ const statusLabel = {
 const STATUSES = ['', 'OPEN', 'CLOSED', 'PAID'];
 
 export default function WaiterOrderSection() {
-  const { orders, loading, fetchOrders, createOrder, deleteOrder, totalPages, currentPage, setPage } = useOrders('OPEN');
-  const { products } = useProducts();
+  const {
+    orders,
+    loading,
+    fetchOrders,
+    createOrder,
+    deleteOrder,
+    totalPages,
+    currentPage,
+    setPage,
+    statusFilter,
+    isCreating,
+    isDeleting,
+  } = useOrders('OPEN');
+  const { products } = useProducts('', { paginate: false });
   const [showForm, setShowForm] = useState(false);
   const [table, setTable] = useState('');
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [filter, setFilter] = useState('OPEN');
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [deleting, setDeleting] = useState(null);
-  const [deleteLoading, setDeleteLoading] = useState(false);
 
   async function handleCreate(e) {
     e.preventDefault();
-    setSaving(true);
     setError('');
     try {
       await createOrder({ table: Number(table) });
@@ -38,26 +47,20 @@ export default function WaiterOrderSection() {
       setShowForm(false);
     } catch (err) {
       setError(formatErrorMessage(err));
-    } finally {
-      setSaving(false);
     }
   }
 
   async function handleDelete() {
-    setDeleteLoading(true);
     try {
       await deleteOrder(deleting);
       setDeleting(null);
     } catch (err) {
       setError(formatErrorMessage(err));
       setDeleting(null);
-    } finally {
-      setDeleteLoading(false);
     }
   }
 
   function handleFilter(status) {
-    setFilter(status);
     fetchOrders(status || undefined);
   }
 
@@ -69,7 +72,7 @@ export default function WaiterOrderSection() {
           message="Esta mesa não possui nenhum consumo adicionado. Deseja realmente excluí-la?"
           onConfirm={handleDelete}
           onCancel={() => setDeleting(null)}
-          loading={deleteLoading}
+          loading={isDeleting}
         />
       )}
 
@@ -78,7 +81,7 @@ export default function WaiterOrderSection() {
           order={selectedOrder}
           products={products}
           onClose={() => setSelectedOrder(null)}
-          onUpdate={() => fetchOrders(filter || undefined)}
+          onUpdate={() => fetchOrders(statusFilter || undefined)}
         />
       )}
 
@@ -119,7 +122,7 @@ export default function WaiterOrderSection() {
           )}
           <Button 
             type="submit" 
-            loading={saving}
+            loading={isCreating}
             className="w-full sm:w-auto h-[44px] px-6 text-xs font-bold uppercase tracking-wider shrink-0 shadow-md shadow-orange-500/10 flex items-center justify-center gap-2"
           >
             <Plus size={16} />
@@ -135,7 +138,7 @@ export default function WaiterOrderSection() {
             key={s}
             onClick={() => handleFilter(s)}
             className={`text-[10px] uppercase tracking-wider font-bold px-4 py-2.5 rounded-xl border transition-all duration-200 cursor-pointer whitespace-nowrap active:scale-95 ${
-              filter === s 
+              statusFilter === s 
                 ? 'bg-white border-white text-black shadow-lg shadow-white/5' 
                 : 'bg-neutral-900 border-neutral-800 text-neutral-400 hover:border-neutral-700 hover:text-neutral-200'
             }`}
@@ -145,136 +148,27 @@ export default function WaiterOrderSection() {
         ))}
       </div>
 
-      {/* Lista de Pedidos / Mesas */}
+      {/* Lista de Mesas / Pedidos w-100 */}
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="flex flex-col gap-2 w-full">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="h-64 bg-neutral-900/50 border border-neutral-800 rounded-2xl animate-pulse" />
+            <div key={i} className="h-14 bg-neutral-900/40 border border-neutral-800 rounded-xl animate-pulse w-full" />
           ))}
         </div>
       ) : orders.length === 0 ? (
-        <div className="text-center py-16 bg-neutral-900/10 rounded-2xl border border-dashed border-neutral-800">
-          <p className="text-neutral-500 font-medium">Nenhum pedido encontrado nesta categoria.</p>
+        <div className="text-center py-16 bg-neutral-900/10 rounded-2xl border border-dashed border-neutral-800 w-full">
+          <p className="text-neutral-550 font-medium">Nenhum pedido encontrado nesta categoria.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {orders.map((o) => {
-            const orderTotal = o.OrderItems?.reduce((sum, item) => sum + Number(item.totalPrice), 0) || 0;
-            const itemCount = o.OrderItems?.reduce((sum, item) => sum + Number(item.quantity), 0) || 0;
-            const itemNames = o.OrderItems?.map((i) => i.Product?.name || i.productName || 'Item').slice(0, 2).join(', ');
-
-            const isOpen = o.status === 'OPEN';
-            const isClosed = o.status === 'CLOSED';
-            const isPaid = o.status === 'PAID';
-
-            return (
-              <div
-                key={o.id}
-                onClick={() => setSelectedOrder(o)}
-                className={`group relative glass-card rounded-2xl overflow-hidden flex flex-col justify-between border transition-all duration-300 shadow-xl cursor-pointer ${
-                  isOpen
-                    ? 'border-neutral-800 hover:border-orange-500/50 hover:shadow-orange-500/5'
-                    : isClosed
-                    ? 'border-amber-500/30 bg-amber-500/5 hover:border-amber-500/60 hover:shadow-amber-500/5'
-                    : 'border-neutral-900/80 bg-neutral-950/60 hover:border-neutral-700'
-                }`}
-              >
-                {/* Top Banner de Destaque da Mesa */}
-                <div className={`h-28 w-full relative flex items-center justify-center overflow-hidden border-b ${
-                  isOpen 
-                    ? 'bg-gradient-to-b from-orange-500/20 via-amber-500/10 to-neutral-900 border-neutral-850/50'
-                    : isClosed
-                    ? 'bg-gradient-to-b from-amber-500/20 via-orange-500/10 to-neutral-900 border-amber-500/20'
-                    : 'bg-gradient-to-b from-blue-500/10 via-neutral-900/60 to-neutral-900 border-neutral-850/50'
-                }`}>
-                  <div className="flex items-center gap-3">
-                    <div className={`w-12 h-12 rounded-2xl bg-neutral-900/80 border flex items-center justify-center shadow-lg backdrop-blur-md font-black text-xl ${
-                      isOpen
-                        ? 'border-neutral-750 text-orange-400'
-                        : isClosed
-                        ? 'border-amber-500/40 text-amber-400'
-                        : 'border-neutral-800 text-neutral-400'
-                    }`}>
-                      {o.table}
-                    </div>
-                  </div>
-
-                  {/* Badge de Status (Top Left) */}
-                  <span className={`absolute top-3 left-3 text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-lg border backdrop-blur-md shadow-md ${statusLabel[o.status]?.color || ''}`}>
-                    {statusLabel[o.status]?.label || o.status}
-                  </span>
-
-                  {/* Preço em Destaque no Header (Bottom Right) */}
-                  <span className={`absolute bottom-3 right-3 text-sm font-extrabold px-3 py-1 rounded-xl shadow-lg backdrop-blur-md ${
-                    isOpen
-                      ? 'bg-orange-500/90 text-white'
-                      : isClosed
-                      ? 'bg-amber-500 text-black font-black'
-                      : 'bg-neutral-800 text-neutral-300'
-                  }`}>
-                    {orderTotal > 0
-                      ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(orderTotal)
-                      : 'R$ 0,00'}
-                  </span>
-                </div>
-
-                {/* Corpo do Card: Nome e Descrição */}
-                <div className="p-4 flex-1 flex flex-col justify-between gap-3">
-                  <div>
-                    <h3 className="text-white font-bold text-base leading-tight mb-1.5 group-hover:text-orange-400 transition-colors flex items-center justify-between">
-                      <span>Mesa {o.table}</span>
-                      {isClosed && (
-                        <span className="text-[10px] font-bold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 rounded-md">
-                          Aguardando PIX / Pagamento
-                        </span>
-                      )}
-                      {isPaid && (
-                        <span className="text-[10px] font-bold text-blue-400 bg-blue-400/10 border border-blue-400/20 px-2 py-0.5 rounded-md">
-                          {o.paymentMethod || 'PAGO'}
-                        </span>
-                      )}
-                    </h3>
-                    <p className="text-neutral-400 text-xs leading-relaxed line-clamp-2 min-h-[32px]">
-                      {itemCount > 0
-                        ? `${itemCount} ${itemCount === 1 ? 'item' : 'itens'}${itemNames ? `: ${itemNames}${o.OrderItems.length > 2 ? '...' : ''}` : ''}`
-                        : 'Nenhum consumo lançado nesta mesa.'}
-                    </p>
-                  </div>
-
-                  {/* Painel Inferior de Controle */}
-                  <div className="flex flex-col gap-2 pt-3 border-t border-neutral-850">
-                    <div className="flex items-center justify-between gap-2">
-                      <Button
-                        variant={isClosed ? 'secondary' : 'primary'}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedOrder(o);
-                        }}
-                        className={`flex-1 text-xs py-1.5 px-3 font-bold uppercase tracking-wider ${
-                          isClosed ? 'border-amber-500/40 text-amber-300 hover:bg-amber-500/10' : ''
-                        }`}
-                      >
-                        {isOpen ? 'Ver Consumo' : isClosed ? 'Cobrar / Detalhes' : 'Ver Recibo'}
-                      </Button>
-                      {isOpen && itemCount === 0 && (
-                        <Button
-                          variant="ghost"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setDeleting(o.id);
-                          }}
-                          className="text-xs py-1.5 px-3 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 border border-rose-500/20 font-semibold"
-                          title="Excluir mesa vazia"
-                        >
-                          Excluir
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+        <div className="flex flex-col gap-2 w-full">
+          {orders.map((o) => (
+            <OrderCard
+              key={o.id}
+              order={o}
+              onClick={setSelectedOrder}
+              onDelete={setDeleting}
+            />
+          ))}
         </div>
       )}
 

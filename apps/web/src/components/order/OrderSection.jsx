@@ -12,16 +12,27 @@ import { formatErrorMessage } from '../util/errorUtil';
 import { Plus, X } from 'lucide-react';
 
 export default function OrderSection() {
-  const { orders, loading, fetchOrders, createOrder, deleteOrder, updateOrder, totalPages, currentPage, setPage } = useOrders('OPEN');
-  const { products } = useProducts();
+  const {
+    orders,
+    loading,
+    fetchOrders,
+    createOrder,
+    deleteOrder,
+    updateOrder,
+    totalPages,
+    currentPage,
+    setPage,
+    statusFilter,
+    isSaving,
+    isDeleting,
+  } = useOrders('OPEN');
+  const { products } = useProducts('', { paginate: false });
   
-  const [filter, setFilter] = useState('OPEN');
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [deleting, setDeleting] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [tableValue, setTableValue] = useState('');
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
   const handleOpenForm = (order = null) => {
@@ -37,7 +48,6 @@ export default function OrderSection() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSaving(true);
     setError('');
     try {
       if (editing) {
@@ -50,8 +60,6 @@ export default function OrderSection() {
       setTableValue('');
     } catch (err) {
       setError(formatErrorMessage(err));
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -71,6 +79,7 @@ export default function OrderSection() {
             }
           }}
           onCancel={() => setDeleting(null)}
+          loading={isDeleting}
         />
       )}
 
@@ -79,7 +88,7 @@ export default function OrderSection() {
           order={selectedOrder}
           products={products}
           onClose={() => setSelectedOrder(null)}
-          onUpdate={() => fetchOrders(filter || undefined)}
+          onUpdate={() => fetchOrders(statusFilter || undefined)}
         />
       )}
 
@@ -127,7 +136,7 @@ export default function OrderSection() {
               </Button>
               <Button 
                 type="submit" 
-                loading={saving}
+                loading={isSaving}
                 className="h-[44px] px-6 text-xs font-bold uppercase tracking-wider shadow-md shadow-orange-500/10 flex items-center justify-center gap-2"
               >
                 <Plus size={16} />
@@ -145,9 +154,9 @@ export default function OrderSection() {
         {['', 'OPEN', 'PAID', 'CLOSED'].map((s) => (
           <button
             key={s}
-            onClick={() => { setFilter(s); fetchOrders(s || undefined); }}
+            onClick={() => fetchOrders(s || undefined)}
             className={`text-[10px] uppercase tracking-wider font-bold px-4 py-2.5 rounded-xl border transition-all duration-200 cursor-pointer whitespace-nowrap active:scale-95 ${
-              filter === s 
+              statusFilter === s 
                 ? 'bg-white border-white text-black shadow-lg shadow-white/5' 
                 : 'bg-neutral-900 border-neutral-800 text-neutral-400 hover:border-neutral-700 hover:text-neutral-200'
             }`}
@@ -157,19 +166,19 @@ export default function OrderSection() {
         ))}
       </div>
 
-      {/* Lista */}
+      {/* Lista de Mesas / Pedidos w-100 */}
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="flex flex-col gap-2 w-full">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="h-64 bg-neutral-900/50 border border-neutral-800 rounded-2xl animate-pulse" />
+            <div key={i} className="h-14 bg-neutral-900/40 border border-neutral-800 rounded-xl animate-pulse w-full" />
           ))}
         </div>
       ) : orders.length === 0 ? (
-        <div className="text-center py-16 bg-neutral-900/10 rounded-2xl border border-dashed border-neutral-800">
+        <div className="text-center py-16 bg-neutral-900/10 rounded-2xl border border-dashed border-neutral-800 w-full">
           <p className="text-neutral-550 font-medium">Nenhum pedido encontrado nesta categoria.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="flex flex-col gap-2 w-full">
           {orders.map((o) => (
             <OrderCard 
               key={o.id} 

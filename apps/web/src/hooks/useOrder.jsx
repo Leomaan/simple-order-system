@@ -1,15 +1,17 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { useState } from 'react';
 import api from '../config/api';
+import { useSocket } from '../context/SocketContext';
 
 export function useOrders(initialStatus = '') {
   const queryClient = useQueryClient();
+  const { isConnected } = useSocket();
   const [statusFilter, setStatusFilter] = useState(initialStatus);
   const [page, setPage] = useState(1);
   const limit = 10;
 
   // Busca reativa de pedidos com cache de dados
-  const { data, isLoading: loading, error, refetch } = useQuery({
+  const { data, isLoading: loading, isFetching, error, refetch } = useQuery({
     queryKey: ['orders', { status: statusFilter, page, limit }],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -19,7 +21,10 @@ export function useOrders(initialStatus = '') {
       const res = await api.get(`/order?${params}`);
       return res.data.data;
     },
-    refetchInterval: 5000, // Mantém as mesas sincronizadas em background mesmo com modal fechado
+    // Polling condicional: desativa requisições periódicas com socket conectado;
+    // se o socket cair, ativa fallback de polling a cada 5s para manter as mesas sincronizadas
+    refetchInterval: isConnected ? false : 5000,
+    placeholderData: keepPreviousData,
   });
 
   const orders = data?.orders || (Array.isArray(data) ? data : []);
@@ -61,18 +66,24 @@ export function useOrders(initialStatus = '') {
   return {
     orders,
     loading,
+    isFetching,
     totalPages,
     currentPage: page,
     totalOrders,
     setPage,
+    statusFilter,
+    setStatusFilter,
     error: error ? 'Erro ao carregar pedidos' : '',
     fetchOrders: (status) => {
       setStatusFilter(status ?? '');
       setPage(1);
-      queryClient.invalidateQueries({ queryKey: ['orders'] });
     },
     createOrder: (data) => createMutation.mutateAsync(data),
     updateOrder: (id, data) => updateMutation.mutateAsync({ id, data }),
     deleteOrder: (id) => deleteMutation.mutateAsync(id),
+    isCreating: createMutation.isPending,
+    isUpdating: updateMutation.isPending,
+    isDeleting: deleteMutation.isPending,
+    isSaving: createMutation.isPending || updateMutation.isPending,
   };
 }

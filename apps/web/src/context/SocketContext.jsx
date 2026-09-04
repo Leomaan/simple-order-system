@@ -23,6 +23,7 @@ export const SocketProvider = ({ children }) => {
     // Invalidação automática do React Query ao receber eventos em tempo real
     function handleOrderChange() {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
+      queryClient.invalidateQueries({ queryKey: ['order'] });
       queryClient.invalidateQueries({ queryKey: ['reports'] });
       queryClient.invalidateQueries({ queryKey: ['auditLogs'] });
       queryClient.invalidateQueries({ queryKey: ['audit-logs'] });
@@ -36,6 +37,7 @@ export const SocketProvider = ({ children }) => {
 
     socket.on('connect', onConnect);
     socket.on('disconnect', onDisconnect);
+    socket.on('connect_error', onDisconnect);
 
     // Eventos de pedidos em tempo real
     socket.on('order:created', handleOrderChange);
@@ -58,6 +60,7 @@ export const SocketProvider = ({ children }) => {
     return () => {
       socket.off('connect', onConnect);
       socket.off('disconnect', onDisconnect);
+      socket.off('connect_error', onDisconnect);
       socket.off('order:created', handleOrderChange);
       socket.off('order:updated', handleOrderChange);
       socket.off('order:closed', handleOrderChange);

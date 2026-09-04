@@ -6,7 +6,7 @@ import Input from "../ui/Input";
 import Button from "../ui/Button";
 import ErrorMessage from "../ui/ErrorMessage";
 import { formatErrorMessage } from "../util/errorUtil";
-import { Utensils, Beer, Popcorn, CakeSlice, Soup, Search, Plus, X } from "lucide-react";
+import { Utensils, Beer, Popcorn, CakeSlice, Soup, Search, Plus, X, Edit2, Trash2 } from "lucide-react";
 
 const CATEGORIES = ["FOOD", "DRINK", "SNACK", "DESSERT", "SIDE"];
 
@@ -29,17 +29,27 @@ const categoryIcon = {
 const emptyForm = { name: "", price: "", category: "FOOD", description: "", available: true };
 
 export default function ProductSection() {
-  const [filterCategory, setFilterCategory] = useState("FOOD");
-  const [searchQuery, setSearchQuery] = useState("");
-  const { products, loading, createProduct, updateProduct, deleteProduct, totalPages, currentPage, setPage, fetchProducts } =
-    useProducts("FOOD");
+  const {
+    products,
+    loading,
+    createProduct,
+    updateProduct,
+    deleteProduct,
+    totalPages,
+    currentPage,
+    setPage,
+    category: filterCategory,
+    search: searchQuery,
+    setCategory,
+    setSearch,
+    isSaving,
+    isDeleting,
+  } = useProducts("");
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptyForm);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [deleting, setDeleting] = useState(null);
-  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const sortedProducts = [...products].sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
 
@@ -72,7 +82,6 @@ export default function ProductSection() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    setSaving(true);
     setError("");
     try {
       const data = { 
@@ -88,21 +97,16 @@ export default function ProductSection() {
       closeForm();
     } catch (err) {
       setError(formatErrorMessage(err));
-    } finally {
-      setSaving(false);
     }
   }
 
   async function handleDelete() {
-    setDeleteLoading(true);
     try {
       await deleteProduct(deleting);
       setDeleting(null);
     } catch (err) {
       setError(formatErrorMessage(err));
       setDeleting(null);
-    } finally {
-      setDeleteLoading(false);
     }
   }
 
@@ -114,7 +118,7 @@ export default function ProductSection() {
           message="Esta ação é permanente e o produto será removido do cardápio. Deseja continuar?"
           onConfirm={handleDelete}
           onCancel={() => setDeleting(null)}
-          loading={deleteLoading}
+          loading={isDeleting}
         />
       )}
       <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 md:mb-8">
@@ -215,10 +219,10 @@ export default function ProductSection() {
           <ErrorMessage message={error} />
 
           <div className="flex gap-3 justify-end mt-2">
-            <Button variant="ghost" onClick={closeForm} disabled={saving}>
+            <Button variant="ghost" onClick={closeForm} disabled={isSaving}>
               Cancelar
             </Button>
-            <Button type="submit" loading={saving}>
+            <Button type="submit" loading={isSaving}>
               {editing ? "Salvar alterações" : "Criar produto"}
             </Button>
           </div>
@@ -230,10 +234,7 @@ export default function ProductSection() {
         <CategoryFilter
           categories={CATEGORIES}
           selected={filterCategory}
-          onChange={(cat) => {
-            setFilterCategory(cat);
-            fetchProducts(cat, searchQuery);
-          }}
+          onChange={setCategory}
         />
 
         <div className="relative w-full md:max-w-xs select-none">
@@ -241,121 +242,112 @@ export default function ProductSection() {
             type="text"
             placeholder="Buscar produto por nome..."
             value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              fetchProducts(filterCategory, e.target.value);
-            }}
-            className="w-full bg-neutral-900 border border-neutral-800 text-white rounded-xl py-2.5 pl-9 pr-4 text-xs outline-none focus:border-orange-500 transition-colors"
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full bg-neutral-900 border border-neutral-800 text-white rounded-xl py-2 pl-9 pr-8 text-xs outline-none focus:border-orange-500 transition-colors"
           />
-          <Search size={14} className="absolute left-3 top-3 text-neutral-500" />
+          <Search size={14} className="absolute left-3 top-2.5 text-neutral-500" />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearch("")}
+              className="absolute right-2.5 top-2 text-neutral-500 hover:text-white p-0.5 rounded cursor-pointer"
+            >
+              <X size={13} />
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Lista de Produtos (Cards estilo iFood para Gerenciamento Admin) */}
+      {/* Lista de Produtos 100% de largura (1 item por linha) para Admin */}
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="flex flex-col gap-2 w-full">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="h-64 bg-neutral-900/50 border border-neutral-800 rounded-2xl animate-pulse" />
+            <div key={i} className="h-14 bg-neutral-900/40 border border-neutral-800 rounded-xl animate-pulse w-full" />
           ))}
         </div>
       ) : sortedProducts.length === 0 ? (
-        <div className="text-center py-16 bg-neutral-900/10 rounded-2xl border border-dashed border-neutral-800">
+        <div className="text-center py-16 bg-neutral-900/10 rounded-2xl border border-dashed border-neutral-800 w-full">
           <p className="text-neutral-500 font-medium">Nenhum produto cadastrado nesta categoria.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="flex flex-col gap-2 w-full">
           {sortedProducts.map((p) => {
             const IconComponent = categoryIcon[p.category] || Utensils;
-            const categoryGradient = {
-              FOOD: "from-orange-500/20 via-amber-500/10 to-neutral-900 text-orange-400 border-orange-500/30",
-              DRINK: "from-cyan-500/20 via-blue-500/10 to-neutral-900 text-cyan-400 border-cyan-500/30",
-              SNACK: "from-amber-500/20 via-yellow-500/10 to-neutral-900 text-amber-400 border-amber-500/30",
-              DESSERT: "from-pink-500/20 via-rose-500/10 to-neutral-900 text-pink-400 border-pink-500/30",
-              SIDE: "from-emerald-500/20 via-teal-500/10 to-neutral-900 text-emerald-400 border-emerald-500/30",
-            }[p.category] || "from-neutral-800 to-neutral-900 text-orange-400 border-neutral-800";
-
             return (
               <div
                 key={p.id}
-                className={`group relative glass-card rounded-2xl overflow-hidden flex flex-col justify-between border transition-all duration-300 shadow-xl ${
+                className={`w-full group rounded-xl border px-3.5 py-2.5 sm:px-4 sm:py-3 flex items-center justify-between gap-3 transition-all duration-150 ${
                   p.available
-                    ? 'border-neutral-800 hover:border-orange-500/50 hover:shadow-orange-500/5'
-                    : 'border-neutral-900 opacity-60 bg-neutral-950/40'
+                    ? 'border-neutral-850 bg-neutral-950/70 hover:border-neutral-750 hover:bg-neutral-900/40'
+                    : 'border-neutral-900 bg-neutral-950/30 opacity-60'
                 }`}
               >
-                {/* Top Banner Ilustrado / Imagem iFood Style */}
-                <div className={`h-28 w-full relative bg-gradient-to-b ${categoryGradient} flex items-center justify-center overflow-hidden border-b border-neutral-850/50`}>
-                  {p.imageUrl ? (
-                    <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="flex flex-col items-center justify-center gap-1">
-                      <div className="w-12 h-12 rounded-2xl bg-neutral-900/80 border border-neutral-750 flex items-center justify-center shadow-lg backdrop-blur-md">
-                        <IconComponent size={24} />
-                      </div>
+                {/* Lado Esquerdo: Ícone + Info do Produto */}
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div className={`w-9 h-9 rounded-xl border flex items-center justify-center shrink-0 ${
+                    p.available ? 'bg-neutral-900 border-neutral-800 text-orange-400' : 'bg-neutral-950 border-neutral-900 text-neutral-600'
+                  }`}>
+                    <IconComponent size={16} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-white font-bold text-sm leading-tight truncate group-hover:text-orange-400 transition-colors">
+                        {p.name}
+                      </h3>
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-neutral-900 text-neutral-400 border border-neutral-800 shrink-0">
+                        {categoryLabel[p.category]}
+                      </span>
                     </div>
-                  )}
-
-                  {/* Badge de Categoria */}
-                  <span className="absolute top-3 left-3 text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-lg bg-neutral-950/80 text-neutral-300 border border-neutral-800 backdrop-blur-md shadow-md">
-                    {categoryLabel[p.category]}
-                  </span>
-
-                  {/* Preço em Destaque no Header */}
-                  <span className="absolute bottom-3 right-3 text-sm font-extrabold px-3 py-1 rounded-xl bg-orange-500/90 text-white shadow-lg backdrop-blur-md">
-                    R$ {Number(p.price).toFixed(2)}
-                  </span>
+                    {p.description && (
+                      <p className="text-neutral-500 text-xs truncate mt-0.5 max-w-md hidden sm:block">
+                        {p.description}
+                      </p>
+                    )}
+                  </div>
                 </div>
 
-                {/* Corpo do Card: Nome e Descrição */}
-                <div className="p-4 flex-1 flex flex-col justify-between gap-3">
-                  <div>
-                    <h3 className="text-white font-bold text-base leading-tight mb-1.5 group-hover:text-orange-400 transition-colors">
-                      {p.name}
-                    </h3>
-                    <p className="text-neutral-400 text-xs leading-relaxed line-clamp-2 min-h-[32px]">
-                      {p.description || "Sem descrição informada."}
-                    </p>
-                  </div>
+                {/* Lado Direito: Preço + Status + Ações */}
+                <div className="flex items-center gap-3 sm:gap-4 shrink-0">
+                  <span className="text-sm sm:text-base font-extrabold text-white text-right sm:min-w-[85px]">
+                    R$ {Number(p.price).toFixed(2)}
+                  </span>
 
-                  {/* Painel de Controle de Admin (Status + Editar + Excluir) */}
-                  <div className="flex flex-col gap-2 pt-3 border-t border-neutral-850">
-                    <div className="flex items-center justify-between gap-2">
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          try {
-                            await updateProduct(p.id, { available: !p.available });
-                          } catch (err) {
-                            setError(err.response?.data?.message || "Erro ao alterar disponibilidade");
-                          }
-                        }}
-                        className={`flex-1 text-[10px] font-extrabold uppercase tracking-wider py-1.5 px-3 rounded-xl border transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                          p.available
-                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20"
-                            : "bg-rose-500/10 text-rose-400 border-rose-500/30 hover:bg-rose-500/20"
-                        }`}
-                      >
-                        <span className={`w-2 h-2 rounded-full ${p.available ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'}`} />
-                        <span>{p.available ? "Disponível" : "Indisponível"}</span>
-                      </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        await updateProduct(p.id, { available: !p.available });
+                      } catch (err) {
+                        setError(err.response?.data?.message || "Erro ao alterar disponibilidade");
+                      }
+                    }}
+                    className={`text-[10px] font-bold uppercase tracking-wider py-1 px-2.5 rounded-lg border transition-all flex items-center gap-1.5 cursor-pointer select-none ${
+                      p.available
+                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20"
+                        : "bg-rose-500/10 text-rose-400 border-rose-500/30 hover:bg-rose-500/20"
+                    }`}
+                  >
+                    <span className={`w-1.5 h-1.5 rounded-full ${p.available ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'}`} />
+                    <span>{p.available ? "Disponível" : "Indisponível"}</span>
+                  </button>
 
-                      <div className="flex items-center gap-1.5">
-                        <Button
-                          variant="ghost"
-                          onClick={() => openEdit(p)}
-                          className="text-xs py-1.5 px-3 border border-neutral-800 hover:border-neutral-700 font-semibold"
-                        >
-                          Editar
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          onClick={() => setDeleting(p.id)}
-                          className="text-xs py-1.5 px-3 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 border border-rose-500/20 font-semibold"
-                        >
-                          Excluir
-                        </Button>
-                      </div>
-                    </div>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => openEdit(p)}
+                      className="p-1.5 rounded-lg border border-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-800/60 transition-colors cursor-pointer"
+                      title="Editar produto"
+                    >
+                      <Edit2 size={13} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDeleting(p.id)}
+                      className="p-1.5 rounded-lg border border-rose-500/20 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                      title="Excluir produto"
+                    >
+                      <Trash2 size={13} />
+                    </button>
                   </div>
                 </div>
               </div>

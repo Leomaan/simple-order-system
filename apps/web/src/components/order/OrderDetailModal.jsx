@@ -1,21 +1,28 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import api from '../../config/api';
-import { useOrderItems } from '../../hooks/useOrderItems';
+import { useOrderDetail } from '../../hooks/useOrderDetail';
 import CategoryFilter from '../ui/CategoryFilter';
 import QuantityControl from '../ui/QuantityControl';
 import CloseOrderButton from './CloseOrderButton';
 import Button from '../ui/Button';
 import ErrorMessage from '../ui/ErrorMessage';
 import { formatErrorMessage } from '../util/errorUtil';
-import { Ticket, Plus, Copy, Check, Loader2, RefreshCw, RotateCcw, Banknote, CreditCard, CheckCircle2 } from 'lucide-react';
+import { Ticket, Plus, Copy, Check, Loader2, RefreshCw, RotateCcw, Banknote, CreditCard, CheckCircle2, Search, X } from 'lucide-react';
 
 export default function OrderDetailModal({ order, products, onClose, onUpdate }) {
-  const [orderDetails, setOrderDetails] = useState(null);
+  const {
+    orderDetails,
+    loadingDetails,
+    addItem,
+    changeQuantity,
+    removeItem,
+    fetchDetails,
+    isMutating,
+  } = useOrderDetail(order.id);
+
   const [selectedCategory, setSelectedCategory] = useState('');
-  const [loadingDetails, setLoadingDetails] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState('');
-  const [changingQty, setChangingQty] = useState(null);
-  const [addingProductId, setAddingProductId] = useState(null);
   const [activeTab, setActiveTab] = useState('add'); // 'items' ou 'add'
 
   // Estados de Pagamento
@@ -26,32 +33,25 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
   const [reopening, setReopening] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const { addItem, removeItem, changeQuantity, loading } = useOrderItems();
-
   const categories = useMemo(() => 
     [...new Set(products.map(p => p.category).filter(Boolean))],
     [products]
   );
 
   const availableProducts = useMemo(() => {
-    const all = products;
-    const filtered = selectedCategory ? all.filter(p => p.category === selectedCategory) : all;
-    return filtered.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
-  }, [products, selectedCategory]);
-
-  const fetchDetails = async () => {
-    setLoadingDetails(true);
-    try {
-      const res = await api.get(`/order/${order.id}`);
-      setOrderDetails(res.data.data);
-    } finally {
-      setLoadingDetails(false);
+    let list = products;
+    if (selectedCategory) {
+      list = list.filter(p => p.category === selectedCategory);
     }
-  };
-
-  useEffect(() => {
-    fetchDetails();
-  }, [order.id]);
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      list = list.filter(p => {
+        const nameNorm = (p.name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        return nameNorm.includes(q);
+      });
+    }
+    return list.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+  }, [products, selectedCategory, searchQuery]);
 
   useEffect(() => {
     let interval;
@@ -71,7 +71,7 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
           api.get(`/order/${order.id}`)
             .then(res => {
               if (res.data.data?.status === 'PAID') {
-                setOrderDetails(res.data.data);
+                fetchDetails();
                 onUpdate?.();
               }
             })
@@ -82,40 +82,26 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [orderDetails?.status, orderDetails?.paymentId, order.id]);
+  }, [orderDetails?.status, orderDetails?.paymentId, order.id, fetchDetails, onUpdate]);
 
   async function handleInstantAdd(product) {
-    setAddingProductId(product.id);
     setError('');
     try {
-      // Se o item já existir no pedido, aumentamos a quantidade em 1.
-      const existingItem = orderDetails?.OrderItems?.find(item => item.productId === product.id);
-      if (existingItem) {
-        await changeQuantity(existingItem.id, existingItem.quantity + 1);
-      } else {
-        await addItem(order.id, product.id, 1);
-      }
-      await fetchDetails();
+      await addItem(product, 1);
       onUpdate?.();
     } catch (err) {
       setError(formatErrorMessage(err));
-    } finally {
-      setAddingProductId(null);
     }
   }
 
   const handleChangeQty = async (item, newQty) => {
-    setChangingQty(item.id);
     setError('');
     try {
       if (newQty <= 0) await removeItem(item.id);
       else await changeQuantity(item.id, newQty);
-      await fetchDetails();
       onUpdate?.();
     } catch (err) {
       setError(formatErrorMessage(err));
-    } finally {
-      setChangingQty(null);
     }
   };
 
@@ -317,7 +303,6 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
                           <QuantityControl
                             quantity={item.quantity}
                             onChange={(qty) => handleChangeQty(item, qty)}
-                            disabled={changingQty === item.id}
                           />
                         ) : (
                           <span className="text-neutral-550 text-xs font-bold bg-neutral-900 border border-neutral-800 px-2.5 py-1 rounded-lg">{item.quantity}x</span>
@@ -518,9 +503,36 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
 
           {/* Coluna da Direita: Adicionar Novos Consumos (Apenas Aberto) */}
           {currentStatus === 'OPEN' && (
-            <div className={`md:col-span-7 border-t md:border-t-0 md:border-l border-neutral-850 pt-6 md:pt-0 md:pl-6 ${activeTab !== 'add' ? 'hidden md:flex' : 'flex'} flex-col gap-4`}>
-              <h4 className="text-white text-xs font-bold uppercase tracking-wider text-neutral-450">Lançar Consumo</h4>
+            <div className={`md:col-span-7 border-t md:border-t-0 md:border-l border-neutral-850 pt-6 md:pt-0 md:pl-6 ${activeTab !== 'add' ? 'hidden md:flex' : 'flex'} flex-col gap-3.5`}>
+              <div className="flex items-center justify-between">
+                <h4 className="text-white text-xs font-bold uppercase tracking-wider text-neutral-450">Lançar Consumo</h4>
+                <span className="text-[11px] text-neutral-500 font-semibold">
+                  {availableProducts.length} {availableProducts.length === 1 ? 'produto' : 'produtos'}
+                </span>
+              </div>
 
+              {/* Barra de Busca de Produtos */}
+              <div className="relative w-full">
+                <input
+                  type="text"
+                  placeholder="Buscar produto por nome..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-neutral-950 border border-neutral-850 text-white rounded-xl py-2 pl-9 pr-8 text-xs outline-none focus:border-orange-500 transition-colors"
+                />
+                <Search size={14} className="absolute left-3 top-2.5 text-neutral-500" />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-2.5 top-2 text-neutral-500 hover:text-white p-0.5 rounded cursor-pointer"
+                  >
+                    <X size={13} />
+                  </button>
+                )}
+              </div>
+
+              {/* Filtro de Categorias (Começa em Todos) */}
               {categories.length > 0 && (
                 <CategoryFilter
                   categories={categories}
@@ -529,54 +541,74 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
                 />
               )}
 
-              {/* Grid de Produtos (3 cards por linha no mobile) */}
-              <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 max-h-[55vh] md:max-h-[58vh] overflow-y-auto pr-1">
-                {availableProducts.map((p) => {
-                  const isAdding = addingProductId === p.id;
-                  const canAdd = p.available && !isAdding;
-                  return (
-                    <button
-                      key={p.id}
-                      type="button"
-                      disabled={!canAdd}
-                      onClick={() => handleInstantAdd(p)}
-                      className={`text-left rounded-2xl border p-2.5 sm:p-3.5 transition-all duration-150 flex flex-col justify-between min-h-[90px] sm:min-h-[105px] h-auto group relative overflow-hidden active:scale-95 ${
-                        !p.available 
-                          ? 'border-neutral-900 bg-neutral-950/40 opacity-40 select-none cursor-not-allowed'
-                          : 'border-neutral-850 bg-neutral-950 hover:border-orange-500/40 hover:shadow-md hover:shadow-orange-500/5 cursor-pointer'
-                      }`}
-                    >
-                      {/* Efeito hover de fundo */}
-                      {p.available && (
-                        <span className="absolute inset-0 bg-orange-500/0 group-hover:bg-orange-500/5 transition-colors" />
-                      )}
+              {/* Lista de Produtos: w-full ocupando a área toda, um embaixo do outro */}
+              {availableProducts.length === 0 ? (
+                <div className="text-center py-12 bg-neutral-950 border border-dashed border-neutral-850 rounded-2xl w-full">
+                  <p className="text-neutral-550 text-xs font-medium">Nenhum produto encontrado.</p>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2 w-full max-h-[50vh] md:max-h-[55vh] overflow-y-auto pr-1">
+                  {availableProducts.map((p) => {
+                    const canAdd = p.available;
+                    return (
+                      <div
+                        key={p.id}
+                        onClick={() => canAdd && handleInstantAdd(p)}
+                        className={`w-full rounded-xl border px-3.5 py-2.5 flex items-center justify-between gap-3 transition-all duration-150 ${
+                          !p.available 
+                            ? 'border-neutral-900 bg-neutral-950/40 opacity-40 select-none cursor-not-allowed'
+                            : 'border-neutral-850 bg-neutral-950 hover:border-orange-500/40 hover:bg-neutral-900/40 cursor-pointer active:scale-[0.99]'
+                        }`}
+                      >
+                        {/* Lado Esquerdo: Nome + Categoria + Descrição */}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-white text-xs sm:text-sm font-bold truncate">
+                              {p.name}
+                            </span>
+                            {p.category && (
+                              <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-neutral-900 text-neutral-400 border border-neutral-800 shrink-0">
+                                {p.category}
+                              </span>
+                            )}
+                          </div>
+                          {p.description && (
+                            <p className="text-neutral-500 text-[11px] truncate mt-0.5 max-w-sm hidden sm:block">
+                              {p.description}
+                            </p>
+                          )}
+                        </div>
 
-                      <p className="text-white text-xs sm:text-sm font-bold line-clamp-2 w-full relative z-10 leading-tight break-words">{p.name}</p>
-                      <div className="flex items-center justify-between w-full mt-2 relative z-10">
-                        {p.available ? (
-                          <>
-                            <span className="text-orange-400 text-xs font-bold whitespace-nowrap">{formatPrice(p.price)}</span>
-                            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center justify-center text-orange-400 group-hover:bg-orange-500 group-hover:text-white group-hover:scale-105 transition-all duration-200 shrink-0">
-                              {isAdding ? (
-                                <Loader2 size={13} className="animate-spin text-white" />
-                              ) : (
-                                <Plus size={13} />
-                              )}
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <span className="text-neutral-550 text-xs font-bold whitespace-nowrap">{formatPrice(p.price)}</span>
-                            <span className="text-[8px] font-black uppercase tracking-wider bg-red-500/10 border border-red-500/20 text-red-400 px-1.5 py-0.5 rounded">
+                        {/* Lado Direito: Preço + Botão Adicionar */}
+                        <div className="flex items-center gap-3 shrink-0">
+                          <span className="text-orange-400 text-xs sm:text-sm font-extrabold whitespace-nowrap">
+                            {formatPrice(p.price)}
+                          </span>
+
+                          {p.available ? (
+                            <button
+                              type="button"
+                              disabled={!canAdd}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleInstantAdd(p);
+                              }}
+                              className="px-2.5 py-1.5 rounded-lg bg-neutral-900 border border-neutral-800 hover:border-orange-500 hover:bg-orange-500 hover:text-white text-orange-400 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
+                            >
+                              <Plus size={13} />
+                              <span className="hidden sm:inline">Adicionar</span>
+                            </button>
+                          ) : (
+                            <span className="text-[9px] font-black uppercase tracking-wider bg-red-500/10 border border-red-500/20 text-red-400 px-2 py-1 rounded-md">
                               Sem Estoque
                             </span>
-                          </>
-                        )}
+                          )}
+                        </div>
                       </div>
-                    </button>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
         </div>
