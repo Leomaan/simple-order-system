@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculateDiff } from '../src/util/diff.js';
+import { calculateDiff, formatQuantityDiff } from '../src/util/diff.js';
 
 describe('calculateDiff util', () => {
   it('should return empty diff when objects are identical', () => {
@@ -56,5 +56,21 @@ describe('calculateDiff util', () => {
     expect(calculateDiff({}, { name: 'New' })).toEqual({
       name: { old: undefined, new: 'New' }
     });
+  });
+});
+
+describe('formatQuantityDiff util', () => {
+  it('should format positive diff with + sign', () => {
+    expect(formatQuantityDiff(1, 2)).toBe('+1');
+    expect(formatQuantityDiff(2, 5)).toBe('+3');
+  });
+
+  it('should format negative diff with - sign', () => {
+    expect(formatQuantityDiff(3, 2)).toBe('-1');
+    expect(formatQuantityDiff(5, 1)).toBe('-4');
+  });
+
+  it('should format zero difference as 0', () => {
+    expect(formatQuantityDiff(2, 2)).toBe('0');
   });
 });

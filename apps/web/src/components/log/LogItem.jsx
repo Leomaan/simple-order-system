@@ -1,19 +1,12 @@
 import React, { memo } from 'react';
 import { getActionStyle, getRoleStyle, formatRelativeTime, getDetailRows } from '../util/logUtil';
 
-const DetailPill = memo(({ icon, label, value, variant }) => {
-  const colors = {
-    success: 'text-emerald-400 bg-emerald-500/5 border-emerald-500/20',
-    danger: 'text-red-400 bg-red-500/5 border-red-500/20',
-    warning: 'text-orange-400 bg-orange-500/5 border-orange-500/20',
-    neutral: 'text-neutral-300 bg-neutral-800/50 border-neutral-700/30'
-  };
-
+const DetailPill = memo(({ icon, label, value }) => {
   return (
-    <div className={`flex items-center gap-1.5 border rounded-lg px-2.5 py-1 text-[11px] font-medium transition-all ${colors[variant] || colors.neutral}`}>
-      <span className="opacity-60">{icon}</span>
-      <span className="opacity-60 select-none">{label}:</span>
-      <span className="font-semibold">{value}</span>
+    <div className="flex items-center gap-1.5 border border-neutral-800 bg-neutral-900/60 rounded-lg px-2.5 py-1 text-[11px] font-medium text-neutral-300">
+      <span className="text-neutral-500">{icon}</span>
+      <span className="text-neutral-450 select-none">{label}:</span>
+      <span className="font-semibold text-neutral-200">{value}</span>
     </div>
   );
 });

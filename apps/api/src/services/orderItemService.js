@@ -6,6 +6,7 @@ import { sequelize } from '../db/conn.js';
 import { log } from './auditLogService.js';
 import logger from '../util/logger.js';
 import { emitEvent } from '../util/socket.js';
+import { formatQuantityDiff } from '../util/diff.js';
 
 export async function findById(id) {
   const item = await OrderItem.findByPk(id, { include: [Order, Product] });
@@ -108,8 +109,7 @@ export async function changeQuantity(id, quantity, user = null) {
     totalPrice: orderItem.Product ? orderItem.Product.price * quantity : orderItem.totalPrice,
   });
 
-  const diff = quantity - oldQty;
-  const change = diff > 0 ? `Adicionou ${diff}` : `Reduziu ${Math.abs(diff)}`;
+  const change = formatQuantityDiff(oldQty, quantity);
 
   await log({
     user,

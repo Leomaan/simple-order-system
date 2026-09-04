@@ -36,3 +36,15 @@ export function calculateDiff(oldObj = {}, newObj = {}, fields = null) {
 
   return diff;
 }
+
+/**
+ * Formata a diferença numérica de quantidade com sinal (+X ou -X).
+ *
+ * @param {number} oldQty
+ * @param {number} newQty
+ * @returns {string} Ex: "+1", "-2", "0"
+ */
+export function formatQuantityDiff(oldQty, newQty) {
+  const diff = Number(newQty) - Number(oldQty);
+  return diff > 0 ? `+${diff}` : `${diff}`;
+}

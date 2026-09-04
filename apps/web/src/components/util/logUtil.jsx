@@ -1,5 +1,25 @@
 import { ICONS, ACTION_LABEL } from '../constants/logConstants';
 
+/**
+ * Normaliza e formata a exibição de variação de quantidade (+X ou -X).
+ * @param {string|number} change 
+ * @returns {string}
+ */
+export function formatItemChange(change) {
+  if (!change) return '';
+  const text = String(change).trim();
+  if (text.startsWith('Adicionou ')) {
+    return `+${text.replace('Adicionou ', '').trim()}`;
+  }
+  if (text.startsWith('Reduziu ')) {
+    return `-${text.replace('Reduziu ', '').trim()}`;
+  }
+  if (text.startsWith('Aumentou ')) {
+    return `+${text.replace('Aumentou ', '').trim()}`;
+  }
+  return text;
+}
+
 export function getDetailRows(log) {
   let d = log.details || {};
   if (typeof d === 'string') {
@@ -16,19 +36,17 @@ export function getDetailRows(log) {
   const produto = d.product != null ? d.product : (d.name != null && log.entity !== 'User' ? d.name : null);
   const usuarioAlvo = log.entity === 'User' ? (d.name || null) : null;
 
-  // MESA: Sinalizador Laranja (warning)
   if (mesa) {
     rows.push({ 
       icon: ICONS.table, 
       label: 'Mesa', 
       value: `Mesa ${mesa}`, 
-      variant: 'warning' // Cor Laranja
     });
   }
 
-  if (pedido) rows.push({ icon: ICONS.tag, label: 'Pedido', value: `#${pedido}`, variant: 'neutral' });
-  if (produto) rows.push({ icon: ICONS.product, label: 'Item', value: String(produto), variant: 'neutral' });
-  if (usuarioAlvo) rows.push({ icon: ICONS.person, label: 'Usuário', value: String(usuarioAlvo), variant: 'neutral' });
+  if (pedido) rows.push({ icon: ICONS.tag, label: 'Pedido', value: `#${pedido}` });
+  if (produto) rows.push({ icon: ICONS.product, label: 'Item', value: String(produto) });
+  if (usuarioAlvo) rows.push({ icon: ICONS.person, label: 'Usuário', value: String(usuarioAlvo) });
 
   const categoryLabels = {
     FOOD: 'Comida',
@@ -46,7 +64,6 @@ export function getDetailRows(log) {
           icon: ICONS.product,
           label: 'Nome',
           value: `${diff.name.old} ➔ ${diff.name.new}`,
-          variant: 'neutral'
         });
       }
       if (diff.price) {
@@ -54,7 +71,6 @@ export function getDetailRows(log) {
           icon: ICONS.money,
           label: 'Preço',
           value: `R$ ${Number(diff.price.old).toFixed(2)} ➔ R$ ${Number(diff.price.new).toFixed(2)}`,
-          variant: 'warning'
         });
       }
       if (diff.category) {
@@ -64,7 +80,6 @@ export function getDetailRows(log) {
           icon: ICONS.tag,
           label: 'Categoria',
           value: `${oldCat} ➔ ${newCat}`,
-          variant: 'neutral'
         });
       }
       if (diff.available) {
@@ -74,7 +89,6 @@ export function getDetailRows(log) {
           icon: ICONS.info,
           label: 'Disponibilidade',
           value: `${oldStatus} ➔ ${newStatus}`,
-          variant: diff.available.new ? 'success' : 'danger'
         });
       }
       if (diff.description) {
@@ -84,7 +98,6 @@ export function getDetailRows(log) {
           icon: ICONS.info,
           label: 'Descrição',
           value: `${oldD} ➔ ${newD}`,
-          variant: 'neutral'
         });
       }
 
@@ -94,13 +107,13 @@ export function getDetailRows(log) {
         if (nonNameKeys.length === 1) {
           const k = nonNameKeys[0];
           if (k === 'price' && d.price != null) {
-            rows.push({ icon: ICONS.money, label: 'Preço Atualizado', value: `R$ ${Number(d.price).toFixed(2)}`, variant: 'warning' });
+            rows.push({ icon: ICONS.money, label: 'Preço Atualizado', value: `R$ ${Number(d.price).toFixed(2)}` });
           } else if (k === 'category' && d.category != null) {
-            rows.push({ icon: ICONS.tag, label: 'Categoria Atualizada', value: categoryLabels[d.category] || d.category, variant: 'neutral' });
+            rows.push({ icon: ICONS.tag, label: 'Categoria Atualizada', value: categoryLabels[d.category] || d.category });
           } else if (k === 'available' && d.available != null) {
-            rows.push({ icon: ICONS.info, label: 'Disponibilidade', value: d.available ? 'Disponível' : 'Indisponível', variant: d.available ? 'success' : 'danger' });
+            rows.push({ icon: ICONS.info, label: 'Disponibilidade', value: d.available ? 'Disponível' : 'Indisponível' });
           } else if (k === 'description' && d.description != null) {
-            rows.push({ icon: ICONS.info, label: 'Descrição', value: `"${d.description}"`, variant: 'neutral' });
+            rows.push({ icon: ICONS.info, label: 'Descrição', value: `"${d.description}"` });
           }
         }
       }
@@ -113,7 +126,6 @@ export function getDetailRows(log) {
           icon: ICONS.money,
           label: 'Preço',
           value: `R$ ${Number(d.price).toFixed(2)}`,
-          variant: 'success'
         });
       }
       if (d.category != null) {
@@ -121,7 +133,6 @@ export function getDetailRows(log) {
           icon: ICONS.tag,
           label: 'Categoria',
           value: categoryLabels[d.category] || d.category,
-          variant: 'neutral'
         });
       }
       if (d.description) {
@@ -129,7 +140,6 @@ export function getDetailRows(log) {
           icon: ICONS.info,
           label: 'Descrição',
           value: `"${d.description}"`,
-          variant: 'neutral'
         });
       }
       break;
@@ -137,22 +147,22 @@ export function getDetailRows(log) {
     case 'UPDATE_USER': {
       const diff = d.diff || {};
       if (diff.name) {
-        rows.push({ icon: ICONS.person, label: 'Nome', value: `${diff.name.old} ➔ ${diff.name.new}`, variant: 'neutral' });
+        rows.push({ icon: ICONS.person, label: 'Nome', value: `${diff.name.old} ➔ ${diff.name.new}` });
       }
       if (diff.role) {
         const oldR = diff.role.old === 'ADMIN' ? 'Admin' : 'Garçom';
         const newR = diff.role.new === 'ADMIN' ? 'Admin' : 'Garçom';
-        rows.push({ icon: ICONS.person, label: 'Cargo', value: `${oldR} ➔ ${newR}`, variant: 'warning' });
+        rows.push({ icon: ICONS.person, label: 'Cargo', value: `${oldR} ➔ ${newR}` });
       }
       if (diff.active) {
         const oldA = diff.active.old ? 'Ativo' : 'Inativo';
         const newA = diff.active.new ? 'Ativo' : 'Inativo';
-        rows.push({ icon: ICONS.info, label: 'Status', value: `${oldA} ➔ ${newA}`, variant: diff.active.new ? 'success' : 'danger' });
+        rows.push({ icon: ICONS.info, label: 'Status', value: `${oldA} ➔ ${newA}` });
       }
 
       if (!d.diff) {
-        if (d.role != null) rows.push({ icon: ICONS.person, label: 'Novo Cargo', value: d.role === 'ADMIN' ? 'Admin' : 'Garçom', variant: 'warning' });
-        if (d.active != null) rows.push({ icon: ICONS.info, label: 'Status', value: d.active ? 'Ativo' : 'Inativo', variant: d.active ? 'success' : 'danger' });
+        if (d.role != null) rows.push({ icon: ICONS.person, label: 'Novo Cargo', value: d.role === 'ADMIN' ? 'Admin' : 'Garçom' });
+        if (d.active != null) rows.push({ icon: ICONS.info, label: 'Status', value: d.active ? 'Ativo' : 'Inativo' });
       }
       break;
     }
@@ -163,46 +173,40 @@ export function getDetailRows(log) {
           icon: ICONS.person,
           label: 'Cargo',
           value: d.role === 'ADMIN' ? 'Admin' : 'Garçom',
-          variant: 'neutral'
         });
       }
       break;
 
     case 'UPDATE_ORDER_ITEM':
       if (d.change) {
-        const text = String(d.change);
-        const isAdd = text.startsWith('Adicionou');
         rows.push({
           icon: ICONS.info,
           label: 'Alteração',
-          value: text,
-          variant: isAdd ? 'success' : 'danger'
+          value: formatItemChange(d.change),
         });
       }
       break;
 
     case 'ADD_ORDER_ITEM':
       if (d.quantity) {
-        rows.push({ icon: ICONS.info, label: 'Quantidade', value: `${d.quantity}x`, variant: 'success' });
+        rows.push({ icon: ICONS.info, label: 'Quantidade', value: `${d.quantity}x` });
       }
       break;
 
     case 'CLOSE_ORDER':
     case 'PAY_ORDER':
-      // TOTAL: Sinalizador Verde (success)
       if (d.total) {
         rows.push({ 
           icon: ICONS.money, 
           label: 'Total', 
           value: `R$ ${Number(d.total).toFixed(2)}`, 
-          variant: 'success'
         });
       }
       break;
 
     case 'UPDATE_ORDER':
-      if (d.oldTable) rows.push({ icon: ICONS.table, label: 'Anterior', value: `Mesa ${d.oldTable}`, variant: 'neutral' });
-      if (d.newTable) rows.push({ icon: ICONS.table, label: 'Nova', value: `Mesa ${d.newTable}`, variant: 'warning' });
+      if (d.oldTable) rows.push({ icon: ICONS.table, label: 'Anterior', value: `Mesa ${d.oldTable}` });
+      if (d.newTable) rows.push({ icon: ICONS.table, label: 'Nova', value: `Mesa ${d.newTable}` });
       break;
   }
 
@@ -227,7 +231,7 @@ export function getActionStyle(action) {
 export function getRoleStyle(role) {
   return role === 'ADMIN' 
     ? { label: 'Admin', cls: 'bg-amber-500/10 text-amber-400 ring-1 ring-amber-500/20' }
-    : { label: 'Garçom', cls: 'bg-sky-500/10 text-sky-400 ring-1 ring-sky-500/20' };
+    : { label: 'Garçom', cls: 'bg-neutral-800/80 text-neutral-400 border border-neutral-750' };
 }
 
 export function formatRelativeTime(dateStr) {
