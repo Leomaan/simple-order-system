@@ -1,5 +1,5 @@
 import { Suspense, lazy } from 'react';
-import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom';
+import { createBrowserRouter, Navigate, Outlet, ScrollRestoration } from 'react-router-dom';
 import { PrivateRoute } from './components/PrivateRoute';
 import { PublicRoute } from './components/PublicRoute';
 
@@ -7,13 +7,7 @@ const Login = lazy(() => import('./pages/Login'));
 const Admin = lazy(() => import('./pages/Admin'));
 const Waiter = lazy(() => import('./pages/Waiter'));
 
-function LoadingSpinner() {
-  return (
-    <div className="min-h-screen bg-neutral-950 flex items-center justify-center">
-      <div className="w-10 h-10 rounded-full border-4 border-orange-500/20 border-t-orange-500 animate-spin" />
-    </div>
-  );
-}
+import { LoadingSpinner } from './components/ui/LoadingSpinner';
 
 function RouteErrorFallback() {
   return (
@@ -39,6 +33,7 @@ export const router = createBrowserRouter([
   {
     element: (
       <Suspense fallback={<LoadingSpinner />}>
+        <ScrollRestoration />
         <Outlet />
       </Suspense>
     ),

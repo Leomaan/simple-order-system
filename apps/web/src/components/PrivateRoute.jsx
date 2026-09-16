@@ -1,12 +1,18 @@
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { LoadingSpinner } from './ui/LoadingSpinner';
 
 export function PrivateRoute({ children, role }) {
   const { user, loading } = useAuth();
+  const location = useLocation();
 
-  if (loading) return null;
-  if (!user) return <Navigate to="/login" replace />;
-  if (role && user.role !== role) return <Navigate to="/login" replace />;
+  if (loading) return <LoadingSpinner />;
+  if (!user) return <Navigate to="/login" state={{ from: location }} replace />;
+
+  if (role && user.role !== role) {
+    const fallbackPath = user.role === 'ADMIN' ? '/admin' : '/waiter';
+    return <Navigate to={fallbackPath} replace />;
+  }
 
   return children;
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../config/api';
 import { formatErrorMessage } from '../components/util/errorUtil';
@@ -7,6 +7,7 @@ import { formatErrorMessage } from '../components/util/errorUtil';
 export function useLogin() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -18,11 +19,15 @@ export function useLogin() {
       const { role, name, csrfToken } = res.data.data;
       login({ role, name, csrfToken }); 
 
-      if (role === 'ADMIN') {
-        navigate('/admin');
-      } else {
-        navigate('/waiter');
-      }
+      const defaultPath = role === 'ADMIN' ? '/admin' : '/waiter';
+      const from = location.state?.from?.pathname;
+
+      const isValidDestination = from && (
+        (role === 'ADMIN' && from.startsWith('/admin')) ||
+        (role === 'WAITER' && from.startsWith('/waiter'))
+      );
+
+      navigate(isValidDestination ? from : defaultPath, { replace: true });
     } catch (err) {
       setError(formatErrorMessage(err));
     } finally {
