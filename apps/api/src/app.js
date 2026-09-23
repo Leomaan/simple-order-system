@@ -22,6 +22,7 @@ import reportRoutes from './routes/reportRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import settingsRoutes from './routes/settingsRoutes.js';
 import healthRoutes from './routes/healthRoutes.js';
+import publicMenuRoutes from './routes/publicMenuRoutes.js';
 
 const app = e();
 
@@ -59,6 +60,7 @@ if (process.env.NODE_ENV !== 'production' || process.env.ENABLE_SWAGGER === 'tru
 }
 
 app.use('/health', healthRoutes);
+app.use('/public/menu', publicMenuRoutes);
 app.use('/product', productRoutes);
 app.use('/order', orderRoutes);
 app.use('/order-item', orderItemRoutes);

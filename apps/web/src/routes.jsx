@@ -6,6 +6,7 @@ import { PublicRoute } from './components/PublicRoute';
 const Login = lazy(() => import('./pages/Login'));
 const Admin = lazy(() => import('./pages/Admin'));
 const Waiter = lazy(() => import('./pages/Waiter'));
+const Menu = lazy(() => import('./pages/menu'));
 
 import { LoadingSpinner } from './components/ui/LoadingSpinner';
 
@@ -39,6 +40,14 @@ export const router = createBrowserRouter([
     ),
     errorElement: <RouteErrorFallback />,
     children: [
+      {
+        path: '/cardapio',
+        element: <Menu />,
+      },
+      {
+        path: '/cardapio/:slug',
+        element: <Menu />,
+      },
       {
         path: '/login',
         element: (
