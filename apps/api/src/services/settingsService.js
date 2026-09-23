@@ -1,22 +1,6 @@
 import Settings from '../models/settings.js';
 import logger from '../util/logger.js';
-
-function maskValue(val, visibleStart = 8, visibleEnd = 4) {
-  if (!val) return '';
-  if (val.length <= (visibleStart + visibleEnd)) return '********';
-  return `${val.substring(0, visibleStart)}...${'*'.repeat(8)}${val.slice(-visibleEnd)}`;
-}
-
-export function formatSettingsWithMasks(settings) {
-  const data = typeof settings.toJSON === 'function' ? settings.toJSON() : { ...settings };
-  if (data.mercadoPagoAccessToken) {
-    data.mercadoPagoAccessToken = maskValue(data.mercadoPagoAccessToken, 8, 4);
-  }
-  if (data.mercadoPagoWebhookSecret) {
-    data.mercadoPagoWebhookSecret = maskValue(data.mercadoPagoWebhookSecret, 2, 2);
-  }
-  return data;
-}
+import { formatSettingsDto } from '../dto/settingsDto.js';
 
 export async function getSettings() {
   let settings = await Settings.findOne();
@@ -28,9 +12,9 @@ export async function getSettings() {
   return settings;
 }
 
-export async function getMaskedSettings() {
+export async function getFormattedSettings() {
   const settings = await getSettings();
-  return formatSettingsWithMasks(settings);
+  return formatSettingsDto(settings);
 }
 
 export async function updateSettings(data, user = null) {
@@ -68,5 +52,5 @@ export async function updateSettings(data, user = null) {
     updatedBy: user?.userId || user?.id,
   });
 
-  return formatSettingsWithMasks(currentSettings);
+  return formatSettingsDto(currentSettings);
 }

@@ -1,13 +1,5 @@
 import { AppError } from '../middleware/appError.js';
 
-/**
- * Valida regras de permissão e proteção para atualização de usuários.
- *
- * @param {Object} targetUser - Usuário que sofrerá a alteração
- * @param {Object} requesterRecord - Registro do usuário solicitante no banco
- * @param {Object} updateData - Payload de dados a serem alterados
- * @param {number} authUserId - ID do usuário autenticado solicitante
- */
 export function assertCanUpdateUser(targetUser, requesterRecord, updateData, authUserId) {
   const targetId = Number(targetUser.id);
 
@@ -42,14 +34,6 @@ export function assertCanUpdateUser(targetUser, requesterRecord, updateData, aut
   }
 }
 
-/**
- * Valida regras de permissão e proteção para exclusão de usuários (soft delete ou permanente).
- *
- * @param {Object} targetUser - Usuário alvo da exclusão
- * @param {Object} requesterRecord - Registro do usuário solicitante no banco
- * @param {number} authUserId - ID do usuário autenticado solicitante
- * @param {boolean} isPermanent - Se a operação é de exclusão permanente
- */
 export function assertCanDeleteUser(targetUser, requesterRecord, authUserId, isPermanent = false) {
   const targetId = Number(targetUser.id);
 

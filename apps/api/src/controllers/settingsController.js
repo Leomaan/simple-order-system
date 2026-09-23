@@ -4,7 +4,7 @@ import { updateSettingsSchema } from '@simple-order/schemas';
 import { AppError } from '../middleware/appError.js';
 
 export const get = asyncHandler(async (req, res) => {
-  const data = await settingsService.getMaskedSettings();
+  const data = await settingsService.getFormattedSettings();
   res.status(200).json({ success: true, data });
 });
 

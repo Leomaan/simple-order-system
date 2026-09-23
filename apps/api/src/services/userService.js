@@ -6,6 +6,7 @@ import { calculateDiff } from '../util/diff.js';
 import { log } from './auditLogService.js';
 import logger from '../util/logger.js';
 import { assertCanUpdateUser, assertCanDeleteUser } from '../policies/userPolicy.js';
+import { formatUserDto } from '../dto/userDto.js';
 
 const USER_DIFF_FIELDS = ['name', 'role', 'active'];
 
@@ -32,14 +33,15 @@ export async function findAll(onlyDeleted = false, page, limit) {
 
     const { count, rows } = await User.findAndCountAll(queryOptions);
     return {
-      users: rows,
+      users: rows.map(formatUserDto),
       totalPages: Math.ceil(count / parsedLimit),
       currentPage: parsedPage,
       totalUsers: count,
     };
   }
 
-  return User.findAll(queryOptions);
+  const users = await User.findAll(queryOptions);
+  return users.map(formatUserDto);
 }
 
 export async function findById(id) {
@@ -47,7 +49,7 @@ export async function findById(id) {
     attributes: ['id', 'name', 'email', 'role', 'active', 'isSuperAdmin', 'createdAt'],
   });
   if (!user) throw new AppError('user not found', 404);
-  return user;
+  return formatUserDto(user);
 }
 
 export async function createUser(data, currentUser = null) {
@@ -75,13 +77,11 @@ export async function createUser(data, currentUser = null) {
       details: { name: exists.name, role: exists.role }
     });
 
-    return userWithoutPassword;
+    return formatUserDto(exists);
   }
 
   const hashed = await bcrypt.hash(password, 10);
   const user = await User.create({ name, email, password: hashed, role });
-
-  const { password: _, ...userWithoutPassword } = user.toJSON();
 
   await log({
     user: currentUser,
@@ -93,7 +93,7 @@ export async function createUser(data, currentUser = null) {
 
   logger.info('Novo usuário cadastrado', { context: 'user_service', createdUserId: user.id, role: user.role });
 
-  return userWithoutPassword;
+  return formatUserDto(user);
 }
 
 export async function updateUser(id, data, requester) {
@@ -104,8 +104,10 @@ export async function updateUser(id, data, requester) {
 
   const [requesterRecord, user] = await Promise.all([
     User.findByPk(requesterId),
-    findById(id)
+    User.findByPk(id)
   ]);
+
+  if (!user) throw new AppError('user not found', 404);
 
   // Aplica política de autorização externa
   assertCanUpdateUser(user, requesterRecord, data, authUserId);
@@ -126,7 +128,7 @@ export async function updateUser(id, data, requester) {
 
   logger.info('Usuário atualizado', { context: 'user_service', updatedUserId: user.id, updatedBy: authUserId });
 
-  return user;
+  return formatUserDto(user);
 }
 
 export async function deleteUser(id, requester) {
@@ -137,8 +139,10 @@ export async function deleteUser(id, requester) {
 
   const [requesterRecord, user] = await Promise.all([
     User.findByPk(requesterId),
-    findById(id)
+    User.findByPk(id)
   ]);
+
+  if (!user) throw new AppError('user not found', 404);
 
   // Aplica política de autorização externa
   assertCanDeleteUser(user, requesterRecord, authUserId, false);
@@ -155,7 +159,7 @@ export async function deleteUser(id, requester) {
 
   logger.warn('Usuário desativado/removido (Soft Delete)', { context: 'user_service', targetUserId: id, removedBy: authUserId });
 
-  return user;
+  return formatUserDto(user);
 }
 
 export async function restoreUser(id, currentUser = null) {
@@ -174,7 +178,7 @@ export async function restoreUser(id, currentUser = null) {
 
   logger.info('Usuário restaurado', { context: 'user_service', restoredUserId: user.id });
 
-  return user;
+  return formatUserDto(user);
 }
 
 export async function permanentDeleteUser(id, requester) {
@@ -205,5 +209,5 @@ export async function permanentDeleteUser(id, requester) {
 
   logger.warn('Usuário excluído permanentemente', { context: 'user_service', targetUserId: id, deletedBy: authUserId });
 
-  return user;
+  return formatUserDto(user);
 }

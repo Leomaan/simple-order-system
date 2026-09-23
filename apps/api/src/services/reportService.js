@@ -1,8 +1,8 @@
-import { Op, fn, col, literal } from 'sequelize';
+import { Op, fn, col } from 'sequelize';
 import Order from '../models/order.js';
 import OrderItem from '../models/orderItem.js';
-import Product from '../models/product.js';
 import { AppError } from '../middleware/appError.js';
+import { formatReportSalesDto } from '../dto/reportDto.js';
 
 export async function salesToday() {
   const today = new Date();
@@ -31,11 +31,11 @@ export async function salesToday() {
 
   const localDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
-  return {
+  return formatReportSalesDto({
     date: localDate,
     totalOrders: Number(result?.totalOrders || 0),
     totalRevenue: Number(Number(result?.totalRevenue || 0).toFixed(2)),
-  };
+  });
 }
 
 export async function revenueByPeriod(from, to) {
@@ -68,12 +68,12 @@ export async function revenueByPeriod(from, to) {
     subQuery: false,
   });
 
-  return {
+  return formatReportSalesDto({
     from: from,
     to: to,
     totalOrders: Number(result?.totalOrders || 0),
     totalRevenue: Number(Number(result?.totalRevenue || 0).toFixed(2)),
-  };
+  });
 }
 
 export async function ordersByPeriod(from, to, status) {

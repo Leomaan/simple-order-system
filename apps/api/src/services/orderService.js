@@ -7,6 +7,7 @@ import { updateTotal } from '../util/updateTotalOrder.js';
 import { log } from './auditLogService.js';
 import logger from '../util/logger.js';
 import { emitEvent } from '../util/socket.js';
+import { formatOrderDto } from '../dto/orderDto.js';
 
 const VALID_STATUSES = ['OPEN', 'PAID', 'CLOSED'];
 
@@ -51,14 +52,15 @@ export async function findAll(status, page, limit, onlyDeleted = false) {
 
     const { count, rows } = await Order.findAndCountAll(queryOptions);
     return {
-      orders: rows,
+      orders: rows.map(formatOrderDto),
       totalPages: Math.ceil(count / parsedLimit),
       currentPage: parsedPage,
       totalOrders: count,
     };
   }
 
-  return Order.findAll(queryOptions);
+  const orders = await Order.findAll(queryOptions);
+  return orders.map(formatOrderDto);
 }
 
 export async function findById(id) {
@@ -75,8 +77,7 @@ export async function findById(id) {
 
   if (!order) throw new AppError('order not found', 404);
 
-  const total = updateTotal(order.OrderItems);
-  return { ...(typeof order.toJSON === 'function' ? order.toJSON() : order), total };
+  return formatOrderDto(order);
 }
 
 export async function createOrder(data, user = null) {
@@ -97,16 +98,17 @@ export async function createOrder(data, user = null) {
   });
 
   logger.info('Novo pedido criado', { context: 'order_service', orderId: order.id, table: order.table, total: order.total });
-  emitEvent('order:created', order);
+  const formattedOrder = formatOrderDto(order);
+  emitEvent('order:created', formattedOrder);
 
-  return order;
+  return formattedOrder;
 }
 
 export async function updateOrder(id, data, user = null) {
   if (!data || Object.keys(data).length === 0)
     throw new AppError('no data provided');
 
-  const order = await Order.findByPk(id);
+  const order = await Order.findByPk(id, { include: [OrderItem] });
   if (!order) throw new AppError('order not found', 404);
 
   if (order.status !== 'OPEN' && data.status === 'OPEN')
@@ -124,9 +126,10 @@ export async function updateOrder(id, data, user = null) {
   });
 
   logger.info('Pedido atualizado', { context: 'order_service', orderId: order.id, updatedBy: user?.userId || user?.id });
-  emitEvent('order:updated', order);
+  const formattedOrder = formatOrderDto(order);
+  emitEvent('order:updated', formattedOrder);
 
-  return order;
+  return formattedOrder;
 }
 
 export async function closeOrder(id, user = null) {
@@ -145,10 +148,7 @@ export async function closeOrder(id, user = null) {
 
   await order.update({ status: 'CLOSED' });
 
-  const result = {
-    ...(typeof order.toJSON === 'function' ? order.toJSON() : order),
-    total,
-  };
+  const formattedOrder = formatOrderDto(order);
 
   await log({
     user,
@@ -159,9 +159,9 @@ export async function closeOrder(id, user = null) {
   });
 
   logger.info('Pedido encerrado', { context: 'order_service', orderId: order.id, table: order.table, total });
-  emitEvent('order:closed', result);
+  emitEvent('order:closed', formattedOrder);
 
-  return result;
+  return formattedOrder;
 }
 
 export async function reopenOrder(id, user = null) {
@@ -210,16 +210,17 @@ export async function reopenOrder(id, user = null) {
   });
 
   logger.info('Pedido reaberto com sucesso', { context: 'order_service', orderId: order.id, table: order.table });
-  emitEvent('order:updated', order);
+  const formattedOrder = formatOrderDto(order);
+  emitEvent('order:updated', formattedOrder);
 
-  return order;
+  return formattedOrder;
 }
 
 export async function deleteOrder(id, userOrRole) {
   const userRole = typeof userOrRole === 'object' && userOrRole !== null ? userOrRole.role : userOrRole;
   const user = typeof userOrRole === 'object' && userOrRole !== null ? userOrRole : null;
 
-  const order = await Order.findByPk(id);
+  const order = await Order.findByPk(id, { include: [OrderItem] });
 
   if (!order) throw new AppError('order not found', 404);
 
@@ -240,11 +241,11 @@ export async function deleteOrder(id, userOrRole) {
   logger.warn('Pedido removido (Soft Delete)', { context: 'order_service', orderId: order.id, removedBy: user?.userId || user?.id });
   emitEvent('order:deleted', { id: Number(id) });
 
-  return order;
+  return formatOrderDto(order);
 }
 
 export async function restoreOrder(id, user = null) {
-  const order = await Order.findOne({ where: { id }, paranoid: false });
+  const order = await Order.findOne({ where: { id }, paranoid: false, include: [OrderItem] });
   if (!order) throw new AppError('order not found or not deleted', 404);
   await order.restore();
 
@@ -257,13 +258,14 @@ export async function restoreOrder(id, user = null) {
   });
 
   logger.info('Pedido restaurado', { context: 'order_service', orderId: order.id, restoredBy: user?.userId || user?.id });
-  emitEvent('order:restored', order);
+  const formattedOrder = formatOrderDto(order);
+  emitEvent('order:restored', formattedOrder);
 
-  return order;
+  return formattedOrder;
 }
 
 export async function permanentDeleteOrder(id, user = null) {
-  const order = await Order.findByPk(id, { paranoid: false });
+  const order = await Order.findByPk(id, { paranoid: false, include: [OrderItem] });
   if (!order) throw new AppError('order not found', 404);
   await order.destroy({ force: true });
 
@@ -278,5 +280,5 @@ export async function permanentDeleteOrder(id, user = null) {
   logger.warn('Pedido excluído permanentemente', { context: 'order_service', orderId: order.id, deletedBy: user?.userId || user?.id });
   emitEvent('order:deleted', { id: Number(id) });
 
-  return order;
+  return formatOrderDto(order);
 }

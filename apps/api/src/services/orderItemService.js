@@ -7,11 +7,12 @@ import { log } from './auditLogService.js';
 import logger from '../util/logger.js';
 import { emitEvent } from '../util/socket.js';
 import { formatQuantityDiff } from '../util/diff.js';
+import { formatOrderItemDto } from '../dto/orderItemDto.js';
 
 export async function findById(id) {
   const item = await OrderItem.findByPk(id, { include: [Order, Product] });
   if (!item) throw new AppError('order item not found', 404);
-  return item;
+  return formatOrderItemDto(item);
 }
 
 export async function addItem(data, user = null) {
@@ -88,9 +89,10 @@ export async function addItem(data, user = null) {
     quantity,
   });
 
-  emitEvent('order_item:created', { orderId: itemCompleto.OrderId, item });
+  const formattedItem = formatOrderItemDto(item);
+  emitEvent('order_item:created', { orderId: itemCompleto.OrderId, item: formattedItem });
 
-  return { item, created };
+  return { item: formattedItem, created };
 }
 
 export async function changeQuantity(id, quantity, user = null) {
@@ -131,9 +133,10 @@ export async function changeQuantity(id, quantity, user = null) {
     newQuantity: quantity,
   });
 
-  emitEvent('order_item:updated', { orderId: orderItem.OrderId, item: orderItem });
+  const formattedItem = formatOrderItemDto(orderItem);
+  emitEvent('order_item:updated', { orderId: orderItem.OrderId, item: formattedItem });
 
-  return orderItem;
+  return formattedItem;
 }
 
 export async function removeItem(id, user = null) {

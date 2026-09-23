@@ -5,6 +5,8 @@ import { calculateDiff } from '../util/diff.js';
 import { log } from './auditLogService.js';
 import logger from '../util/logger.js';
 import { emitEvent } from '../util/socket.js';
+import { notifyMenuUpdate } from '../util/notifyMenuUpdate.js';
+import { formatProductDto } from '../dto/productDto.js';
 
 const VALID_CATEGORIES = ['FOOD', 'DRINK', 'SNACK', 'DESSERT', 'SIDE'];
 const PRODUCT_DIFF_FIELDS = ['name', 'price', 'category', 'available', 'description'];
@@ -43,20 +45,21 @@ export async function findAll(category, onlyDeleted = false, page, limit, search
 
     const { count, rows } = await Product.findAndCountAll(queryOptions);
     return {
-      products: rows,
+      products: rows.map(formatProductDto),
       totalPages: Math.ceil(count / parsedLimit),
       currentPage: parsedPage,
       totalProducts: count,
     };
   }
 
-  return Product.findAll(queryOptions);
+  const products = await Product.findAll(queryOptions);
+  return products.map(formatProductDto);
 }
 
 export async function findById(id) {
   const product = await Product.findByPk(id);
   if (!product) throw new AppError('product not found', 404);
-  return product;
+  return formatProductDto(product);
 }
 
 export async function createProduct(data, user = null) {
@@ -83,15 +86,17 @@ export async function createProduct(data, user = null) {
 
   logger.info('Novo produto cadastrado', { context: 'product_service', productId: product.id, name: product.name });
   emitEvent('product:created', product);
+  notifyMenuUpdate('created', product);
 
-  return product;
+  return formatProductDto(product);
 }
 
 export async function updateProduct(id, data, user = null) {
   if (!data || Object.keys(data).length === 0)
     throw new AppError('no data provided');
 
-  const product = await findById(id);
+  const product = await Product.findByPk(id);
+  if (!product) throw new AppError('product not found', 404);
   const oldValues = typeof product.toJSON === 'function' ? product.toJSON() : { ...product };
 
   await product.update(data);
@@ -109,12 +114,14 @@ export async function updateProduct(id, data, user = null) {
 
   logger.info('Produto atualizado', { context: 'product_service', productId: product.id, updatedBy: user?.userId || user?.id });
   emitEvent('product:updated', product);
+  notifyMenuUpdate('updated', product);
 
-  return product;
+  return formatProductDto(product);
 }
 
 export async function deleteProduct(id, user = null) {
-  const product = await findById(id);
+  const product = await Product.findByPk(id);
+  if (!product) throw new AppError('product not found', 404);
   await product.destroy();
 
   await log({
@@ -127,8 +134,9 @@ export async function deleteProduct(id, user = null) {
 
   logger.warn('Produto removido (Soft Delete)', { context: 'product_service', productId: id });
   emitEvent('product:deleted', { id: Number(id) });
+  notifyMenuUpdate('deleted', { id: Number(id) });
 
-  return product;
+  return formatProductDto(product);
 }
 
 export async function restoreProduct(id, user = null) {
@@ -146,8 +154,9 @@ export async function restoreProduct(id, user = null) {
 
   logger.info('Produto restaurado', { context: 'product_service', productId: product.id });
   emitEvent('product:restored', product);
+  notifyMenuUpdate('restored', product);
 
-  return product;
+  return formatProductDto(product);
 }
 
 export async function permanentDeleteProduct(id, user = null) {
@@ -165,6 +174,7 @@ export async function permanentDeleteProduct(id, user = null) {
 
   logger.warn('Produto excluído permanentemente', { context: 'product_service', productId: id });
   emitEvent('product:deleted', { id: Number(id) });
+  notifyMenuUpdate('deleted', { id: Number(id) });
 
-  return product;
+  return formatProductDto(product);
 }

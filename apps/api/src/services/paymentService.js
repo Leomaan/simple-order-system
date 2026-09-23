@@ -6,12 +6,9 @@ import { log } from './auditLogService.js';
 import { getSettings } from './settingsService.js';
 import logger from '../util/logger.js';
 import { emitEvent } from '../util/socket.js';
+import { formatPaymentDto } from '../dto/paymentDto.js';
+import { formatOrderDto } from '../dto/orderDto.js';
 
-/**
- * Creates a PIX payment for a specific order.
- * @param {number} orderId 
- * @returns {Promise<object>} The payment details including QR code and copy-paste code.
- */
 export async function createPixPayment(orderId) {
   const order = await Order.findByPk(orderId, {
     include: [
@@ -58,9 +55,16 @@ export async function createPixPayment(orderId) {
       paymentExpiresAt: mockPayment.paymentExpiresAt
     });
 
-    emitEvent('order:updated', order);
+    emitEvent('order:updated', formatOrderDto(order));
 
-    return mockPayment;
+    return formatPaymentDto({
+      orderId: order.id,
+      paymentId: mockPayment.paymentId,
+      qrCode: mockPayment.paymentQrCode,
+      qrCodeCopy: mockPayment.paymentQrCodeCopy,
+      expiresAt: mockPayment.paymentExpiresAt,
+      amount: totalAmount,
+    });
   }
 
   // Fallback to a valid public URL format in local development to satisfy Mercado Pago's validation
@@ -116,25 +120,23 @@ export async function createPixPayment(orderId) {
       paymentExpiresAt
     });
 
-    emitEvent('order:updated', order);
+    emitEvent('order:updated', formatOrderDto(order));
 
-    return {
+    return formatPaymentDto({
+      orderId: order.id,
       paymentId,
-      paymentQrCode: qrCode ? `data:image/png;base64,${qrCode}` : null,
-      paymentQrCodeCopy: qrCodeCopy,
-      paymentExpiresAt
-    };
+      qrCode: qrCode ? `data:image/png;base64,${qrCode}` : null,
+      qrCodeBase64: qrCode || null,
+      qrCodeCopy,
+      expiresAt: paymentExpiresAt,
+      amount: totalAmount,
+    });
   } catch (error) {
     logger.error('Falha ao criar pagamento no Mercado Pago', { context: 'payment_service', error: error.message, stack: error.stack });
     throw new AppError(`Error creating PIX payment: ${error.message}`, 500);
   }
 }
 
-/**
- * Handles incoming webhooks from Mercado Pago.
- * @param {object} webhookPayload 
- * @param {object} user - User metadata from authentication (if system)
- */
 export async function processWebhook(webhookPayload, user = { name: 'webhook_system', role: 'system' }) {
   const action = webhookPayload?.action || webhookPayload?.topic;
   const type = webhookPayload?.type || webhookPayload?.topic;
@@ -227,12 +229,6 @@ export async function approveMockPayment(paymentId, user) {
   return { success: true, reason: 'Order already paid' };
 }
 
-/**
- * Manually confirms payment in CASH or CARD.
- * @param {number} orderId 
- * @param {'CASH'|'CARD'|'PIX'} paymentMethod 
- * @param {object} user 
- */
 export async function manualPayOrder(orderId, paymentMethod = 'CASH', user = null) {
   const order = await Order.findByPk(orderId, {
     include: [OrderItem]
@@ -259,16 +255,12 @@ export async function manualPayOrder(orderId, paymentMethod = 'CASH', user = nul
   });
 
   logger.info('Pagamento manual registrado com sucesso', { context: 'payment_service', orderId: order.id, paymentMethod, total });
-  emitEvent('order:updated', order);
+  const formattedOrder = formatOrderDto(order);
+  emitEvent('order:updated', formattedOrder);
 
-  return order;
+  return formattedOrder;
 }
 
-/**
- * Actively checks the payment status on Mercado Pago for a given order.
- * @param {number} orderId 
- * @param {object} user 
- */
 export async function checkPaymentStatus(orderId, user = null) {
   const order = await Order.findByPk(orderId, {
     include: [OrderItem]

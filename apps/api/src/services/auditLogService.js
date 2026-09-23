@@ -1,5 +1,6 @@
 import AuditLog from '../models/auditLog.js';
 import logger from '../util/logger.js';
+import { formatAuditLogDto } from '../dto/auditLogDto.js';
 
 export async function log({ user, action, entity = null, entityId = null, details = null, ip = null }) {
   try {
@@ -45,10 +46,10 @@ export async function findAll({ userId, action, entity, from, to, page, limit } 
     queryOptions.offset = offset;
 
     const { count, rows } = await AuditLog.findAndCountAll(queryOptions);
-    const parsedLogs = rows.map(log => ({
-      ...log.toJSON(),
-      details: log.details ? JSON.parse(log.details) : null,
-    }));
+    const parsedLogs = rows.map(log => {
+      const parsed = { ...log.toJSON(), details: log.details ? JSON.parse(log.details) : null };
+      return formatAuditLogDto(parsed);
+    });
 
     return {
       logs: parsedLogs,
@@ -58,8 +59,8 @@ export async function findAll({ userId, action, entity, from, to, page, limit } 
     };
   }
 
-  return AuditLog.findAll(queryOptions).then(logs => logs.map(log => ({
-    ...log.toJSON(),
-    details: log.details ? JSON.parse(log.details) : null,
-  })));
+  return AuditLog.findAll(queryOptions).then(logs => logs.map(log => {
+    const parsed = { ...log.toJSON(), details: log.details ? JSON.parse(log.details) : null };
+    return formatAuditLogDto(parsed);
+  }));
 }   

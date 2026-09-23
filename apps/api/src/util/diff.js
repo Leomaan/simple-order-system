@@ -1,13 +1,3 @@
-
-/**
- * Calculates the difference between two objects for specified fields.
- * Returns a diff map: { [field]: { old: oldValue, new: newValue } }
- *
- * @param {Object} oldObj - The original object or values
- * @param {Object} newObj - The new object or values
- * @param {string[]} [fields] - List of fields to monitor. If omitted, compares all keys present in newObj.
- * @returns {Record<string, { old: any, new: any }>} Object containing only the modified properties
- */
 export function calculateDiff(oldObj = {}, newObj = {}, fields = null) {
   const diff = {};
   if (!oldObj || !newObj) return diff;
@@ -37,13 +27,6 @@ export function calculateDiff(oldObj = {}, newObj = {}, fields = null) {
   return diff;
 }
 
-/**
- * Formata a diferença numérica de quantidade com sinal (+X ou -X).
- *
- * @param {number} oldQty
- * @param {number} newQty
- * @returns {string} Ex: "+1", "-2", "0"
- */
 export function formatQuantityDiff(oldQty, newQty) {
   const diff = Number(newQty) - Number(oldQty);
   return diff > 0 ? `+${diff}` : `${diff}`;
