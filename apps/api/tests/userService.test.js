@@ -20,28 +20,49 @@ vi.mock('bcryptjs', () => ({
   }
 }));
 
+// Mock simplificado do DTO de usuário para isolamento de testes unitários
+vi.mock('../src/dto/userDto.js', () => ({
+  formatUserDto: vi.fn((user) => {
+    if (!user) return null;
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role || 'WAITER',
+      active: user.active ?? true,
+      isSuperAdmin: Boolean(user.isSuperAdmin),
+    };
+  })
+}));
+
+vi.mock('../src/services/auditLogService.js', () => ({
+  log: vi.fn().mockResolvedValue(true),
+}));
+
 beforeEach(() => vi.clearAllMocks());
 
 describe('findAll', () => {
   it('deve retornar todos os usuários', async () => {
-    const users = [{ id: 1, name: 'Admin', role: 'ADMIN' }];
+    const users = [{ id: 1, name: 'Admin', role: 'ADMIN', email: 'admin@test.com' }];
     User.findAll.mockResolvedValue(users);
 
     const result = await findAll();
 
-    expect(result).toEqual(users);
+    expect(result).toEqual([
+      expect.objectContaining({ id: 1, name: 'Admin', role: 'ADMIN' })
+    ]);
     expect(User.findAll).toHaveBeenCalledOnce();
   });
 });
 
 describe('findById', () => {
   it('deve retornar o usuário pelo id', async () => {
-    const user = { id: 1, name: 'Admin' };
+    const user = { id: 1, name: 'Admin', role: 'ADMIN', email: 'admin@test.com' };
     User.findByPk.mockResolvedValue(user);
 
     const result = await findById(1);
 
-    expect(result).toEqual(user);
+    expect(result).toEqual(expect.objectContaining({ id: 1, name: 'Admin' }));
   });
 
   it('deve lançar AppError 404 se usuário não existir', async () => {
@@ -55,6 +76,7 @@ describe('createUser', () => {
   it('deve criar um usuário com sucesso', async () => {
     User.findOne.mockResolvedValue(null);
     User.create.mockResolvedValue({
+      id: 1, name: 'João', email: 'joao@test.com', role: 'WAITER', password: 'hashed',
       toJSON: () => ({ id: 1, name: 'João', email: 'joao@test.com', role: 'WAITER', password: 'hashed' })
     });
 
@@ -74,6 +96,7 @@ describe('createUser', () => {
   it('deve fazer hash da senha antes de salvar', async () => {
     User.findOne.mockResolvedValue(null);
     User.create.mockResolvedValue({
+      id: 1, name: 'João', email: 'joao@test.com', role: 'WAITER', password: 'hashed',
       toJSON: () => ({ id: 1, name: 'João', email: 'joao@test.com', role: 'WAITER', password: 'hashed' })
     });
 
@@ -136,6 +159,7 @@ describe('deleteUser', () => {
 
     expect(user.destroy).toHaveBeenCalledOnce();
   });
+
   it('deve lançar AppError se admin tentar deletar a si mesmo', async () => {
     await expect(deleteUser(1, 1))
       .rejects.toMatchObject({ message: 'você não pode deletar sua própria conta' });
@@ -174,7 +198,7 @@ describe('permanentDeleteUser', () => {
       return null;
     });
 
-    await permanentDeleteUser(2, 1); // id 2, requester 1
+    await permanentDeleteUser(2, 1);
 
     expect(user.destroy).toHaveBeenCalledWith({ force: true });
   });

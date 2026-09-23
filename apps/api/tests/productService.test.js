@@ -12,26 +12,44 @@ vi.mock('../src/models/product.js', () => ({
   }
 }));
 
+// Mock simplificado do DTO para o ambiente de testes
+vi.mock('../src/dto/productDto.js', () => ({
+  formatProductDto: vi.fn((product) => {
+    if (!product) return null;
+    return {
+      id: product.id,
+      name: product.name,
+      price: Number(product.price) || 0,
+      category: product.category || 'FOOD',
+      available: product.available ?? true,
+    };
+  })
+}));
+
 beforeEach(() => vi.clearAllMocks());
 
 describe('findAll', () => {
   it('deve retornar todos os produtos', async () => {
-    const products = [{ id: 1, name: 'X-Burguer' }];
+    const products = [{ id: 1, name: 'X-Burguer', price: 25.90, category: 'FOOD' }];
     Product.findAll.mockResolvedValue(products);
 
     const result = await findAll();
 
-    expect(result).toEqual(products);
+    expect(result).toEqual([
+      expect.objectContaining({ id: 1, name: 'X-Burguer' })
+    ]);
     expect(Product.findAll).toHaveBeenCalledOnce();
   });
 
   it('deve filtrar produtos por categoria', async () => {
-    const drinks = [{ id: 2, name: 'Suco', category: 'DRINK' }];
+    const drinks = [{ id: 2, name: 'Suco', category: 'DRINK', price: 8.00 }];
     Product.findAll.mockResolvedValue(drinks);
 
     const result = await findAll('DRINK');
 
-    expect(result).toEqual(drinks);
+    expect(result).toEqual([
+      expect.objectContaining({ id: 2, name: 'Suco', category: 'DRINK' })
+    ]);
     expect(Product.findAll).toHaveBeenCalledWith({ where: { category: 'DRINK' }, order: [['name', 'ASC']] });
   });
 
@@ -44,12 +62,12 @@ describe('findAll', () => {
 
 describe('findById', () => {
   it('deve retornar o produto pelo id', async () => {
-    const product = { id: 1, name: 'X-Burguer' };
+    const product = { id: 1, name: 'X-Burguer', price: 25.90, category: 'FOOD' };
     Product.findByPk.mockResolvedValue(product);
 
     const result = await findById(1);
 
-    expect(result).toEqual(product);
+    expect(result).toEqual(expect.objectContaining({ id: 1, name: 'X-Burguer' }));
   });
 
   it('deve lançar AppError 404 se produto não existir', async () => {
@@ -127,6 +145,7 @@ describe('deleteProduct', () => {
 
     expect(product.destroy).toHaveBeenCalledOnce();
   });
+
   it('deve lançar AppError 404 se produto não existir', async () => {
     Product.findByPk.mockResolvedValue(null);
 

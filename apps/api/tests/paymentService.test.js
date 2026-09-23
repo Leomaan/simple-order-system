@@ -23,6 +23,24 @@ vi.mock('../src/services/settingsService.js', () => ({
   getSettings: vi.fn().mockResolvedValue({})
 }));
 
+// Mock do DTO para simular a saída sanitizada
+vi.mock('../src/dto/orderDto.js', () => ({
+  formatOrderDto: vi.fn((order) => {
+    if (!order) return null;
+    return {
+      id: order.id,
+      table: order.table,
+      status: order.status,
+      paymentMethod: order.paymentMethod || null,
+      paymentId: order.paymentId || null,
+      paymentQrCode: order.paymentQrCode || null,
+      paymentQrCodeCopy: order.paymentQrCodeCopy || null,
+      total: 100,
+      items: []
+    };
+  })
+}));
+
 beforeEach(() => {
   vi.clearAllMocks();
 });
@@ -54,20 +72,25 @@ describe('createPixPayment', () => {
       table: 4,
       status: 'CLOSED',
       OrderItems: [{ totalPrice: 50 }, { totalPrice: 30 }],
-      update: vi.fn().mockResolvedValue(true)
+      update: vi.fn().mockImplementation(function(data) {
+        Object.assign(this, data);
+        return Promise.resolve(true);
+      })
     };
     Order.findByPk.mockResolvedValue(mockOrder);
     settingsService.getSettings.mockResolvedValue({ mercadoPagoAccessToken: null });
 
     const result = await createPixPayment(1);
 
+    // Valida propriedades retornadas no payload do PIX mock
     expect(result).toHaveProperty('paymentId');
     expect(result).toHaveProperty('paymentQrCode');
     expect(result).toHaveProperty('paymentQrCodeCopy');
+    
     expect(mockOrder.update).toHaveBeenCalledWith(expect.objectContaining({
       paymentMethod: 'PIX'
     }));
-    expect(emitEvent).toHaveBeenCalledWith('order:updated', mockOrder);
+    expect(emitEvent).toHaveBeenCalledWith('order:updated', expect.objectContaining({ id: 1 }));
   });
 });
 
@@ -78,7 +101,10 @@ describe('manualPayOrder', () => {
       table: 5,
       status: 'CLOSED',
       OrderItems: [{ totalPrice: 120 }],
-      update: vi.fn().mockResolvedValue(true)
+      update: vi.fn().mockImplementation(function(data) {
+        Object.assign(this, data);
+        return Promise.resolve(true);
+      })
     };
     Order.findByPk.mockResolvedValue(mockOrder);
 
@@ -88,8 +114,14 @@ describe('manualPayOrder', () => {
       status: 'PAID',
       paymentMethod: 'CASH'
     }));
-    expect(emitEvent).toHaveBeenCalledWith('order:updated', mockOrder);
-    expect(result).toBe(mockOrder);
+    
+    // Valida que o evento do socket foi emitido contendo o ID e status do pedido formatado
+    expect(emitEvent).toHaveBeenCalledWith('order:updated', expect.objectContaining({
+      id: 2,
+      status: 'PAID',
+      paymentMethod: 'CASH'
+    }));
+    expect(result).toEqual(expect.objectContaining({ id: 2, status: 'PAID' }));
   });
 
   it('deve pagar pedido manualmente em CARTÃO (CARD)', async () => {
@@ -98,17 +130,24 @@ describe('manualPayOrder', () => {
       table: 2,
       status: 'CLOSED',
       OrderItems: [{ totalPrice: 85 }],
-      update: vi.fn().mockResolvedValue(true)
+      update: vi.fn().mockImplementation(function(data) {
+        Object.assign(this, data);
+        return Promise.resolve(true);
+      })
     };
     Order.findByPk.mockResolvedValue(mockOrder);
 
-    const result = await manualPayOrder(3, 'CARD');
+    await manualPayOrder(3, 'CARD');
 
     expect(mockOrder.update).toHaveBeenCalledWith(expect.objectContaining({
       status: 'PAID',
       paymentMethod: 'CARD'
     }));
-    expect(emitEvent).toHaveBeenCalledWith('order:updated', mockOrder);
+    expect(emitEvent).toHaveBeenCalledWith('order:updated', expect.objectContaining({
+      id: 3,
+      status: 'PAID',
+      paymentMethod: 'CARD'
+    }));
   });
 
   it('deve rejeitar se pedido já estiver pago', async () => {
@@ -134,7 +173,10 @@ describe('approveMockPayment', () => {
       paymentId: 'mock_12345',
       status: 'CLOSED',
       OrderItems: [{ totalPrice: 40 }],
-      update: vi.fn().mockResolvedValue(true)
+      update: vi.fn().mockImplementation(function(data) {
+        Object.assign(this, data);
+        return Promise.resolve(true);
+      })
     };
     Order.findOne.mockResolvedValue(mockOrder);
 
@@ -142,6 +184,6 @@ describe('approveMockPayment', () => {
 
     expect(result).toEqual({ success: true, orderId: 5, status: 'PAID' });
     expect(mockOrder.update).toHaveBeenCalledWith({ status: 'PAID', paymentMethod: 'PIX' });
-    expect(emitEvent).toHaveBeenCalledWith('order:updated', mockOrder);
+    expect(emitEvent).toHaveBeenCalledWith('order:updated', expect.objectContaining({ id: 5 }));
   });
 });
