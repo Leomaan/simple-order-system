@@ -26,7 +26,7 @@ const categoryIcon = {
   SIDE: Soup,
 };
 
-const emptyForm = { name: "", price: "", category: "FOOD", description: "", available: true };
+const emptyForm = { name: "", price: "", category: "FOOD", description: "", imageUrl: "", available: true };
 
 export default function ProductSection() {
   const {
@@ -385,3 +385,7 @@ export default function ProductSection() {
     </div>
   );
 }
+
+
+
+

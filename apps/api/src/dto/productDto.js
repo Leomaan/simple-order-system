@@ -9,9 +9,11 @@ export function formatProductDto(product) {
     price: Number(raw.price),
     category: raw.category,
     description: raw.description || '',
+    imageUrl: raw.imageUrl || null,
     available: Boolean(raw.available),
     createdAt: raw.createdAt ? new Date(raw.createdAt).toISOString() : null,
     updatedAt: raw.updatedAt ? new Date(raw.updatedAt).toISOString() : null,
     deletedAt: raw.deletedAt ? new Date(raw.deletedAt).toISOString() : null,
   };
 }
+
