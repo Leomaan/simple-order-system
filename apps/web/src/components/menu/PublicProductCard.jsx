@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useState } from 'react';
 
 function formatCurrency(value) {
   return new Intl.NumberFormat('pt-BR', {
@@ -8,13 +8,19 @@ function formatCurrency(value) {
 }
 
 export const PublicProductCard = memo(function PublicProductCard({ product }) {
+  const [imageError, setImageError] = useState(false);
+
   return (
     <article className="bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden flex flex-col justify-between hover:border-neutral-700 transition duration-200">
-      {product.imageUrl && (
-        <div className="w-full h-40 overflow-hidden">
+      {product.imageUrl && !imageError && (
+        <div className="w-full h-44 bg-neutral-950 overflow-hidden relative border-b border-neutral-800/60">
           <img 
             src={product.imageUrl} 
             alt={product.name} 
+            loading="lazy"
+            decoding="async"
+            referrerPolicy="no-referrer"
+            onError={() => setImageError(true)}
             className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
           />
         </div>

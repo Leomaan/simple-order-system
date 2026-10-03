@@ -67,6 +67,7 @@ export default function ProductSection() {
       price: product.price,
       category: product.category,
       description: product.description || "",
+      imageUrl: product.imageUrl || "",
       available: product.available,
     });
     setError("");
@@ -203,6 +204,32 @@ export default function ProductSection() {
             </div>
           </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+            <Input
+              label="URL da Imagem (opcional)"
+              value={form.imageUrl}
+              onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
+              placeholder="Ex: https://exemplo.com/foto-produto.jpg"
+            />
+            {form.imageUrl ? (
+              <div className="flex items-center gap-3 border border-neutral-800 rounded-xl p-2.5 bg-neutral-900/50">
+                <img
+                  src={form.imageUrl}
+                  alt="Pré-visualização"
+                  className="w-10 h-10 rounded-lg object-cover border border-neutral-700 shrink-0 bg-neutral-950"
+                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                />
+                <span className="text-xs text-neutral-400 font-medium truncate">
+                  Pré-visualização da imagem
+                </span>
+              </div>
+            ) : (
+              <p className="text-xs text-neutral-500 italic pb-2">
+                Cole a URL da imagem para exibi-la no cardápio público.
+              </p>
+            )}
+          </div>
+
           <div className="flex items-center gap-3 pt-1">
             <input
               type="checkbox"
@@ -284,11 +311,20 @@ export default function ProductSection() {
               >
                 {/* Lado Esquerdo: Ícone + Info do Produto */}
                 <div className="flex items-center gap-3 min-w-0 flex-1">
-                  <div className={`w-9 h-9 rounded-xl border flex items-center justify-center shrink-0 ${
-                    p.available ? 'bg-neutral-900 border-neutral-800 text-orange-400' : 'bg-neutral-950 border-neutral-900 text-neutral-600'
-                  }`}>
-                    <IconComponent size={16} />
-                  </div>
+                  {p.imageUrl ? (
+                    <img
+                      src={p.imageUrl}
+                      alt={p.name}
+                      className="w-9 h-9 rounded-xl object-cover border border-neutral-800 shrink-0 bg-neutral-900"
+                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                    />
+                  ) : (
+                    <div className={`w-9 h-9 rounded-xl border flex items-center justify-center shrink-0 ${
+                      p.available ? 'bg-neutral-900 border-neutral-800 text-orange-400' : 'bg-neutral-950 border-neutral-900 text-neutral-600'
+                    }`}>
+                      <IconComponent size={16} />
+                    </div>
+                  )}
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="text-white font-bold text-sm leading-tight truncate group-hover:text-orange-400 transition-colors">
