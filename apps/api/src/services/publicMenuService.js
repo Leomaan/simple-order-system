@@ -1,7 +1,7 @@
 import Product from '../models/product.js';
 import { formatPublicProductDto } from '../dto/publicProductDto.js';
 
-const PUBLIC_PRODUCT_ATTRIBUTES = ['id', 'name', 'price', 'description', 'category', 'available'];
+const PUBLIC_PRODUCT_ATTRIBUTES = ['id', 'name', 'price', 'description', 'imageUrl', 'category', 'available'];
 
 export async function getPublicMenuProducts() {
   const where = {
