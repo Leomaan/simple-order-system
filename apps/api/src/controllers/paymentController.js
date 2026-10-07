@@ -56,7 +56,8 @@ export const simulatePaymentConfirmation = asyncHandler(async (req, res) => {
 });
 
 export const manualPayment = asyncHandler(async (req, res) => {
-  const { orderId, paymentMethod } = req.body;
+  const orderId = req.body?.orderId || req.params?.id || req.params?.orderId;
+  const paymentMethod = req.body?.paymentMethod;
 
   if (!orderId) {
     return res.status(400).json({ success: false, message: 'orderId is required' });

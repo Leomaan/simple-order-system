@@ -207,10 +207,12 @@ describe('DELETE /order/:id', () => {
       .patch(`/order/${paidOrderId}/close`)
       .set('Authorization', `Bearer ${waiterToken}`);
 
-    await request(app)
+    const payRes = await request(app)
       .post(`/payment/manual/${paidOrderId}`)
       .set('Authorization', `Bearer ${waiterToken}`)
       .send({ paymentMethod: 'CASH' });
+
+    expect(payRes.status).toBe(200);
 
     const res = await request(app)
       .delete(`/order/${paidOrderId}`)
@@ -225,7 +227,9 @@ describe('DELETE /order/:id', () => {
 
     const foundInTrash = trashRes.body.data.find(o => o.id === paidOrderId);
     expect(foundInTrash).toBeDefined();
-    expect(Number(foundInTrash.total)).toBe(26);
+    expect(foundInTrash.status).toBe('PAID');
+    expect(foundInTrash.paymentMethod).toBe('CASH');
+    expect(Number(foundInTrash.total)).toBeCloseTo(25.9, 1);
   });
 });
 

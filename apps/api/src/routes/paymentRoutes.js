@@ -14,8 +14,9 @@ routes.post('/webhook', verifyWebhookSignature, receiveWebhook);
 // Check payment status actively with Mercado Pago API
 routes.get('/check-status/:id', requireWaiter, checkStatus);
 
-// Manual payment confirmation (Cash, Card, etc.)
+// Manual payment confirmation (Cash, Card, etc.) - aceita /manual ou /manual/:id
 routes.post('/manual', requireWaiter, manualPayment);
+routes.post('/manual/:id', requireWaiter, manualPayment);
 
 // Helper route to manually confirm payment in dev environments
 routes.post('/simulate-confirm', requireWaiter, simulatePaymentConfirmation);
