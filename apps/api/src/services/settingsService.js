@@ -1,5 +1,6 @@
 import Settings from '../models/settings.js';
 import logger from '../util/logger.js';
+import { log } from './auditLogService.js';
 import { formatSettingsDto } from '../dto/settingsDto.js';
 
 export async function getSettings() {
@@ -46,6 +47,14 @@ export async function updateSettings(data, user = null) {
   }
 
   await currentSettings.update(updateData);
+
+  await log({
+    user,
+    action: 'UPDATE_SETTINGS',
+    entity: 'Settings',
+    entityId: currentSettings.id,
+    details: { restaurantName: currentSettings.restaurantName },
+  });
 
   logger.info('Configurações do sistema atualizadas', {
     context: 'settings_service',

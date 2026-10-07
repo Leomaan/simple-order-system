@@ -9,6 +9,6 @@ const routes = Router();
  
 routes.post('/login', loginLimiter, validate(loginSchema), login);
 routes.post('/refresh', validate(refreshSchema), refresh);
-routes.post('/logout', authenticate, logout);
+routes.post('/logout', logout);
  
 export default routes;

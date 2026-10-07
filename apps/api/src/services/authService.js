@@ -59,9 +59,20 @@ export async function refresh(token) {
   return { accessToken, role: stored.User.role, name: stored.User.name };
 }
 
-export async function logout(token, user, ip) {
+export async function logout(token, user = null, ip = null) {
   if (!token) throw new AppError('refresh token não fornecido', 400);
+
+  let currentUser = user;
+  if (!currentUser) {
+    const stored = await RefreshToken.findOne({ where: { token }, include: [User] });
+    if (stored?.User) {
+      currentUser = { userId: stored.User.id, name: stored.User.name, role: stored.User.role };
+    }
+  }
+
   await RefreshToken.destroy({ where: { token } });
 
-  await log({ user, action: 'LOGOUT', ip });
+  if (currentUser) {
+    await log({ user: currentUser, action: 'LOGOUT', ip });
+  }
 }

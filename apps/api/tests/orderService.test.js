@@ -76,6 +76,58 @@ describe('findAll', () => {
   });
 });
 
+describe('updateOrder', () => {
+  it('deve atualizar a mesa de um pedido aberto com sucesso', async () => {
+    const order = {
+      id: 1,
+      table: 3,
+      status: 'OPEN',
+      update: vi.fn().mockImplementation(function (data) {
+        Object.assign(this, data);
+        return Promise.resolve(this);
+      }),
+    };
+    Order.findByPk.mockResolvedValue(order);
+    Order.findOne.mockResolvedValue(null); // Nenhuma outra comanda aberta na nova mesa
+
+    const result = await updateOrder(1, { table: 5 }, { userId: 1, role: 'WAITER' });
+
+    expect(order.update).toHaveBeenCalledWith({ table: 5 });
+    expect(result).toMatchObject({ id: 1, table: 5 });
+  });
+
+  it('deve lançar AppError se pedido não estiver aberto (ex: CLOSED ou PAID)', async () => {
+    const order = { id: 1, table: 3, status: 'CLOSED' };
+    Order.findByPk.mockResolvedValue(order);
+
+    await expect(updateOrder(1, { table: 5 })).rejects.toMatchObject({
+      status: 400,
+      message: 'apenas pedidos abertos podem ser alterados',
+    });
+  });
+
+  it('deve lançar AppError se tentar alterar status do pedido diretamente', async () => {
+    const order = { id: 1, table: 3, status: 'OPEN' };
+    Order.findByPk.mockResolvedValue(order);
+
+    await expect(updateOrder(1, { table: 3, status: 'PAID' })).rejects.toMatchObject({
+      status: 400,
+      message: 'o status do pedido não pode ser alterado diretamente por esta rota',
+    });
+  });
+
+  it('deve lançar AppError se a nova mesa já possuir outro pedido aberto', async () => {
+    const order = { id: 1, table: 3, status: 'OPEN' };
+    Order.findByPk.mockResolvedValue(order);
+    Order.findOne.mockResolvedValue({ id: 2, table: 5, status: 'OPEN' }); // Mesa 5 já ocupada
+
+    await expect(updateOrder(1, { table: 5 })).rejects.toMatchObject({
+      status: 400,
+      message: expect.stringContaining('já possui outro pedido aberto'),
+    });
+  });
+});
+
 describe('deleteOrder', () => {
   it('deve deletar um pedido com sucesso', async () => {
     const order = { 

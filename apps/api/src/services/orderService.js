@@ -111,11 +111,32 @@ export async function updateOrder(id, data, user = null) {
   const order = await Order.findByPk(id, { include: [OrderItem] });
   if (!order) throw new AppError('order not found', 404);
 
-  if (order.status !== 'OPEN' && data.status === 'OPEN')
-    throw new AppError('cannot reopen a closed order');
+  if (order.status !== 'OPEN') {
+    throw new AppError('apenas pedidos abertos podem ser alterados', 400);
+  }
+
+  if (data.status !== undefined && data.status !== order.status) {
+    throw new AppError('o status do pedido não pode ser alterado diretamente por esta rota', 400);
+  }
+
+  const { status, ...allowedUpdates } = data;
+
+  if (allowedUpdates.table && allowedUpdates.table !== order.table) {
+    const existingOpenOrder = await Order.findOne({
+      where: {
+        table: allowedUpdates.table,
+        status: 'OPEN',
+        id: { [Op.ne]: order.id },
+      },
+    });
+
+    if (existingOpenOrder) {
+      throw new AppError(`A mesa ${allowedUpdates.table} já possui outro pedido aberto (#${existingOpenOrder.id})`, 400);
+    }
+  }
 
   const oldTable = order.table;
-  await order.update(data);
+  await order.update(allowedUpdates);
 
   await log({
     user,

@@ -132,6 +132,17 @@ describe('changeQuantity', () => {
       message: 'cannot change item of a closed order'
     });
   });
+
+  it('deve lançar AppError se pedido estiver pago', async () => {
+    OrderItem.findByPk.mockResolvedValue({
+      Order:   { status: 'PAID' },
+      Product: { price: 25.90 },
+    });
+
+    await expect(changeQuantity(1, 2)).rejects.toMatchObject({
+      message: 'cannot change item of a paid order'
+    });
+  });
 });
 
 describe('removeItem', () => {
@@ -155,6 +166,14 @@ describe('removeItem', () => {
 
     await expect(removeItem(1)).rejects.toMatchObject({
       message: 'cannot remove item from a closed order'
+    });
+  });
+
+  it('deve lançar AppError se pedido estiver pago', async () => {
+    OrderItem.findByPk.mockResolvedValue({ Order: { status: 'PAID' } });
+
+    await expect(removeItem(1)).rejects.toMatchObject({
+      message: 'cannot remove item from a paid order'
     });
   });
 });

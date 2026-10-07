@@ -155,6 +155,14 @@ export async function processWebhook(webhookPayload, user = { name: 'webhook_sys
       /[^\x20-\x7E]/.test(accessToken);
 
     if (isInvalidToken) {
+      if (process.env.NODE_ENV === 'production') {
+        logger.error('Webhook recebido em produção sem token válido do Mercado Pago configurado', {
+          context: 'payment_service',
+          paymentId,
+        });
+        throw new AppError('Gateway de pagamento não configurado em produção', 500);
+      }
+
       logger.warn('Webhook recebido sem Token de Acesso do Mercado Pago configurado ou inválido. Processando como mock.', { context: 'payment_service' });
       return await approveMockPayment(paymentId, user);
     }

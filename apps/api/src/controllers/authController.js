@@ -1,6 +1,7 @@
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import * as authService from '../services/authService.js';
 import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
 import logger from '../util/logger.js';
 
 const isProduction = process.env.NODE_ENV === 'production';
@@ -77,13 +78,30 @@ export const logout = asyncHandler(async (req, res) => {
   const token = req.cookies?.refreshToken || req.body?.refreshToken;
   const ip = req.ip || req.headers['x-forwarded-for'];
 
-  await authService.logout(token, req.user, ip);
+  let user = req.user || null;
+  if (!user) {
+    const accessToken = req.cookies?.accessToken || 
+      (req.headers.authorization?.startsWith('Bearer ') 
+        ? req.headers.authorization.split(' ')[1] 
+        : null);
+
+    if (accessToken) {
+      try {
+        user = jwt.verify(accessToken, process.env.JWT_SECRET);
+      } catch {
+        // Ignora se o token estiver expirado durante o logout
+      }
+    }
+  }
+
+  await authService.logout(token, user, ip);
 
   res.clearCookie('accessToken', cookieOptions);
   res.clearCookie('refreshToken', cookieOptions);
   res.clearCookie('XSRF-TOKEN', getCsrfCookieOptions(req));
 
-  logger.info('Logout realizado com sucesso', { context: 'auth_controller', userId: req.user?.id, ip });
+  const userId = user?.userId || user?.id;
+  logger.info('Logout realizado com sucesso', { context: 'auth_controller', userId, ip });
 
   res.status(200).json({ success: true, message: 'logout realizado com sucesso' });
 });

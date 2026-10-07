@@ -27,6 +27,18 @@ export const receiveWebhook = asyncHandler(async (req, res) => {
 });
 
 export const simulatePaymentConfirmation = asyncHandler(async (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    logger.warn('Tentativa de simular pagamento em produção bloqueada', {
+      context: 'payment_controller',
+      userId: req.user?.userId || req.user?.id,
+      ip: req.ip || req.headers['x-forwarded-for'],
+    });
+    return res.status(403).json({
+      success: false,
+      message: 'Simulação de pagamento desativada em ambiente de produção.',
+    });
+  }
+
   const { paymentId } = req.body;
 
   if (!paymentId) {

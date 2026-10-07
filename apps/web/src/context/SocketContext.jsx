@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { socket } from '../config/socket.js';
+import { useAuth } from './AuthContext.jsx';
 
 const SocketContext = createContext({
   socket: null,
@@ -10,6 +11,19 @@ const SocketContext = createContext({
 export const SocketProvider = ({ children }) => {
   const [isConnected, setIsConnected] = useState(socket.connected);
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      if (!socket.connected) {
+        socket.connect();
+      }
+    } else {
+      if (socket.connected) {
+        socket.disconnect();
+      }
+    }
+  }, [user]);
 
   useEffect(() => {
     function onConnect() {

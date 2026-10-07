@@ -23,11 +23,11 @@ export default function App() {
       <QueryClientProvider client={queryClient}>
         <ToastProvider>
           <OfflineStatusBanner />
-          <SocketProvider>
-            <AuthProvider>
+          <AuthProvider>
+            <SocketProvider>
               <RouterProvider router={router} />
-            </AuthProvider>
-          </SocketProvider>
+            </SocketProvider>
+          </AuthProvider>
         </ToastProvider>
       </QueryClientProvider>
     </ErrorBoundary>

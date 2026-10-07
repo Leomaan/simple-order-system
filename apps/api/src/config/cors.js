@@ -2,10 +2,21 @@
  * Configuração centralizada e dinâmica de CORS.
  * Responsabilidade Única: Validar e permitir origens seguras (Vercel, Render, Localhost).
  */
+const isProduction = process.env.NODE_ENV === 'production';
+
 const allowedOrigins = (process.env.FRONTEND_URL || '')
   .split(',')
   .map((url) => url.trim().replace(/\/$/, ''))
   .filter(Boolean);
+
+const devOrigins = [
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://localhost:4173',
+  'http://127.0.0.1:4173',
+];
 
 export const corsOptions = {
   origin: (origin, callback) => {
@@ -14,13 +25,9 @@ export const corsOptions = {
 
     const cleanOrigin = origin.replace(/\/$/, '');
 
-    // Permite se a origem estiver configurada no FRONTEND_URL, ou se for um subdomínio da Vercel (*.vercel.app), ou dev local
     const isAllowed =
-      allowedOrigins.length === 0 ||
       allowedOrigins.includes(cleanOrigin) ||
-      cleanOrigin.endsWith('.vercel.app') ||
-      cleanOrigin === 'http://localhost:5173' ||
-      cleanOrigin === 'http://localhost:3000';
+      (!isProduction && devOrigins.includes(cleanOrigin));
 
     if (isAllowed) {
       return callback(null, true);

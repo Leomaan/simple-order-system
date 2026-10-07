@@ -104,6 +104,8 @@ export async function changeQuantity(id, quantity, user = null) {
 
   if (orderItem.Order?.status === 'CLOSED')
     throw new AppError('cannot change item of a closed order');
+  if (orderItem.Order?.status === 'PAID')
+    throw new AppError('cannot change item of a paid order');
 
   const oldQty = orderItem.quantity;
   await orderItem.update({
@@ -145,6 +147,8 @@ export async function removeItem(id, user = null) {
 
   if (orderItem.Order?.status === 'CLOSED')
     throw new AppError('cannot remove item from a closed order');
+  if (orderItem.Order?.status === 'PAID')
+    throw new AppError('cannot remove item from a paid order');
 
   await orderItem.destroy();
 
