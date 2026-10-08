@@ -18,7 +18,6 @@ export async function findAll(onlyDeleted = false, page, limit) {
     order: [['name', 'ASC']],
   };
   if (onlyDeleted) {
-    const { Op } = await import('sequelize');
     queryOptions.paranoid = false;
     where.deletedAt = { [Op.ne]: null };
   }

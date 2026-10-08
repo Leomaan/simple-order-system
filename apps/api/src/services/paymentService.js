@@ -197,7 +197,7 @@ export async function processWebhook(webhookPayload, user = { name: 'webhook_sys
             entityId: order.id,
             details: { table: order.table, order: order.id, paymentId, status: 'PAID', total }
           });
-          emitEvent('order:updated', order);
+          emitEvent('order:updated', formatOrderDto(order));
           return { success: true, orderId, status: 'PAID' };
         }
       }
@@ -230,7 +230,7 @@ export async function approveMockPayment(paymentId, user) {
       entityId: order.id,
       details: { table: order.table, order: order.id, paymentId, status: 'PAID_MOCK', total }
     });
-    emitEvent('order:updated', order);
+    emitEvent('order:updated', formatOrderDto(order));
     return { success: true, orderId: order.id, status: 'PAID' };
   }
 
@@ -315,8 +315,9 @@ export async function checkPaymentStatus(orderId, user = null) {
         entityId: order.id,
         details: { table: order.table, order: order.id, paymentId: order.paymentId, status: 'PAID', total }
       });
-      emitEvent('order:updated', order);
-      return { success: true, status: 'PAID', order };
+      const formattedOrder = formatOrderDto(order);
+      emitEvent('order:updated', formattedOrder);
+      return { success: true, status: 'PAID', order: formattedOrder };
     }
 
     return { success: false, status: status || 'pending', message: `Pagamento ainda em status: ${status}` };

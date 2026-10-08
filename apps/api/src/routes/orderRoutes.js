@@ -15,6 +15,6 @@ routes.patch('/:id/close', validateId, requireWaiter, close);
 routes.patch('/:id/reopen', validateId, requireWaiter, reopen);
 routes.delete('/:id', validateId, requireAdmin, remove);
 routes.patch('/:id/restore', requireAdmin,  validateId, restore);
-routes.delete('/:id/permanent', requireAdmin,  validateId, permanentDelete)
+routes.delete('/:id/permanent', requireAdmin,  validateId, permanentDelete);
 
 export default routes;

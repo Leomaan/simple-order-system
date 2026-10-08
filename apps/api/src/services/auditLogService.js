@@ -1,3 +1,4 @@
+import { Op } from 'sequelize';
 import AuditLog from '../models/auditLog.js';
 import logger from '../util/logger.js';
 import { formatAuditLogDto } from '../dto/auditLogDto.js';
@@ -26,7 +27,6 @@ export async function findAll({ userId, action, entity, from, to, page, limit } 
   if (action)  where.action = action;
   if (entity)  where.entity = entity;
   if (from || to) {
-    const { Op } = await import('sequelize');
     where.createdAt = {};
     if (from) where.createdAt[Op.gte] = new Date(from);
     if (to)   where.createdAt[Op.lte] = new Date(to);

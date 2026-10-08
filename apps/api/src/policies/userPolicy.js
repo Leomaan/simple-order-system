@@ -1,5 +1,7 @@
 import { AppError } from '../middleware/appError.js';
 
+export const DEMO_WAITER_EMAIL = process.env.DEMO_WAITER_EMAIL || 'waiter@restaurant.com';
+
 export function assertCanUpdateUser(targetUser, requesterRecord, updateData, authUserId) {
   const targetId = Number(targetUser.id);
 
@@ -9,7 +11,7 @@ export function assertCanUpdateUser(targetUser, requesterRecord, updateData, aut
   }
 
   // Garçom Demo não pode ser alterado por ninguém exceto o SuperAdmin
-  if (targetUser.email === 'waiter@restaurant.com' && !requesterRecord?.isSuperAdmin) {
+  if (targetUser.email === DEMO_WAITER_EMAIL && !requesterRecord?.isSuperAdmin) {
     throw new AppError('a conta de demonstração do garçom não pode ser alterada');
   }
 
@@ -47,7 +49,7 @@ export function assertCanDeleteUser(targetUser, requesterRecord, authUserId, isP
 
   const suffix = isPermanent ? ' permanentemente' : '';
 
-  if (targetUser.email === 'waiter@restaurant.com' && !requesterRecord?.isSuperAdmin) {
+  if (targetUser.email === DEMO_WAITER_EMAIL && !requesterRecord?.isSuperAdmin) {
     throw new AppError(`a conta de demonstração do garçom não pode ser deletada${suffix}`);
   }
 

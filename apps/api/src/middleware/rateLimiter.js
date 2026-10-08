@@ -5,7 +5,7 @@ const skipIfDevOrTest = () => process.env.NODE_ENV !== 'production';
 
 export const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, 
-  max: 10,
+  max: process.env.RATE_LIMIT_LOGIN_MAX ? Number(process.env.RATE_LIMIT_LOGIN_MAX) : 10,
   message: {
     success: false,
     message: 'Muitas tentativas de login. Tente novamente em 15 minutos.',
@@ -25,7 +25,7 @@ export const loginLimiter = rateLimit({
 
 export const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: process.env.RATE_LIMIT_GENERAL_MAX ? Number(process.env.RATE_LIMIT_GENERAL_MAX) : 1000,
   message: {
     success: false,
     message: 'Muitas requisições. Tente novamente em alguns minutos.',

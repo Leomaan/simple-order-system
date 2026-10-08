@@ -21,7 +21,6 @@ export async function findAll(category, onlyDeleted = false, page, limit, search
   }
 
   if (search) {
-    const { Op } = await import('sequelize');
     where.name = { [Op.like]: `%${search}%` };
   }
 
@@ -30,7 +29,6 @@ export async function findAll(category, onlyDeleted = false, page, limit, search
     order: [['name', 'ASC']]
   };
   if (onlyDeleted) {
-    const { Op } = await import('sequelize');
     queryOptions.paranoid = false;
     where.deletedAt = { [Op.ne]: null };
   }
@@ -85,10 +83,11 @@ export async function createProduct(data, user = null) {
   });
 
   logger.info('Novo produto cadastrado', { context: 'product_service', productId: product.id, name: product.name });
-  emitEvent('product:created', product);
-  notifyMenuUpdate('created', product);
+  const formattedProduct = formatProductDto(product);
+  emitEvent('product:created', formattedProduct);
+  notifyMenuUpdate('created', formattedProduct);
 
-  return formatProductDto(product);
+  return formattedProduct;
 }
 
 export async function updateProduct(id, data, user = null) {
@@ -113,10 +112,11 @@ export async function updateProduct(id, data, user = null) {
   });
 
   logger.info('Produto atualizado', { context: 'product_service', productId: product.id, updatedBy: user?.userId || user?.id });
-  emitEvent('product:updated', product);
-  notifyMenuUpdate('updated', product);
+  const formattedProduct = formatProductDto(product);
+  emitEvent('product:updated', formattedProduct);
+  notifyMenuUpdate('updated', formattedProduct);
 
-  return formatProductDto(product);
+  return formattedProduct;
 }
 
 export async function deleteProduct(id, user = null) {
@@ -153,10 +153,11 @@ export async function restoreProduct(id, user = null) {
   });
 
   logger.info('Produto restaurado', { context: 'product_service', productId: product.id });
-  emitEvent('product:restored', product);
-  notifyMenuUpdate('restored', product);
+  const formattedProduct = formatProductDto(product);
+  emitEvent('product:restored', formattedProduct);
+  notifyMenuUpdate('restored', formattedProduct);
 
-  return formatProductDto(product);
+  return formattedProduct;
 }
 
 export async function permanentDeleteProduct(id, user = null) {
