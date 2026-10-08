@@ -187,7 +187,8 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
   };
 
   const formatPrice = (val) => `R$ ${Number(val || 0).toFixed(2)}`;
-  const currentStatus = orderDetails?.status || order.status;  return (
+  const currentStatus = orderDetails?.status || order.status;
+  const orderItems = orderDetails?.OrderItems || orderDetails?.items || [];  return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 md:px-4 animate-in fade-in duration-200">
       <div 
         className={`bg-neutral-900 p-4 md:p-6 w-full h-full max-h-screen md:h-auto md:max-h-[90vh] md:rounded-3xl border-none md:border border-neutral-800 overflow-y-auto shadow-2xl flex flex-col gap-5 md:gap-6 animate-in scale-in duration-200 transition-all ${
@@ -262,7 +263,7 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
                   : 'text-neutral-400 hover:text-neutral-200'
               }`}
             >
-              Ver Consumo ({orderDetails?.OrderItems?.reduce((sum, item) => sum + item.quantity, 0) || 0})
+              Ver Consumo ({orderItems.reduce((sum, item) => sum + item.quantity, 0)})
             </button>
           </div>
         )}
@@ -282,7 +283,7 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
                   <Loader2 size={16} className="animate-spin text-orange-500" />
                   <span className="text-sm">Carregando itens...</span>
                 </div>
-              ) : orderDetails?.OrderItems?.length === 0 ? (
+              ) : orderItems.length === 0 ? (
                 <div className="text-center py-10 bg-neutral-950 border border-dashed border-neutral-850 rounded-2xl">
                   <p className="text-neutral-550 text-sm font-medium">Nenhum item adicionado à mesa ainda.</p>
                   {currentStatus === 'OPEN' && (
@@ -291,10 +292,10 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
                 </div>
               ) : (
                 <div className="flex flex-col gap-2 max-h-[50vh] md:max-h-[40vh] overflow-y-auto pr-1">
-                  {orderDetails.OrderItems.map((item) => (
+                  {orderItems.map((item) => (
                     <div key={item.id} className="flex items-center justify-between bg-neutral-950/60 border border-neutral-850 rounded-xl px-4 py-3 hover:border-neutral-800 transition-colors">
                       <div className="min-w-0">
-                        <p className="text-white text-sm font-semibold truncate">{item.Product?.name}</p>
+                        <p className="text-white text-sm font-semibold truncate">{item.Product?.name || item.product?.name || 'Item'}</p>
                         <p className="text-neutral-550 text-[10px] uppercase tracking-wider mt-0.5">{formatPrice(item.unitPrice)} cada</p>
                       </div>
                       <div className="flex items-center gap-3">
@@ -327,7 +328,7 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
                 </div>
 
                 {/* Botão de Fechamento */}
-                {currentStatus === 'OPEN' && orderDetails.OrderItems.length > 0 && (
+                {currentStatus === 'OPEN' && orderItems.length > 0 && (
                   <div className="mt-4">
                     <CloseOrderButton
                       orderId={order.id}

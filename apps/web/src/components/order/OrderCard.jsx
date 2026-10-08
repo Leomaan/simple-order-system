@@ -4,9 +4,10 @@ import { Edit2, Trash2 } from 'lucide-react';
 
 export default function OrderCard({ order, onClick, onEdit, onDelete }) {
   const status = STATUS_MAP[order.status] || { label: order.status, color: 'text-neutral-400 bg-neutral-900 border-neutral-800' };
-  const orderTotal = order.OrderItems?.reduce((sum, item) => sum + Number(item.totalPrice), 0) || 0;
-  const itemCount = order.OrderItems?.reduce((sum, item) => sum + Number(item.quantity), 0) || 0;
-  const itemNames = order.OrderItems?.map((i) => i.Product?.name || i.productName || 'Item').slice(0, 3).join(', ');
+  const orderItems = order.OrderItems || order.items || [];
+  const orderTotal = order.total !== undefined ? Number(order.total) : (orderItems.reduce((sum, item) => sum + Number(item.totalPrice), 0) || 0);
+  const itemCount = orderItems.reduce((sum, item) => sum + Number(item.quantity), 0) || 0;
+  const itemNames = orderItems.map((i) => i.Product?.name || i.product?.name || i.productName || 'Item').slice(0, 3).join(', ');
 
   const isOpen = order.status === 'OPEN';
   const isClosed = order.status === 'CLOSED';
@@ -50,7 +51,7 @@ export default function OrderCard({ order, onClick, onEdit, onDelete }) {
           </div>
           <p className="text-neutral-500 text-xs truncate mt-0.5 max-w-md hidden sm:block">
             {itemCount > 0
-              ? `${itemCount} ${itemCount === 1 ? 'item' : 'itens'}${itemNames ? `: ${itemNames}${order.OrderItems?.length > 3 ? '...' : ''}` : ''}`
+              ? `${itemCount} ${itemCount === 1 ? 'item' : 'itens'}${itemNames ? `: ${itemNames}${orderItems.length > 3 ? '...' : ''}` : ''}`
               : 'Mesa vazia'}
           </p>
         </div>

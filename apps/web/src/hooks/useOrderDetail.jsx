@@ -37,7 +37,7 @@ export function useOrderDetail(orderId) {
       // Atualiza o cache otimista imediatamente (0ms de latência)
       queryClient.setQueryData(['order', orderId], (old) => {
         if (!old) return old;
-        const items = [...(old.OrderItems || [])];
+        const items = [...(old.OrderItems || old.items || [])];
         const existingIdx = items.findIndex(
           (i) => i.ProductId === product.id || i.Product?.id === product.id || i.Product?.name === product.name
         );
@@ -63,7 +63,7 @@ export function useOrderDetail(orderId) {
         }
 
         const total = items.reduce((sum, item) => sum + Number(item.totalPrice), 0);
-        return { ...old, OrderItems: items, total };
+        return { ...old, OrderItems: items, items, total };
       });
 
       return { previousOrder };
@@ -97,7 +97,7 @@ export function useOrderDetail(orderId) {
 
       queryClient.setQueryData(['order', orderId], (old) => {
         if (!old) return old;
-        let items = [...(old.OrderItems || [])];
+        let items = [...(old.OrderItems || old.items || [])];
 
         if (quantity <= 0) {
           items = items.filter((i) => i.id !== itemId);
@@ -115,7 +115,7 @@ export function useOrderDetail(orderId) {
         }
 
         const total = items.reduce((sum, item) => sum + Number(item.totalPrice), 0);
-        return { ...old, OrderItems: items, total };
+        return { ...old, OrderItems: items, items, total };
       });
 
       return { previousOrder };
@@ -142,9 +142,9 @@ export function useOrderDetail(orderId) {
 
       queryClient.setQueryData(['order', orderId], (old) => {
         if (!old) return old;
-        const items = (old.OrderItems || []).filter((i) => i.id !== itemId);
+        const items = (old.OrderItems || old.items || []).filter((i) => i.id !== itemId);
         const total = items.reduce((sum, item) => sum + Number(item.totalPrice), 0);
-        return { ...old, OrderItems: items, total };
+        return { ...old, OrderItems: items, items, total };
       });
 
       return { previousOrder };

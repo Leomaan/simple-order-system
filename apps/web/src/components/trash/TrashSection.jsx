@@ -182,7 +182,7 @@ export default function TrashSection() {
                       )}
                       {activeTab === 'orders' && (
                         <>
-                          Total: <span className="text-neutral-300 font-semibold">R$ {Number(item.total ?? item.OrderItems?.reduce((sum, i) => sum + Number(i.totalPrice || 0), 0) ?? 0).toFixed(2)}</span> · Status: <span className="text-neutral-300 font-semibold">{STATUS_MAP[item.status]?.label || item.status}</span>
+                          Total: <span className="text-neutral-300 font-semibold">R$ {Number(item.total ?? (item.OrderItems || item.items)?.reduce((sum, i) => sum + Number(i.totalPrice || 0), 0) ?? 0).toFixed(2)}</span> · Status: <span className="text-neutral-300 font-semibold">{STATUS_MAP[item.status]?.label || item.status}</span>
                           {item.paymentMethod && (
                             <> · Pagamento: <span className="text-neutral-300 font-semibold">{PAYMENT_METHOD_MAP[item.paymentMethod] || item.paymentMethod}</span></>
                           )}

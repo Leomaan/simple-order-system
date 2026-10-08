@@ -4,7 +4,8 @@ export function formatOrderDto(order) {
   if (!order) return null;
 
   const raw = typeof order.toJSON === 'function' ? order.toJSON() : order;
-  const items = Array.isArray(raw.OrderItems) ? raw.OrderItems.map(formatOrderItemDto) : [];
+  const rawItems = raw.OrderItems || raw.items;
+  const items = Array.isArray(rawItems) ? rawItems.map(formatOrderItemDto) : [];
 
   const totalCalculated = items.reduce((sum, item) => sum + (item.totalPrice || 0), 0);
 
@@ -19,6 +20,7 @@ export function formatOrderDto(order) {
     paymentExpiresAt: raw.paymentExpiresAt ? new Date(raw.paymentExpiresAt).toISOString() : null,
     total: raw.total !== undefined ? Number(raw.total) : totalCalculated,
     items,
+    OrderItems: items,
     createdAt: raw.createdAt ? new Date(raw.createdAt).toISOString() : null,
     updatedAt: raw.updatedAt ? new Date(raw.updatedAt).toISOString() : null,
     deletedAt: raw.deletedAt ? new Date(raw.deletedAt).toISOString() : null,

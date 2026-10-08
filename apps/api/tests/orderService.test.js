@@ -28,12 +28,14 @@ vi.mock('../src/services/auditLogService.js', () => ({
 vi.mock('../src/dto/orderDto.js', () => ({
   formatOrderDto: vi.fn((order) => {
     if (!order) return null;
+    const items = order.OrderItems || order.items || [];
     return {
       id: order.id,
       table: order.table,
       status: order.status,
       total: order.total || 0,
-      items: order.OrderItems || order.items || [],
+      items,
+      OrderItems: items,
     };
   })
 }));
