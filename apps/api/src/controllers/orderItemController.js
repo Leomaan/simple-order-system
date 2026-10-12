@@ -15,3 +15,13 @@ export const remove = asyncHandler(async (req, res) => {
   await orderItemService.removeItem(req.params.id, req.user);
   res.status(200).json({ success: true, message: 'order item removed' });
 });
+
+export const changeStatus = asyncHandler(async (req, res) => {
+  const item = await orderItemService.updateStatus(req.params.id, req.body.status, req.user);
+  res.status(200).json({ success: true, data: item });
+});
+
+export const claimDelivery = asyncHandler(async (req, res) => {
+  const item = await orderItemService.claimDelivery(req.params.id, req.user);
+  res.status(200).json({ success: true, data: item });
+});

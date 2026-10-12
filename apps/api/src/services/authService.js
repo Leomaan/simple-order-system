@@ -8,7 +8,13 @@ import { log } from './auditLogService.js';
 
 function generateAccessToken(user) {
   return jwt.sign(
-    { userId: user.id, role: user.role, name: user.name },
+    { 
+      userId: user.id, 
+      role: user.role, 
+      name: user.name,
+      companyId: user.companyId || null,
+      isSuperAdmin: !!user.isSuperAdmin
+    },
     process.env.JWT_SECRET,
     { expiresIn: '15m' }
   );
@@ -40,7 +46,14 @@ export async function login(email, password, ip) {
     ip,
   });
 
-  return { accessToken, refreshToken, role: user.role, name: user.name };
+  return { 
+    accessToken, 
+    refreshToken, 
+    role: user.role, 
+    name: user.name,
+    companyId: user.companyId || null,
+    isSuperAdmin: !!user.isSuperAdmin
+  };
 }
 
 export async function refresh(token) {
@@ -56,7 +69,13 @@ export async function refresh(token) {
   if (!stored.User.active) throw new AppError('usuário inativo', 401);
 
   const accessToken = generateAccessToken(stored.User);
-  return { accessToken, role: stored.User.role, name: stored.User.name };
+  return { 
+    accessToken, 
+    role: stored.User.role, 
+    name: stored.User.name,
+    companyId: stored.User.companyId || null,
+    isSuperAdmin: !!stored.User.isSuperAdmin
+  };
 }
 
 export async function logout(token, user = null, ip = null) {

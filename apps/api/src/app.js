@@ -23,6 +23,8 @@ import paymentRoutes from './routes/paymentRoutes.js';
 import settingsRoutes from './routes/settingsRoutes.js';
 import healthRoutes from './routes/healthRoutes.js';
 import publicMenuRoutes from './routes/publicMenuRoutes.js';
+import companyRoutes from './routes/companyRoutes.js';
+import categoryRoutes from './routes/categoryRoutes.js';
 
 const app = e();
 
@@ -70,6 +72,8 @@ app.use('/audit', auditLogRoutes);
 app.use('/report', reportRoutes);
 app.use('/payment', paymentRoutes);
 app.use('/settings', settingsRoutes);
+app.use('/company', companyRoutes);
+app.use('/category', categoryRoutes);
 
 app.use(errorHandler);
 

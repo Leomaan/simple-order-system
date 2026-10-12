@@ -1,5 +1,6 @@
 import { Op } from 'sequelize';
 import Product from '../models/product.js';
+import Category from '../models/category.js';
 import { AppError } from '../middleware/appError.js';
 import { calculateDiff } from '../util/diff.js';
 import { log } from './auditLogService.js';
@@ -8,16 +9,27 @@ import { emitEvent } from '../util/socket.js';
 import { notifyMenuUpdate } from '../util/notifyMenuUpdate.js';
 import { formatProductDto } from '../dto/productDto.js';
 
-const VALID_CATEGORIES = ['FOOD', 'DRINK', 'SNACK', 'DESSERT', 'SIDE'];
-const PRODUCT_DIFF_FIELDS = ['name', 'price', 'category', 'available', 'description'];
+const PRODUCT_DIFF_FIELDS = ['name', 'price', 'category', 'categoryId', 'stationId', 'available', 'description'];
 
-export async function findAll(category, onlyDeleted = false, page, limit, search) {
+export async function findAll(category, onlyDeleted = false, page, limit, search, companyId = null, categoryId = null) {
   const where = {}; 
 
-  if (category) {
-    if (!VALID_CATEGORIES.includes(category))
-      throw new AppError(`categoria inválida. Use: ${VALID_CATEGORIES.join(', ')}`);
-    where.category = category;
+  if (companyId) {
+    where.companyId = companyId;
+  }
+
+  if (categoryId) {
+    where.categoryId = Number(categoryId);
+  } else if (category) {
+    if (!isNaN(category)) {
+      where.categoryId = Number(category);
+    } else {
+      where[Op.or] = [
+        { category: { [Op.like]: `%${category}%` } },
+        { '$Category.slug$': category },
+        { '$Category.name$': category },
+      ];
+    }
   }
 
   if (search) {
@@ -26,8 +38,16 @@ export async function findAll(category, onlyDeleted = false, page, limit, search
 
   const queryOptions = { 
     where,
+    include: [
+      {
+        model: Category,
+        attributes: ['id', 'name', 'slug', 'stationId'],
+        required: false,
+      },
+    ],
     order: [['name', 'ASC']]
   };
+
   if (onlyDeleted) {
     queryOptions.paranoid = false;
     where.deletedAt = { [Op.ne]: null };
@@ -54,20 +74,65 @@ export async function findAll(category, onlyDeleted = false, page, limit, search
   return products.map(formatProductDto);
 }
 
-export async function findById(id) {
-  const product = await Product.findByPk(id);
+export async function findById(id, companyId = null) {
+  const where = { id };
+  if (companyId) where.companyId = companyId;
+
+  const product = await Product.findOne({
+    where,
+    include: [
+      {
+        model: Category,
+        attributes: ['id', 'name', 'slug', 'stationId'],
+        required: false,
+      },
+    ],
+  });
+
   if (!product) throw new AppError('product not found', 404);
   return formatProductDto(product);
 }
 
-export async function createProduct(data, user = null) {
-  const { name } = data;
+export async function createProduct(data, user = null, companyId = null) {
+  const targetCompanyId = companyId || user?.companyId || null;
+  const { name, categoryId, category } = data;
   if (!name) throw new AppError('no data provided');
 
-  const exists = await Product.findOne({ where: { name } });
+  const whereExists = { name };
+  if (targetCompanyId) whereExists.companyId = targetCompanyId;
+  const exists = await Product.findOne({ where: whereExists });
   if (exists) throw new AppError('product already exists');
 
-  const product = await Product.create(data);
+  let resolvedCategory = category;
+  let resolvedStationId = data.stationId;
+
+  if (categoryId) {
+    const cat = await Category.findByPk(categoryId);
+    if (cat) {
+      resolvedCategory = cat.name;
+      if (!resolvedStationId && cat.stationId) {
+        resolvedStationId = cat.stationId;
+      }
+    }
+  }
+
+  const product = await Product.create({
+    ...data,
+    companyId: targetCompanyId,
+    category: resolvedCategory || 'Geral',
+    categoryId: categoryId || null,
+    stationId: resolvedStationId || null,
+  });
+
+  const createdProduct = await Product.findByPk(product.id, {
+    include: [
+      {
+        model: Category,
+        attributes: ['id', 'name', 'slug', 'stationId'],
+        required: false,
+      },
+    ],
+  });
 
   await log({
     user,
@@ -77,30 +142,65 @@ export async function createProduct(data, user = null) {
     details: {
       name: product.name,
       price: product.price,
-      category: product.category,
+      category: resolvedCategory,
+      categoryId,
       description: product.description,
+      companyId: targetCompanyId,
     },
   });
 
-  logger.info('Novo produto cadastrado', { context: 'product_service', productId: product.id, name: product.name });
-  const formattedProduct = formatProductDto(product);
+  logger.info('Novo produto cadastrado', { context: 'product_service', productId: product.id, name: product.name, companyId: targetCompanyId });
+  const formattedProduct = formatProductDto(createdProduct || product);
   emitEvent('product:created', formattedProduct);
   notifyMenuUpdate('created', formattedProduct);
 
   return formattedProduct;
 }
 
-export async function updateProduct(id, data, user = null) {
+export async function updateProduct(id, data, user = null, companyId = null) {
   if (!data || Object.keys(data).length === 0)
     throw new AppError('no data provided');
 
-  const product = await Product.findByPk(id);
+  const where = { id };
+  if (companyId) where.companyId = companyId;
+
+  const product = await Product.findOne({
+    where,
+    include: [
+      {
+        model: Category,
+        attributes: ['id', 'name', 'slug', 'stationId'],
+        required: false,
+      },
+    ],
+  });
   if (!product) throw new AppError('product not found', 404);
   const oldValues = typeof product.toJSON === 'function' ? product.toJSON() : { ...product };
 
-  await product.update(data);
+  let updatePayload = { ...data };
+  if (data.categoryId) {
+    const cat = await Category.findByPk(data.categoryId);
+    if (cat) {
+      updatePayload.category = cat.name;
+      if (!updatePayload.stationId && cat.stationId) {
+        updatePayload.stationId = cat.stationId;
+      }
+    }
+  }
 
-  const newValues = typeof product.toJSON === 'function' ? product.toJSON() : { ...product, ...data };
+  await product.update(updatePayload);
+
+  const updatedProduct = await Product.findByPk(product.id, {
+    include: [
+      {
+        model: Category,
+        attributes: ['id', 'name', 'slug', 'stationId'],
+        required: false,
+      },
+    ],
+  });
+
+  const newValues = typeof updatedProduct.toJSON === 'function' ? updatedProduct.toJSON() : { ...updatedProduct };
   const diff = calculateDiff(oldValues, newValues, PRODUCT_DIFF_FIELDS);
 
   await log({
@@ -112,15 +212,18 @@ export async function updateProduct(id, data, user = null) {
   });
 
   logger.info('Produto atualizado', { context: 'product_service', productId: product.id, updatedBy: user?.userId || user?.id });
-  const formattedProduct = formatProductDto(product);
+  const formattedProduct = formatProductDto(updatedProduct);
   emitEvent('product:updated', formattedProduct);
   notifyMenuUpdate('updated', formattedProduct);
 
   return formattedProduct;
 }
 
-export async function deleteProduct(id, user = null) {
-  const product = await Product.findByPk(id);
+export async function deleteProduct(id, user = null, companyId = null) {
+  const where = { id };
+  if (companyId) where.companyId = companyId;
+
+  const product = await Product.findOne({ where });
   if (!product) throw new AppError('product not found', 404);
   await product.destroy();
 
@@ -139,8 +242,11 @@ export async function deleteProduct(id, user = null) {
   return formatProductDto(product);
 }
 
-export async function restoreProduct(id, user = null) {
-  const product = await Product.findOne({ where: { id }, paranoid: false });
+export async function restoreProduct(id, user = null, companyId = null) {
+  const where = { id };
+  if (companyId) where.companyId = companyId;
+
+  const product = await Product.findOne({ where, paranoid: false });
   if (!product) throw new AppError('product not found or not deleted', 404);
   await product.restore();
 
@@ -160,8 +266,11 @@ export async function restoreProduct(id, user = null) {
   return formattedProduct;
 }
 
-export async function permanentDeleteProduct(id, user = null) {
-  const product = await Product.findOne({ where: { id }, paranoid: false });
+export async function permanentDeleteProduct(id, user = null, companyId = null) {
+  const where = { id };
+  if (companyId) where.companyId = companyId;
+
+  const product = await Product.findOne({ where, paranoid: false });
   if (!product) throw new AppError('product not found', 404);
   await product.destroy({ force: true });
 

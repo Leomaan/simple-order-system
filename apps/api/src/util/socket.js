@@ -21,8 +21,19 @@ export function socketAuthMiddleware(socket, next) {
     const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : null;
     const token = socket.handshake.auth?.token || cookies.accessToken || bearerToken;
 
+    // Se for uma conexão anônima de cliente no cardápio da mesa
     if (!token) {
-      logger.warn('Conexão WebSocket rejeitada: token ausente', {
+      const publicSlug = socket.handshake.query?.slug || socket.handshake.auth?.slug;
+      const tableNumber = socket.handshake.query?.table || socket.handshake.auth?.table;
+
+      if (publicSlug && tableNumber) {
+        socket.isPublicClient = true;
+        socket.publicSlug = publicSlug;
+        socket.tableNumber = tableNumber;
+        return next();
+      }
+
+      logger.warn('Conexão WebSocket rejeitada: token ausente e sem identificação de mesa', {
         context: 'websocket',
         socketId: socket.id,
         ip: socket.handshake.address,
@@ -48,20 +59,50 @@ export function initSocket(httpServer) {
     cors: corsOptions,
   });
 
-  // Middleware de autenticação obrigatório para conexões WebSocket
   io.use(socketAuthMiddleware);
 
   io.on('connection', (socket) => {
-    logger.info(`Novo cliente WebSocket autenticado conectado`, {
-      context: 'websocket',
-      socketId: socket.id,
-      userId: socket.user?.userId || socket.user?.id,
-      role: socket.user?.role,
+    // Se for cliente público do cardápio, insere automaticamente na sala da sua mesa
+    if (socket.isPublicClient) {
+      const tableRoom = `company:${socket.publicSlug}:table:${socket.tableNumber}`;
+      socket.join(tableRoom);
+      logger.info(`Cliente de mesa público conectado na sala ${tableRoom}`, {
+        context: 'websocket',
+        socketId: socket.id,
+        slug: socket.publicSlug,
+        table: socket.tableNumber,
+      });
+    } else {
+      logger.info(`Novo colaborador WebSocket autenticado conectado`, {
+        context: 'websocket',
+        socketId: socket.id,
+        userId: socket.user?.userId || socket.user?.id,
+        role: socket.user?.role,
+        companyId: socket.user?.companyId,
+      });
+
+      // Auto-join nas salas operacionais da empresa do colaborador
+      if (socket.user?.companyId) {
+        const companyRoom = `company:${socket.user.companyId}`;
+        socket.join(companyRoom);
+        
+        if (socket.user.role === 'WAITER' || socket.user.role === 'ADMIN') {
+          socket.join(`company:${socket.user.companyId}:waiters`);
+        }
+      }
+    }
+
+    // Permite ingressar em estações específicas do KDS (ex: station_12)
+    socket.on('join_station', (stationId) => {
+      if (!socket.isPublicClient && socket.user?.companyId && stationId) {
+        const stationRoom = `company:${socket.user.companyId}:station:${stationId}`;
+        socket.join(stationRoom);
+        logger.info(`Socket ingressou na estação KDS: ${stationRoom}`, { context: 'websocket', socketId: socket.id });
+      }
     });
 
-    // Permite que o cliente entre em salas específicas (ex: "room:waiters", "room:admin", "order_12")
     socket.on('join_room', (room) => {
-      if (room && typeof room === 'string' && room.length <= 50) {
+      if (room && typeof room === 'string' && room.length <= 80) {
         socket.join(room);
         logger.info(`Socket ingressou na sala: ${room}`, { context: 'websocket', socketId: socket.id, room });
       }

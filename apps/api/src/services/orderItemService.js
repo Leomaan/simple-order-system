@@ -174,3 +174,73 @@ export async function removeItem(id, user = null) {
 
   return { success: true };
 }
+
+export async function updateStatus(id, newStatus, user = null) {
+  const validStatuses = ['PENDING', 'QUEUED', 'PREPARING', 'READY', 'DELIVERING', 'DELIVERED', 'CANCELLED'];
+  if (!validStatuses.includes(newStatus)) {
+    throw new AppError('status de item inválido', 400);
+  }
+
+  const orderItem = await OrderItem.findByPk(id, { include: [Order, Product] });
+  if (!orderItem) throw new AppError('item do pedido não encontrado', 404);
+
+  await orderItem.update({ status: newStatus });
+
+  const companyRoom = orderItem.Order?.companyId ? `company:${orderItem.Order.companyId}` : null;
+  const payload = {
+    itemId: orderItem.id,
+    orderId: orderItem.OrderId,
+    table: orderItem.Order?.table,
+    status: newStatus,
+    productName: orderItem.Product?.name,
+  };
+
+  emitEvent('item_status_changed', payload, companyRoom);
+  emitEvent('order_item:status_changed', payload);
+
+  return orderItem;
+}
+
+export async function claimDelivery(id, user) {
+  return await sequelize.transaction(async (t) => {
+    const item = await OrderItem.findByPk(id, {
+      include: [Order, Product],
+      transaction: t,
+      lock: t.LOCK.UPDATE,
+    });
+
+    if (!item) throw new AppError('item não encontrado', 404);
+
+    if (item.status === 'DELIVERING' && item.deliveredById && item.deliveredById !== user.userId) {
+      throw new AppError('este item já foi assumido por outro garçom', 409);
+    }
+
+    if (item.status === 'DELIVERED') {
+      throw new AppError('este item já foi entregue na mesa', 400);
+    }
+
+    await item.update({
+      status: 'DELIVERING',
+      deliveredById: user.userId,
+    }, { transaction: t });
+
+    const companyRoom = item.Order?.companyId ? `company:${item.Order.companyId}` : null;
+    const payload = {
+      itemId: item.id,
+      orderId: item.OrderId,
+      table: item.Order?.table,
+      status: 'DELIVERING',
+      deliveredBy: {
+        id: user.userId,
+        name: user.name,
+      },
+      productName: item.Product?.name,
+    };
+
+    // Notifica em broadcast imediato para bloquear o prato nos outros celulares
+    emitEvent('delivery_claimed', payload, companyRoom);
+    emitEvent('order_item:status_changed', payload);
+
+    return item;
+  });
+}

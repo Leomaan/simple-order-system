@@ -46,7 +46,13 @@ export const login = asyncHandler(async (req, res) => {
 
   res.status(200).json({
     success: true,
-    data: { role: result.role, name: result.name, csrfToken }, 
+    data: { 
+      role: result.role, 
+      name: result.name, 
+      companyId: result.companyId,
+      isSuperAdmin: result.isSuperAdmin,
+      csrfToken 
+    }, 
   });
 });
 
