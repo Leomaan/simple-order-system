@@ -293,20 +293,84 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
               ) : (
                 <div className="flex flex-col gap-2 max-h-[50vh] md:max-h-[40vh] overflow-y-auto pr-1">
                   {orderItems.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between bg-neutral-950/60 border border-neutral-850 rounded-xl px-4 py-3 hover:border-neutral-800 transition-colors">
-                      <div className="min-w-0">
-                        <p className="text-white text-sm font-semibold truncate">{item.Product?.name || item.product?.name || 'Item'}</p>
-                        <p className="text-neutral-550 text-[10px] uppercase tracking-wider mt-0.5">{formatPrice(item.unitPrice)} cada</p>
+                    <div key={item.id} className="flex flex-col gap-2 bg-neutral-950/60 border border-neutral-850 rounded-xl px-4 py-3 hover:border-neutral-800 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <div className="min-w-0">
+                          <p className="text-white text-sm font-semibold truncate">{item.Product?.name || item.product?.name || 'Item'}</p>
+                          <p className="text-neutral-550 text-[10px] uppercase tracking-wider mt-0.5">{formatPrice(item.unitPrice)} cada</p>
+                          {item.notes && (
+                            <p className="text-amber-400 text-xs mt-0.5">Obs: {item.notes}</p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-orange-400 text-sm font-bold whitespace-nowrap">{formatPrice(item.totalPrice)}</span>
+                          {currentStatus === 'OPEN' ? (
+                            <QuantityControl
+                              quantity={item.quantity}
+                              onChange={(qty) => handleChangeQty(item, qty)}
+                            />
+                          ) : (
+                            <span className="text-neutral-550 text-xs font-bold bg-neutral-900 border border-neutral-800 px-2.5 py-1 rounded-lg">{item.quantity}x</span>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-orange-400 text-sm font-bold whitespace-nowrap">{formatPrice(item.totalPrice)}</span>
-                        {currentStatus === 'OPEN' ? (
-                          <QuantityControl
-                            quantity={item.quantity}
-                            onChange={(qty) => handleChangeQty(item, qty)}
-                          />
-                        ) : (
-                          <span className="text-neutral-550 text-xs font-bold bg-neutral-900 border border-neutral-800 px-2.5 py-1 rounded-lg">{item.quantity}x</span>
+
+                      {/* Status KDS & Ação de Entrega */}
+                      <div className="flex items-center justify-between pt-2 border-t border-neutral-850/60 text-xs">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-neutral-500 text-[11px]">Cozinha:</span>
+                          {item.status === 'READY' ? (
+                            <span className="px-2 py-0.5 rounded-md font-bold text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                              Pronto p/ Servir ✓
+                            </span>
+                          ) : item.status === 'PREPARING' ? (
+                            <span className="px-2 py-0.5 rounded-md font-bold text-[10px] bg-orange-500/10 text-orange-400 border border-orange-500/20">
+                              Em Preparação...
+                            </span>
+                          ) : item.status === 'DELIVERING' ? (
+                            <span className="px-2 py-0.5 rounded-md font-bold text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                              A Caminho da Mesa
+                            </span>
+                          ) : item.status === 'DELIVERED' ? (
+                            <span className="px-2 py-0.5 rounded-md font-bold text-[10px] bg-neutral-800 text-neutral-400">
+                              Entregue
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-md font-bold text-[10px] bg-neutral-900 text-neutral-400 border border-neutral-800">
+                              Na Fila
+                            </span>
+                          )}
+                        </div>
+
+                        {item.status === 'READY' && (
+                          <button
+                            onClick={async () => {
+                              try {
+                                await api.patch(`/order-item/${item.id}/claim-delivery`);
+                                fetchDetails();
+                              } catch (err) {
+                                alert(err.response?.data?.message || 'Erro ao assumir entrega');
+                              }
+                            }}
+                            className="px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-white font-bold rounded-lg text-[11px] transition"
+                          >
+                            Levar à Mesa ➔
+                          </button>
+                        )}
+                        {item.status === 'DELIVERING' && (
+                          <button
+                            onClick={async () => {
+                              try {
+                                await api.patch(`/order-item/${item.id}/status`, { status: 'DELIVERED' });
+                                fetchDetails();
+                              } catch (err) {
+                                alert(err.response?.data?.message || 'Erro ao confirmar entrega');
+                              }
+                            }}
+                            className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-[11px] transition shadow"
+                          >
+                            Confirmar Entrega ✓
+                          </button>
                         )}
                       </div>
                     </div>

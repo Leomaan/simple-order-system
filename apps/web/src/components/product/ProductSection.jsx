@@ -1,12 +1,14 @@
 import React, { useState } from "react";
 import { useProducts } from "../../hooks/useProduct";
+import { useCategory } from "../../hooks/useCategory";
 import ConfirmModal from "../ui/ConfirmModal";
 import CategoryFilter from "../ui/CategoryFilter";
+import CategoryManagerModal from "../category/CategoryManagerModal";
 import Input from "../ui/Input";
 import Button from "../ui/Button";
 import ErrorMessage from "../ui/ErrorMessage";
 import { formatErrorMessage } from "../util/errorUtil";
-import { Utensils, Beer, Popcorn, CakeSlice, Soup, Search, Plus, X, Edit2, Trash2 } from "lucide-react";
+import { Utensils, Beer, Popcorn, CakeSlice, Soup, Search, Plus, X, Edit2, Trash2, Layers } from "lucide-react";
 
 const CATEGORIES = ["FOOD", "DRINK", "SNACK", "DESSERT", "SIDE"];
 
@@ -26,7 +28,7 @@ const categoryIcon = {
   SIDE: Soup,
 };
 
-const emptyForm = { name: "", price: "", category: "FOOD", description: "", imageUrl: "", available: true };
+const emptyForm = { name: "", price: "", category: "FOOD", categoryId: null, description: "", imageUrl: "", available: true };
 
 export default function ProductSection() {
   const {
@@ -45,6 +47,8 @@ export default function ProductSection() {
     isSaving,
     isDeleting,
   } = useProducts("");
+  const { categories: customCategories } = useCategory();
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptyForm);
@@ -55,7 +59,11 @@ export default function ProductSection() {
 
   function openCreate() {
     setEditing(null);
-    setForm(emptyForm);
+    setForm({
+      ...emptyForm,
+      category: customCategories.length > 0 ? customCategories[0].name : "FOOD",
+      categoryId: customCategories.length > 0 ? customCategories[0].id : null,
+    });
     setError("");
     setShowForm(true);
   }
@@ -66,6 +74,7 @@ export default function ProductSection() {
       name: product.name,
       price: product.price,
       category: product.category,
+      categoryId: product.categoryId || null,
       description: product.description || "",
       imageUrl: product.imageUrl || "",
       available: product.available,
@@ -127,14 +136,25 @@ export default function ProductSection() {
           <h2 className="text-2xl font-bold text-white tracking-tight">Cardápio & Produtos</h2>
           <p className="text-neutral-500 text-sm">Gerencie os itens disponíveis para venda</p>
         </div>
-        <Button
-          onClick={showForm ? closeForm : openCreate}
-          variant={showForm ? "secondary" : "primary"}
-          className="w-full sm:w-auto py-3 px-5 text-xs font-bold uppercase tracking-wider shadow-lg shadow-orange-500/10 flex items-center justify-center gap-2"
-        >
-          {showForm ? <X size={16} /> : <Plus size={16} />}
-          <span>{showForm ? "Cancelar" : "Novo produto"}</span>
-        </Button>
+        <div className="flex items-center gap-2.5">
+          <Button
+            onClick={() => setIsCategoryModalOpen(true)}
+            variant="secondary"
+            className="w-full sm:w-auto py-3 px-4 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 border border-neutral-750 hover:bg-neutral-800"
+          >
+            <Layers size={16} className="text-orange-500" />
+            <span>Categorias</span>
+          </Button>
+
+          <Button
+            onClick={showForm ? closeForm : openCreate}
+            variant={showForm ? "secondary" : "primary"}
+            className="w-full sm:w-auto py-3 px-5 text-xs font-bold uppercase tracking-wider shadow-lg shadow-orange-500/10 flex items-center justify-center gap-2"
+          >
+            {showForm ? <X size={16} /> : <Plus size={16} />}
+            <span>{showForm ? "Cancelar" : "Novo produto"}</span>
+          </Button>
+        </div>
       </header>
 
       {/* Form Criar / Editar */}
@@ -182,15 +202,31 @@ export default function ProductSection() {
                 Categoria
               </label>
               <select
-                value={form.category}
-                onChange={(e) => setForm({ ...form, category: e.target.value })}
+                value={form.categoryId ? String(form.categoryId) : form.category}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  const foundCustom = customCategories.find((c) => String(c.id) === val);
+                  if (foundCustom) {
+                    setForm({ ...form, categoryId: foundCustom.id, category: foundCustom.name });
+                  } else {
+                    setForm({ ...form, categoryId: null, category: val });
+                  }
+                }}
                 className="w-full bg-neutral-900 border border-neutral-800 text-white rounded-xl p-3 text-xs outline-none focus:border-orange-500 transition-colors"
               >
-                {CATEGORIES.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {categoryLabel[cat]}
-                  </option>
-                ))}
+                {customCategories.length > 0 ? (
+                  customCategories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))
+                ) : (
+                  CATEGORIES.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {categoryLabel[cat]}
+                    </option>
+                  ))
+                )}
               </select>
             </div>
 
@@ -259,7 +295,7 @@ export default function ProductSection() {
       {/* Filtros de categoria & Busca */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <CategoryFilter
-          categories={CATEGORIES}
+          categories={customCategories.length > 0 ? customCategories : CATEGORIES}
           selected={filterCategory}
           onChange={setCategory}
         />
@@ -418,6 +454,11 @@ export default function ProductSection() {
           </div>
         </div>
       )}
+
+      <CategoryManagerModal
+        isOpen={isCategoryModalOpen}
+        onClose={() => setIsCategoryModalOpen(false)}
+      />
     </div>
   );
 }

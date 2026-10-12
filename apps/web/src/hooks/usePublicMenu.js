@@ -3,9 +3,9 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchPublicMenu } from '../services/publicMenuService.js';
 import { publicSocket } from '../config/public/socketPublic.js';
 
-export const PUBLIC_MENU_QUERY_KEY = ['public-menu'];
+export const PUBLIC_MENU_QUERY_KEY = (slug) => ['public-menu', slug || 'default'];
 
-export function usePublicMenu(initialCategory = '') {
+export function usePublicMenu(initialCategory = '', slug = null) {
   const queryClient = useQueryClient();
   const [categoryFilter, setCategoryFilter] = useState(initialCategory);
   const [searchFilter, setSearchFilter] = useState('');
@@ -20,14 +20,18 @@ export function usePublicMenu(initialCategory = '') {
   }, [searchFilter]);
 
   // 1. Busca todos os produtos disponíveis do cardápio público
-  const { data: allProducts = [], isLoading, isFetching, error, refetch } = useQuery({
-    queryKey: PUBLIC_MENU_QUERY_KEY,
-    queryFn: () => fetchPublicMenu(),
+  const { data = {}, isLoading, isFetching, error, refetch } = useQuery({
+    queryKey: PUBLIC_MENU_QUERY_KEY(slug),
+    queryFn: () => fetchPublicMenu(null, slug),
     staleTime: 1000 * 60 * 5, // 5 minutos de frescor em cache
     gcTime: 1000 * 60 * 15,   // 15 minutos até descarte
     refetchOnWindowFocus: false,
     refetchOnReconnect: true,
   });
+
+  const allProducts = data.products || [];
+  const company = data.company || null;
+  const customCategories = data.categories || [];
 
   // 2. Sincronização em tempo real via WebSocket público
   useEffect(() => {
@@ -64,6 +68,8 @@ export function usePublicMenu(initialCategory = '') {
   return {
     products: filteredProducts,
     allProducts,
+    company,
+    customCategories,
     loading: isLoading,
     isFetching,
     error: error ? 'Erro ao carregar o cardápio' : '',

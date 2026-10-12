@@ -24,7 +24,7 @@ const categoryIcon = {
   SIDE: Soup,
 };
 
-export const PublicProductCard = memo(function PublicProductCard({ product }) {
+export const PublicProductCard = memo(function PublicProductCard({ product, onAddToCart }) {
   const [imageError, setImageError] = useState(false);
   const IconComponent = categoryIcon[product.category] || Utensils;
   const label = categoryLabel[product.category] || product.category;
@@ -78,11 +78,19 @@ export const PublicProductCard = memo(function PublicProductCard({ product }) {
         </div>
       </div>
 
-      {/* Extremidade Direita: Valor */}
-      <div className="shrink-0 text-right pl-2 sm:pl-4">
+      {/* Extremidade Direita: Valor e Botão Adicionar */}
+      <div className="shrink-0 flex flex-col items-end gap-2 pl-2 sm:pl-4">
         <span className="text-amber-400 font-extrabold text-base sm:text-lg whitespace-nowrap block tracking-tight">
           {formatCurrency(product.price)}
         </span>
+        {onAddToCart && (
+          <button
+            onClick={() => onAddToCart(product)}
+            className="flex items-center gap-1 px-3 py-1.5 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-xs font-bold transition shadow-sm active:scale-95 cursor-pointer"
+          >
+            Adicionar +
+          </button>
+        )}
       </div>
     </article>
   );

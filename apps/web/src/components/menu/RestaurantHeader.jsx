@@ -10,6 +10,7 @@ import {
   ExternalLink 
 } from 'lucide-react';
 import { restaurantConfig } from '../../config/restaurantInfo.js';
+import ThemeToggle from '../ui/ThemeToggle.jsx';
 
 export function RestaurantHeader({ 
   customConfig = {}, 
@@ -174,6 +175,9 @@ export function RestaurantHeader({
                   <span>QR Code</span>
                 </button>
               )}
+
+              {/* Alternador de Tema Claro/Escuro */}
+              <ThemeToggle />
             </div>
           </div>
 

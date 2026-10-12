@@ -21,6 +21,7 @@ const categoryIcons = {
 export const ProductCategorySection = memo(function ProductCategorySection({
   categoryKey,
   products = [],
+  onAddToCart,
 }) {
   if (!products.length) return null;
 
@@ -50,7 +51,11 @@ export const ProductCategorySection = memo(function ProductCategorySection({
       {/* Grid de Cards Horizontais */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
         {products.map((product) => (
-          <PublicProductCard key={product.id} product={product} />
+          <PublicProductCard 
+            key={product.id} 
+            product={product} 
+            onAddToCart={onAddToCart}
+          />
         ))}
       </div>
     </section>
