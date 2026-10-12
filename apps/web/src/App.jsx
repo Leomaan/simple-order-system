@@ -2,6 +2,7 @@ import { RouterProvider } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
 import { ToastProvider } from './context/ToastContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import OfflineStatusBanner from './components/ui/OfflineStatusBanner';
@@ -21,14 +22,16 @@ export default function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <ToastProvider>
-          <OfflineStatusBanner />
-          <AuthProvider>
-            <SocketProvider>
-              <RouterProvider router={router} />
-            </SocketProvider>
-          </AuthProvider>
-        </ToastProvider>
+        <ThemeProvider>
+          <ToastProvider>
+            <OfflineStatusBanner />
+            <AuthProvider>
+              <SocketProvider>
+                <RouterProvider router={router} />
+              </SocketProvider>
+            </AuthProvider>
+          </ToastProvider>
+        </ThemeProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   );

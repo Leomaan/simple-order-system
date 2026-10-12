@@ -10,13 +10,16 @@ import {
   User,
   Trash2,
   Settings as SettingsIcon,
+  ChefHat,
   Menu,
   X
 } from 'lucide-react';
+import ThemeToggle from '../ui/ThemeToggle';
 
 const adminNavItems = [
   { label: 'Produtos', key: 'products', icon: UtensilsCrossed },
   { label: 'Pedidos', key: 'orders', icon: ShoppingBag },
+  { label: 'Cozinha (KDS)', key: 'kds_link', icon: ChefHat, isExternalRoute: '/kds' },
   { label: 'Usuários', key: 'users', icon: Users },
   { label: 'Relatórios', key: 'reports', icon: BarChart3 },
   { label: 'Auditoria', key: 'logs', icon: History },
@@ -27,6 +30,7 @@ const adminNavItems = [
 const waiterNavItems = [
   { label: 'Cardápio', key: 'products', icon: UtensilsCrossed },
   { label: 'Mesas', key: 'orders', icon: ShoppingBag },
+  { label: 'Cozinha (KDS)', key: 'kds_link', icon: ChefHat, isExternalRoute: '/kds' },
 ];
 
 export default function Sidebar({ active, onNavigate, role }) {
@@ -96,6 +100,10 @@ export default function Sidebar({ active, onNavigate, role }) {
                 <button
                   key={item.key}
                   onClick={() => {
+                    if (item.isExternalRoute) {
+                      window.location.href = item.isExternalRoute;
+                      return;
+                    }
                     onNavigate(item.key);
                     setIsOpen(false);
                   }}
@@ -115,16 +123,19 @@ export default function Sidebar({ active, onNavigate, role }) {
 
         {/* User profile & logout */}
         <div className="p-4 border-t border-neutral-800 flex flex-col gap-3 bg-neutral-950/20">
-          <div className="flex items-center gap-3 px-2.5 py-1.5">
-            <div className="w-8.5 h-8.5 rounded-full bg-neutral-800 flex items-center justify-center text-neutral-400 border border-neutral-750">
-              <User size={16} />
+          <div className="flex items-center justify-between px-2.5 py-1.5">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-8.5 h-8.5 rounded-full bg-neutral-800 flex items-center justify-center text-neutral-400 border border-neutral-750 shrink-0">
+                <User size={16} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-white text-xs font-semibold truncate leading-none">{user?.name || 'Funcionário'}</p>
+                <span className="text-[10px] text-neutral-550 font-bold uppercase mt-1 block tracking-wider">
+                  {role === 'ADMIN' ? 'Administrador' : 'Garçom'}
+                </span>
+              </div>
             </div>
-            <div className="min-w-0">
-              <p className="text-white text-xs font-semibold truncate leading-none">{user?.name || 'Funcionário'}</p>
-              <span className="text-[10px] text-neutral-550 font-bold uppercase mt-1 block tracking-wider">
-                {role === 'ADMIN' ? 'Administrador' : 'Garçom'}
-              </span>
-            </div>
+            <ThemeToggle />
           </div>
 
           <button

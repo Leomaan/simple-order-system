@@ -7,6 +7,8 @@ const Login = lazy(() => import('./pages/Login'));
 const Admin = lazy(() => import('./pages/Admin'));
 const Waiter = lazy(() => import('./pages/Waiter'));
 const Menu = lazy(() => import('./pages/menu'));
+const SuperAdmin = lazy(() => import('./pages/SuperAdmin'));
+const KDS = lazy(() => import('./pages/KDS'));
 
 import { LoadingSpinner } from './components/ui/LoadingSpinner';
 
@@ -65,10 +67,26 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        path: '/superadmin',
+        element: (
+          <PrivateRoute requireSuperAdmin={true}>
+            <SuperAdmin />
+          </PrivateRoute>
+        ),
+      },
+      {
         path: '/waiter',
         element: (
           <PrivateRoute role="WAITER">
             <Waiter />
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: '/kds',
+        element: (
+          <PrivateRoute role={['ADMIN', 'WAITER']}>
+            <KDS />
           </PrivateRoute>
         ),
       },

@@ -13,16 +13,24 @@ export function AuthProvider({ children }) {
     async function checkAuth() {
       try {
         const res = await api.post('/auth/refresh');
-        const { role, name, csrfToken } = res.data.data;
-        setUser({ role, name });
+        const { role, name, csrfToken, isSuperAdmin, companyId } = res.data.data;
+        setUser({ role, name, isSuperAdmin, companyId });
         localStorage.setItem('role', role);
         localStorage.setItem('name', name);
+        if (isSuperAdmin !== undefined) {
+          localStorage.setItem('isSuperAdmin', String(isSuperAdmin));
+        }
+        if (companyId) {
+          localStorage.setItem('companyId', String(companyId));
+        }
         if (csrfToken) {
           localStorage.setItem('csrfToken', csrfToken);
         }
       } catch (err) {
         localStorage.removeItem('role');
         localStorage.removeItem('name');
+        localStorage.removeItem('isSuperAdmin');
+        localStorage.removeItem('companyId');
         localStorage.removeItem('csrfToken');
         setUser(null);
       } finally {
@@ -42,13 +50,19 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
-  function login({ role, name, csrfToken }) {
+  function login({ role, name, csrfToken, isSuperAdmin, companyId }) {
     localStorage.setItem('role', role);
     localStorage.setItem('name', name);
+    if (isSuperAdmin !== undefined) {
+      localStorage.setItem('isSuperAdmin', String(isSuperAdmin));
+    }
+    if (companyId) {
+      localStorage.setItem('companyId', String(companyId));
+    }
     if (csrfToken) {
       localStorage.setItem('csrfToken', csrfToken);
     }
-    setUser({ role, name });
+    setUser({ role, name, isSuperAdmin, companyId });
   }
 
   async function logout() {
