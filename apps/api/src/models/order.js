@@ -36,6 +36,10 @@ const Order = sequelize.define('Order',{
         allowNull: true,
         defaultValue: null
     },
+    companyId: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+    },
     deletedAt: {
     type: DataTypes.DATE,
     allowNull: true,

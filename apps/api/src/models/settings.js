@@ -40,6 +40,10 @@ const Settings = sequelize.define('Settings', {
       }
     }
   },
+  companyId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+  },
 }, {
   tableName: 'Settings',
 });

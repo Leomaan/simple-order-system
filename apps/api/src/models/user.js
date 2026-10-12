@@ -30,6 +30,10 @@ const User = sequelize.define('User', {
     allowNull: false,
     defaultValue: false,
   },
+  companyId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+  },
   deletedAt: {
     type: DataTypes.DATE,
     allowNull: true,

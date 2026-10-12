@@ -27,8 +27,25 @@ const Product = sequelize.define('Product',{
         defaultValue: true
     },
     category:{
-        type: DataTypes.ENUM('FOOD', 'DRINK', 'SNACK', 'DESSERT', 'SIDE'),
-        allowNull: false,
+        type: DataTypes.STRING(50),
+        allowNull: true,
+    },
+    categoryId: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'Categories',
+          key: 'id',
+        },
+        onDelete: 'SET NULL',
+    },
+    companyId: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+    },
+    stationId: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
     },
     deletedAt: {
     type: DataTypes.DATE,

@@ -41,6 +41,10 @@ const AuditLog = sequelize.define('AuditLog', {
     type: DataTypes.STRING,
     allowNull: true,
   },
+  companyId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+  },
 }, {
   updatedAt: false,
 });
