@@ -82,12 +82,14 @@ describe('GET /product', () => {
     expect(res.body.data.every(p => p.category === 'FOOD')).toBe(true);
   });
 
-  it('deve retornar 400 com categoria inválida', async () => {
+  it('deve retornar lista vazia quando categoria não encontrar produtos', async () => {
     const res = await request(app)
-      .get('/product?category=INVALIDA')
+      .get('/product?category=INEXISTENTE')
       .set('Authorization', `Bearer ${waiterToken}`);
 
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data).toEqual([]);
   });
 });
 
