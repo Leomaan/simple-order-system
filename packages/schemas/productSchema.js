@@ -1,6 +1,4 @@
 import { z } from 'zod';
-
-const CATEGORIES = ['FOOD', 'DRINK', 'SNACK', 'DESSERT', 'SIDE'];
  
 export const createProductSchema = z.object({
   name:        z.string({ error: 'nome é obrigatório' }).min(1, 'nome não pode ser vazio'),
@@ -8,7 +6,9 @@ export const createProductSchema = z.object({
   description: z.string().optional(),
   imageUrl:    z.string().url('URL da imagem invalida').optional().or(z.literal('')),
   available:   z.boolean().optional(),
-  category:    z.enum(CATEGORIES, { error: `categoria deve ser: ${CATEGORIES.join(', ')}` }),
+  category:    z.string().min(1, 'categoria não pode ser vazia').optional(),
+  categoryId:  z.number().int().positive().nullable().optional(),
+  stationId:   z.number().int().positive().nullable().optional(),
 });
  
 export const updateProductSchema = z.object({
@@ -17,7 +17,9 @@ export const updateProductSchema = z.object({
   description: z.string().optional(),
   imageUrl:    z.string().url('URL da imagem invalida').optional().or(z.literal('')),
   available:   z.boolean({ error: 'disponibilidade deve ser verdadeiro ou falso' }).optional(),
-  category:    z.enum(CATEGORIES, { error: `categoria deve ser: ${CATEGORIES.join(', ')}` }).optional(),
+  category:    z.string().min(1).optional(),
+  categoryId:  z.number().int().positive().nullable().optional(),
+  stationId:   z.number().int().positive().nullable().optional(),
 }).refine(data => Object.keys(data).length > 0, {
   message: 'nenhum dado fornecido',
 });
