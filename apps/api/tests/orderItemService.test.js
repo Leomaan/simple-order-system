@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { addItem, changeQuantity, removeItem } from '../src/services/orderItemService.js';
+import { addItem, changeQuantity, removeItem, updateStatus, claimDelivery } from '../src/services/orderItemService.js';
 import OrderItem from '../src/models/orderItem.js';
 import Order from '../src/models/order.js';
 import Product from '../src/models/product.js';
@@ -174,6 +174,98 @@ describe('removeItem', () => {
 
     await expect(removeItem(1)).rejects.toMatchObject({
       message: 'cannot remove item from a paid order'
+    });
+  });
+});
+
+describe('updateStatus', () => {
+  it('deve atualizar o status do item para PREPARING', async () => {
+    const item = {
+      id: 1,
+      OrderId: 10,
+      status: 'QUEUED',
+      Order: { table: 5, companyId: 1 },
+      Product: { name: 'Burger' },
+      update: vi.fn().mockImplementation(function (data) {
+        this.status = data.status;
+        return Promise.resolve(this);
+      }),
+    };
+    OrderItem.findByPk.mockResolvedValue(item);
+
+    const result = await updateStatus(1, 'PREPARING');
+
+    expect(item.update).toHaveBeenCalledWith({ status: 'PREPARING' });
+    expect(result.status).toBe('PREPARING');
+  });
+
+  it('deve lançar AppError para status inválido', async () => {
+    await expect(updateStatus(1, 'INVALID_STATUS')).rejects.toMatchObject({
+      status: 400,
+      message: 'status de item inválido',
+    });
+  });
+
+  it('deve lançar AppError 404 se item não existir', async () => {
+    OrderItem.findByPk.mockResolvedValue(null);
+
+    await expect(updateStatus(999, 'READY')).rejects.toMatchObject({
+      status: 404,
+      message: 'item do pedido não encontrado',
+    });
+  });
+});
+
+describe('claimDelivery', () => {
+  it('deve assumir a entrega com sucesso', async () => {
+    const item = {
+      id: 1,
+      OrderId: 10,
+      status: 'READY',
+      deliveredById: null,
+      Order: { table: 3, companyId: 1 },
+      Product: { name: 'Pizza' },
+      update: vi.fn().mockResolvedValue(true),
+    };
+    OrderItem.findByPk.mockResolvedValue(item);
+
+    const result = await claimDelivery(1, { userId: 42, name: 'Garçom João' });
+
+    expect(item.update).toHaveBeenCalledWith(
+      { status: 'DELIVERING', deliveredById: 42 },
+      expect.any(Object)
+    );
+    expect(result.id).toBe(1);
+  });
+
+  it('deve lançar erro 409 se outro garçom já tiver assumido a entrega', async () => {
+    const item = {
+      id: 1,
+      status: 'DELIVERING',
+      deliveredById: 99,
+      Order: { table: 3 },
+      update: vi.fn(),
+    };
+    OrderItem.findByPk.mockResolvedValue(item);
+
+    await expect(claimDelivery(1, { userId: 42, name: 'Garçom João' })).rejects.toMatchObject({
+      status: 409,
+      message: 'este item já foi assumido por outro garçom',
+    });
+  });
+
+  it('deve lançar erro 400 se o item já foi entregue', async () => {
+    const item = {
+      id: 1,
+      status: 'DELIVERED',
+      Order: { table: 3 },
+      update: vi.fn(),
+    };
+    OrderItem.findByPk.mockResolvedValue(item);
+
+    await expect(claimDelivery(1, { userId: 42, name: 'Garçom João' })).rejects.toMatchObject({
+      status: 400,
+      message: 'este item já foi entregue na mesa',
     });
   });
 });
