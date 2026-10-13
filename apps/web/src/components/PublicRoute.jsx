@@ -8,6 +8,9 @@ export function PublicRoute({ children }) {
   if (loading) return <LoadingSpinner />;
 
   if (user) {
+    if (user.isSuperAdmin) {
+      return <Navigate to="/superadmin" replace />;
+    }
     return <Navigate to={user.role === 'ADMIN' ? '/admin' : '/waiter'} replace />;
   }
 

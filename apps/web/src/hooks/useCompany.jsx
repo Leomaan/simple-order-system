@@ -26,7 +26,12 @@ export function useCompany() {
       setErrorMsg('');
     },
     onError: (err) => {
-      setErrorMsg(err.response?.data?.message || 'Erro ao criar empresa');
+      const msg = err.response?.data?.message;
+      if (Array.isArray(msg)) {
+        setErrorMsg(msg.join(' | '));
+      } else {
+        setErrorMsg(msg || 'Erro ao criar empresa');
+      }
     },
   });
 
@@ -62,5 +67,11 @@ export function useCompany() {
     toggleStatus: toggleStatusMutation.mutate,
     isToggling: toggleStatusMutation.isPending,
     impersonate,
+    exitImpersonate: async () => {
+      try {
+        await api.post('/company/exit-impersonate');
+      } catch {}
+      window.location.href = '/superadmin';
+    },
   };
 }

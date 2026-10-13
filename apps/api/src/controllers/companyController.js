@@ -1,3 +1,4 @@
+import jwt from 'jsonwebtoken';
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import * as companyService from '../services/companyService.js';
 
@@ -44,5 +45,35 @@ export const impersonateCompany = asyncHandler(async (req, res) => {
       message: `Modo suporte ativado para ${result.company.name}`,
       company: result.company,
     },
+  });
+});
+
+export const exitImpersonate = asyncHandler(async (req, res) => {
+  const isProduction = process.env.NODE_ENV === 'production';
+  const cleanName = (req.user?.name || 'SuperAdmin').replace(/\s*\(Suporte:.*\)$/, '');
+  
+  const token = jwt.sign(
+    {
+      userId: req.user.userId || req.user.id,
+      name: cleanName,
+      role: 'ADMIN',
+      companyId: null,
+      isSuperAdmin: true,
+      impersonating: false,
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: '15m' }
+  );
+
+  res.cookie('accessToken', token, {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? (process.env.COOKIE_SAME_SITE || 'none') : 'lax',
+    maxAge: 15 * 60 * 1000,
+  });
+
+  res.status(200).json({
+    success: true,
+    data: { message: 'Modo suporte desativado com sucesso' },
   });
 });

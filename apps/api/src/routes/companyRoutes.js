@@ -16,5 +16,6 @@ router.post('/', validate(CreateCompanySchema), companyController.createCompany)
 router.put('/:id', validateId, validate(UpdateCompanySchema), companyController.updateCompany);
 router.patch('/:id/toggle-status', validateId, companyController.toggleCompanyStatus);
 router.post('/:id/impersonate', validateId, companyController.impersonateCompany);
+router.post('/exit-impersonate', companyController.exitImpersonate);
 
 export default router;

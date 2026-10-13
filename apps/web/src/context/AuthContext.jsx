@@ -71,6 +71,8 @@ export function AuthProvider({ children }) {
     } catch {}
     localStorage.removeItem('role');
     localStorage.removeItem('name');
+    localStorage.removeItem('isSuperAdmin');
+    localStorage.removeItem('companyId');
     localStorage.removeItem('csrfToken');
     queryClient.clear();
     setUser(null);

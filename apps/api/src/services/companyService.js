@@ -10,6 +10,11 @@ export async function listCompanies() {
         model: ProductionStation,
         attributes: ['id', 'name', 'slug', 'color', 'active'],
       },
+      {
+        model: User,
+        attributes: ['id', 'name', 'email', 'role', 'active'],
+        required: false,
+      },
     ],
     order: [['createdAt', 'DESC']],
   });
@@ -21,6 +26,11 @@ export async function getCompanyById(id) {
       {
         model: ProductionStation,
         attributes: ['id', 'name', 'slug', 'color', 'active'],
+      },
+      {
+        model: User,
+        attributes: ['id', 'name', 'email', 'role', 'active'],
+        required: false,
       },
     ],
   });

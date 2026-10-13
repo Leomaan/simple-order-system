@@ -56,7 +56,7 @@ export async function login(email, password, ip) {
   };
 }
 
-export async function refresh(token) {
+export async function refresh(token, impersonatedCompanyId = null) {
   if (!token) throw new AppError('refresh token não fornecido', 401);
 
   const stored = await RefreshToken.findOne({ where: { token }, include: [User] });
@@ -68,12 +68,21 @@ export async function refresh(token) {
   }
   if (!stored.User.active) throw new AppError('usuário inativo', 401);
 
-  const accessToken = generateAccessToken(stored.User);
+  const effectiveCompanyId = (stored.User.isSuperAdmin && impersonatedCompanyId)
+    ? impersonatedCompanyId
+    : (stored.User.companyId || null);
+
+  const userPayload = {
+    ...(typeof stored.User.toJSON === 'function' ? stored.User.toJSON() : stored.User),
+    companyId: effectiveCompanyId,
+  };
+
+  const accessToken = generateAccessToken(userPayload);
   return { 
     accessToken, 
     role: stored.User.role, 
-    name: stored.User.name,
-    companyId: stored.User.companyId || null,
+    name: stored.User.name, 
+    companyId: effectiveCompanyId,
     isSuperAdmin: !!stored.User.isSuperAdmin
   };
 }
