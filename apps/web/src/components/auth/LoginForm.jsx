@@ -15,13 +15,13 @@ export default function LoginForm() {
   }
 
   return (
-    <div className="glass-panel rounded-2xl p-8 border border-neutral-800 shadow-xl w-full">
+    <div className="bg-white dark:bg-neutral-900 rounded-2xl p-6 sm:p-8 border border-neutral-200 dark:border-neutral-800 shadow-xl w-full text-neutral-900 dark:text-neutral-100">
       <div className="mb-6">
-        <h2 className="text-white font-bold text-xl tracking-tight">Login</h2>
-        <p className="text-neutral-500 text-xs mt-1">Identifique-se para acessar o sistema</p>
+        <h2 className="text-neutral-900 dark:text-white font-bold text-xl tracking-tight">Login</h2>
+        <p className="text-neutral-500 dark:text-neutral-400 text-xs mt-1">Identifique-se para acessar o sistema</p>
       </div>
 
-      <form onSubmit={onSubmit} className="flex flex-col gap-5">
+      <form onSubmit={onSubmit} className="flex flex-col gap-4">
         <Input
           label="E-mail"
           type="email"
@@ -53,16 +53,16 @@ export default function LoginForm() {
       </form>
 
       {/* Demo Credentials Section */}
-      <div className="mt-6 pt-6 border-t border-neutral-800 flex flex-col gap-3">
-        <p className="text-center text-neutral-500 text-[10px] font-bold uppercase tracking-wider select-none">
+      <div className="mt-6 pt-5 border-t border-neutral-200 dark:border-neutral-800 flex flex-col gap-2.5">
+        <p className="text-center text-neutral-500 dark:text-neutral-400 text-[10px] font-bold uppercase tracking-wider select-none">
           Acesso Rápido (Demonstração)
         </p>
-        <div className="grid grid-cols-2 gap-2.5">
+        <div className="grid grid-cols-2 gap-2">
           <button
             type="button"
             onClick={() => handleLogin('admin@restaurant.com', 'admin123')}
             disabled={loading}
-            className="py-2.5 px-3 bg-neutral-900 border border-neutral-800 hover:bg-neutral-800 text-neutral-350 hover:text-white rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer text-center select-none active:scale-[0.97]"
+            className="py-2 px-3 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 dark:bg-neutral-800 dark:hover:bg-neutral-750 dark:text-neutral-200 border border-neutral-200 dark:border-neutral-700 rounded-xl text-xs font-semibold transition-all duration-200 cursor-pointer text-center select-none active:scale-[0.97]"
           >
             Admin Demo
           </button>
@@ -70,7 +70,7 @@ export default function LoginForm() {
             type="button"
             onClick={() => handleLogin('waiter@restaurant.com', 'waiter123')}
             disabled={loading}
-            className="py-2.5 px-3 bg-neutral-900 border border-neutral-800 hover:bg-neutral-800 text-neutral-350 hover:text-white rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer text-center select-none active:scale-[0.97]"
+            className="py-2 px-3 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 dark:bg-neutral-800 dark:hover:bg-neutral-750 dark:text-neutral-200 border border-neutral-200 dark:border-neutral-700 rounded-xl text-xs font-semibold transition-all duration-200 cursor-pointer text-center select-none active:scale-[0.97]"
           >
             Garçom Demo
           </button>
