@@ -10,13 +10,13 @@ export default function Button({
   className = '',
   ...props
 }) {
-  const baseStyles = 'inline-flex items-center justify-center font-semibold rounded-xl text-sm transition-all duration-200 cursor-pointer outline-none focus:ring-2 focus:ring-neutral-400/50 dark:focus:ring-neutral-600/50 disabled:opacity-50 disabled:cursor-not-allowed select-none active:scale-[0.98]';
+  const baseStyles = 'inline-flex items-center justify-center font-semibold rounded-xl text-sm transition-all duration-200 cursor-pointer outline-none focus:ring-2 focus:ring-orange-500/40 disabled:opacity-50 disabled:cursor-not-allowed select-none active:scale-[0.98]';
   
   const variants = {
-    primary: 'bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-neutral-100 dark:hover:bg-neutral-200 dark:text-neutral-900 shadow-sm py-2.5 px-5',
-    secondary: 'bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border border-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-750 dark:text-neutral-200 dark:border-neutral-700 py-2.5 px-5 shadow-sm',
+    primary: 'bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white shadow-sm shadow-orange-950/20 py-2.5 px-5',
+    secondary: 'bg-[#ede8df] hover:bg-[#e4ded3] text-stone-800 border border-[#d8d2c4] dark:bg-[#26262e] dark:hover:bg-[#30303a] dark:text-[#ececf0] dark:border-[#3e3e4a] py-2.5 px-5 shadow-xs',
     danger: 'bg-red-600 hover:bg-red-500 text-white shadow-sm py-2.5 px-5',
-    ghost: 'bg-transparent hover:bg-neutral-100 text-neutral-600 dark:hover:bg-neutral-800 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white py-2 px-4',
+    ghost: 'bg-transparent hover:bg-stone-200/60 dark:hover:bg-[#26262e] text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 py-2 px-4',
   };
 
   return (

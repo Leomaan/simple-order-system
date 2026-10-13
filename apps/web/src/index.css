@@ -6,6 +6,17 @@
 @theme {
   --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   
+  --color-primary-50: #fff7ed;
+  --color-primary-100: #ffedd5;
+  --color-primary-200: #fed7aa;
+  --color-primary-300: #fdba74;
+  --color-primary-400: #fb923c;
+  --color-primary-500: #f97316;
+  --color-primary-600: #ea580c;
+  --color-primary-700: #c2410c;
+  --color-primary-800: #9a3412;
+  --color-primary-900: #7c2d12;
+  
   --animate-fade-in: fade-in 0.2s ease-out;
   --animate-slide-up: slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   --animate-scale-in: scale-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
@@ -39,17 +50,19 @@
     transition: background-color 0.2s ease, color 0.2s ease;
   }
 
+  /* Modo Dark: Tom grafite profundo, calmo e sem contraste extremo */
   html.dark body {
-    background-color: #09090b;
-    color: #f4f4f5;
+    background-color: #121215;
+    color: #ececf0;
   }
 
+  /* Modo Light: Bege moderno, editorial e extremamente agradável aos olhos */
   html.light body {
-    background-color: #f8fafc;
-    color: #0f172a;
+    background-color: #f7f4ee;
+    color: #1c1917;
   }
 
-  /* Scrollbar styling */
+  /* Scrollbar suave e elegante */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -58,17 +71,68 @@
     background: transparent;
   }
   html.dark ::-webkit-scrollbar-thumb {
-    background: #27272a;
+    background: #363640;
     border-radius: 9999px;
   }
   html.light ::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
+    background: #d6d0c4;
     border-radius: 9999px;
+  }
+
+  /* Universal Form Input Styling: Conforto e Harmonia Visual */
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  /* Modo Dark: Campos NUNCA pretos puros; superfície elevada e confortável */
+  html.dark input:not([type="checkbox"]):not([type="radio"]),
+  html.dark select,
+  html.dark textarea {
+    background-color: #26262e !important;
+    border-color: #3e3e4a !important;
+    color: #ececf0 !important;
+  }
+
+  html.dark input::placeholder,
+  html.dark textarea::placeholder {
+    color: #838392 !important;
+  }
+
+  html.dark input:focus,
+  html.dark select:focus,
+  html.dark textarea:focus {
+    border-color: #f97316 !important;
+    outline: none !important;
+    box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.25) !important;
+  }
+
+  /* Modo Light: Fundo limpo suave e bordas areia/bege */
+  html.light input:not([type="checkbox"]):not([type="radio"]),
+  html.light select,
+  html.light textarea {
+    background-color: #ffffff !important;
+    border-color: #d8d2c4 !important;
+    color: #1c1917 !important;
+  }
+
+  html.light input::placeholder,
+  html.light textarea::placeholder {
+    color: #a39e94 !important;
+  }
+
+  html.light input:focus,
+  html.light select:focus,
+  html.light textarea:focus {
+    border-color: #f97316 !important;
+    outline: none !important;
+    box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2) !important;
   }
 
   /* Suporte universal ao modo claro para compatibilidade de componentes legados */
   html.light .bg-neutral-950 {
-    background-color: #f8fafc !important;
+    background-color: #f7f4ee !important;
   }
 
   html.light .bg-neutral-900 {
@@ -77,26 +141,26 @@
 
   html.light .bg-neutral-850,
   html.light .bg-neutral-800 {
-    background-color: #f1f5f9 !important;
+    background-color: #eee9df !important;
   }
 
   html.light .hover\:bg-neutral-800:hover,
   html.light .hover\:bg-neutral-800\/60:hover,
   html.light .hover\:bg-neutral-800\/40:hover {
-    background-color: #e2e8f0 !important;
+    background-color: #e5dfd3 !important;
   }
 
   html.light .border-neutral-800,
   html.light .border-neutral-750,
   html.light .border-neutral-700 {
-    border-color: #e2e8f0 !important;
+    border-color: #e4ded4 !important;
   }
 
   html.light .divide-neutral-800 > :not([hidden]) ~ :not([hidden]) {
-    border-color: #e2e8f0 !important;
+    border-color: #e4ded4 !important;
   }
 
-  /* Textos em modo claro */
+  /* Textos em modo claro com harmonia stone/carvão */
   html.light h1.text-white,
   html.light h2.text-white,
   html.light h3.text-white,
@@ -105,40 +169,66 @@
   html.light .font-semibold.text-white,
   html.light td .text-white,
   html.light th.text-white {
-    color: #0f172a !important;
+    color: #1c1917 !important;
   }
 
   html.light .text-neutral-100 {
-    color: #0f172a !important;
+    color: #1c1917 !important;
   }
 
   html.light .text-neutral-200 {
-    color: #1e293b !important;
+    color: #292524 !important;
   }
 
   html.light .text-neutral-300 {
-    color: #334155 !important;
+    color: #44403c !important;
   }
 
   html.light .text-neutral-400 {
-    color: #64748b !important;
+    color: #78716c !important;
   }
 
   html.light .text-neutral-500,
   html.light .text-neutral-550 {
-    color: #94a3b8 !important;
+    color: #a8a29e !important;
   }
+}
 
-  html.light input:not([type="checkbox"]):not([type="radio"]),
-  html.light select,
-  html.light textarea {
-    background-color: #ffffff !important;
-    border-color: #e2e8f0 !important;
-    color: #0f172a !important;
-  }
+/* Glassmorphism helpers com estética premium moderna */
+html.dark .glass-panel {
+  background: rgba(26, 26, 32, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
 
-  html.light input::placeholder,
-  html.light textarea::placeholder {
-    color: #94a3b8 !important;
-  }
+html.light .glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(228, 222, 212, 0.85);
+}
+
+html.dark .glass-card {
+  background: linear-gradient(135deg, rgba(30, 30, 38, 0.7) 0%, rgba(20, 20, 26, 0.85) 100%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+html.light .glass-card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(250, 248, 243, 0.85) 100%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(228, 222, 212, 0.8);
+}
+
+.glass-card-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card-hover:hover {
+  transform: translateY(-2px);
+  border-color: rgba(249, 115, 22, 0.25);
+  box-shadow: 0 12px 20px -10px rgba(0, 0, 0, 0.3), 0 0 15px -3px rgba(249, 115, 22, 0.08);
 }
