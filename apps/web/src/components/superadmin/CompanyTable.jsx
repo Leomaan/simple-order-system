@@ -4,7 +4,7 @@ import { Building2, ExternalLink, CheckCircle2, XCircle, UserCheck } from 'lucid
 export default function CompanyTable({ companies, onImpersonate, onToggleStatus }) {
   if (companies.length === 0) {
     return (
-      <div className="p-12 text-center text-neutral-500 dark:text-neutral-400 text-sm">
+      <div className="p-12 text-center text-stone-500 dark:text-stone-400 text-sm">
         Nenhum estabelecimento cadastrado até o momento.
       </div>
     );
@@ -13,7 +13,7 @@ export default function CompanyTable({ companies, onImpersonate, onToggleStatus 
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-left text-xs sm:text-sm">
-        <thead className="bg-neutral-50 dark:bg-neutral-950/60 text-neutral-500 dark:text-neutral-400 border-b border-neutral-200 dark:border-neutral-800">
+        <thead className="bg-[#f5f2ea] dark:bg-[#202026] text-stone-600 dark:text-stone-400 border-b border-[#e4ded4] dark:border-[#2e2e38]">
           <tr>
             <th className="py-3.5 px-5 font-semibold">Estabelecimento</th>
             <th className="py-3.5 px-5 font-semibold">Dono / Administrador</th>
@@ -23,20 +23,20 @@ export default function CompanyTable({ companies, onImpersonate, onToggleStatus 
             <th className="py-3.5 px-5 font-semibold text-right">Ações</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-neutral-200 dark:divide-neutral-800">
+        <tbody className="divide-y divide-[#e4ded4] dark:divide-[#2e2e38]">
           {companies.map((company) => {
             const owner = company.Users?.find(u => u.role === 'ADMIN') || company.Users?.[0];
 
             return (
-              <tr key={company.id} className="hover:bg-neutral-50/80 dark:hover:bg-neutral-850/40 transition">
+              <tr key={company.id} className="hover:bg-[#f7f4ee]/70 dark:hover:bg-[#202028] transition">
                 <td className="py-3.5 px-5">
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-750 flex items-center justify-center font-bold text-neutral-700 dark:text-neutral-300 shrink-0">
-                      <Building2 className="w-4 h-4 text-neutral-600 dark:text-neutral-300" />
+                    <div className="w-9 h-9 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center font-bold text-orange-500 shrink-0">
+                      <Building2 className="w-4 h-4" />
                     </div>
                     <div className="min-w-0">
-                      <div className="font-semibold text-neutral-900 dark:text-white truncate">{company.name}</div>
-                      <div className="text-neutral-500 dark:text-neutral-400 text-[11px] truncate">
+                      <div className="font-semibold text-[#1c1917] dark:text-white truncate">{company.name}</div>
+                      <div className="text-stone-500 dark:text-stone-400 text-[11px] truncate">
                         CNPJ: {company.cnpj || 'Não informado'}
                       </div>
                     </div>
@@ -46,18 +46,18 @@ export default function CompanyTable({ companies, onImpersonate, onToggleStatus 
                 <td className="py-3.5 px-5">
                   {owner ? (
                     <div className="flex items-center gap-2">
-                      <UserCheck className="w-4 h-4 text-neutral-400 shrink-0" />
+                      <UserCheck className="w-4 h-4 text-orange-500/80 shrink-0" />
                       <div className="min-w-0">
-                        <div className="font-medium text-neutral-800 dark:text-neutral-200 text-xs truncate">
+                        <div className="font-medium text-stone-800 dark:text-stone-200 text-xs truncate">
                           {owner.name}
                         </div>
-                        <div className="text-[11px] text-neutral-500 dark:text-neutral-400 truncate">
+                        <div className="text-[11px] text-stone-500 dark:text-stone-400 truncate">
                           {owner.email}
                         </div>
                       </div>
                     </div>
                   ) : (
-                    <span className="text-neutral-400 text-xs italic">Sem admin vinculado</span>
+                    <span className="text-stone-400 text-xs italic">Sem admin vinculado</span>
                   )}
                 </td>
 
@@ -66,10 +66,10 @@ export default function CompanyTable({ companies, onImpersonate, onToggleStatus 
                     href={`/cardapio/${company.slug}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 text-xs text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white bg-neutral-100 dark:bg-neutral-800 px-2.5 py-1 rounded-lg border border-neutral-200 dark:border-neutral-700"
+                    className="inline-flex items-center gap-1.5 text-xs text-stone-700 dark:text-stone-300 hover:text-[#1c1917] dark:hover:text-white bg-[#ede8df] hover:bg-[#e4ded3] dark:bg-[#26262e] dark:hover:bg-[#30303a] px-2.5 py-1 rounded-lg border border-[#d8d2c4] dark:border-[#3e3e4a] transition"
                   >
                     <span>/{company.slug}</span>
-                    <ExternalLink className="w-3 h-3 text-neutral-400" />
+                    <ExternalLink className="w-3 h-3 text-stone-400" />
                   </a>
                 </td>
 
@@ -78,7 +78,7 @@ export default function CompanyTable({ companies, onImpersonate, onToggleStatus 
                     {company.ProductionStations?.map((st) => (
                       <span
                         key={st.id}
-                        className="px-2 py-0.5 rounded text-[11px] text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700"
+                        className="px-2 py-0.5 rounded text-[11px] text-stone-700 dark:text-stone-300 bg-[#ede8df] dark:bg-[#26262e] border border-[#d8d2c4] dark:border-[#3e3e4a]"
                       >
                         {st.name}
                       </span>
@@ -101,17 +101,19 @@ export default function CompanyTable({ companies, onImpersonate, onToggleStatus 
                 <td className="py-3.5 px-5 text-right">
                   <div className="flex items-center justify-end gap-2">
                     <button
+                      type="button"
                       onClick={() => onImpersonate(company.id)}
-                      className="text-xs px-3 py-1.5 rounded-lg font-semibold bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-neutral-100 dark:hover:bg-neutral-200 dark:text-neutral-900 transition shadow-sm cursor-pointer"
+                      className="text-xs px-3.5 py-1.5 rounded-xl font-semibold bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white transition shadow-xs cursor-pointer active:scale-95"
                       title="Entrar no painel da empresa em modo suporte"
                     >
                       Acessar Loja
                     </button>
                     <button
+                      type="button"
                       onClick={() => onToggleStatus(company.id)}
-                      className={`text-xs px-2.5 py-1.5 rounded-lg font-medium border transition cursor-pointer ${
+                      className={`text-xs px-2.5 py-1.5 rounded-xl font-medium border transition cursor-pointer active:scale-95 ${
                         company.active
-                          ? 'border-neutral-200 dark:border-neutral-700 hover:border-red-500/30 hover:bg-red-500/5 text-neutral-600 dark:text-neutral-400 hover:text-red-500'
+                          ? 'border-[#d8d2c4] dark:border-[#3e3e4a] hover:border-red-500/40 hover:bg-red-500/5 text-stone-600 dark:text-stone-400 hover:text-red-500'
                           : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20'
                       }`}
                     >

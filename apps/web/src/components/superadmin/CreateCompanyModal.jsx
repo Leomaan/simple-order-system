@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import { Building2, User, X } from 'lucide-react';
+import Input from '../ui/Input';
+import Button from '../ui/Button';
+import { filterSlug } from '../../utils/inputFilters';
 
 export default function CreateCompanyModal({ isOpen, onClose, onSubmit, isSubmitting, errorMsg }) {
   const [formData, setFormData] = useState({
@@ -12,7 +15,25 @@ export default function CreateCompanyModal({ isOpen, onClose, onSubmit, isSubmit
     adminName: '',
   });
 
+  const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
+
   if (!isOpen) return null;
+
+  const handleNameChange = (e) => {
+    const val = e.target.value;
+    setFormData((prev) => {
+      const next = { ...prev, name: val };
+      if (!slugManuallyEdited) {
+        next.slug = filterSlug(val);
+      }
+      return next;
+    });
+  };
+
+  const handleSlugChange = (e) => {
+    setSlugManuallyEdited(true);
+    setFormData((prev) => ({ ...prev, slug: e.target.value }));
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -31,22 +52,23 @@ export default function CreateCompanyModal({ isOpen, onClose, onSubmit, isSubmit
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl w-full max-w-lg p-6 space-y-5 shadow-xl text-neutral-900 dark:text-neutral-100">
+      <div className="bg-[#fcfbf9] dark:bg-[#1a1a20] border border-[#e4ded4] dark:border-[#2e2e38] rounded-2xl w-full max-w-lg p-6 space-y-5 shadow-2xl text-[#1c1917] dark:text-[#ececf0]">
         
         {/* Modal Header */}
-        <div className="flex justify-between items-center pb-3 border-b border-neutral-200 dark:border-neutral-800">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 flex items-center justify-center">
-              <Building2 className="w-4 h-4 text-neutral-700 dark:text-neutral-300" />
+        <div className="flex justify-between items-center pb-3 border-b border-[#e4ded4] dark:border-[#2e2e38]">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-500">
+              <Building2 className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-neutral-900 dark:text-white">Cadastrar Estabelecimento</h3>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">Novo cliente e conta do dono do restaurante</p>
+              <h3 className="text-base font-bold text-[#1c1917] dark:text-white">Cadastrar Estabelecimento</h3>
+              <p className="text-xs text-stone-500 dark:text-stone-400">Novo restaurante e conta de acesso do proprietário</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition cursor-pointer"
+            type="button"
+            className="p-1.5 rounded-lg text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-200/50 dark:hover:bg-[#26262e] transition cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -61,132 +83,107 @@ export default function CreateCompanyModal({ isOpen, onClose, onSubmit, isSubmit
         <form onSubmit={handleSubmit} className="space-y-4">
           
           {/* Dados do Restaurante */}
-          <div className="space-y-3">
-            <div>
-              <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
-                Nome Fantasia do Estabelecimento *
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.name}
-                onChange={(e) => {
-                  const name = e.target.value;
-                  const slug = name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
-                  setFormData({ ...formData, name, slug });
-                }}
-                placeholder="Ex: Cantina Bella Vista"
-                className="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-3.5 py-2 text-xs sm:text-sm text-neutral-900 dark:text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-400 dark:focus:ring-neutral-600"
-              />
-            </div>
+          <div className="space-y-3.5">
+            <Input
+              label="Nome Fantasia do Estabelecimento *"
+              name="name"
+              required
+              value={formData.name}
+              onChange={handleNameChange}
+              filter="text"
+              placeholder="Ex: Cantina Bella Vista"
+            />
 
-            <div>
-              <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
-                Slug do Cardápio Público (/cardapio/:slug) *
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.slug}
-                onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase() })}
-                placeholder="ex: cantina-bella-vista"
-                className="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-3.5 py-2 text-xs sm:text-sm text-neutral-900 dark:text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-400 dark:focus:ring-neutral-600"
-              />
-            </div>
+            <Input
+              label="Slug do Cardápio Público (/cardapio/:slug) *"
+              name="slug"
+              required
+              value={formData.slug}
+              onChange={handleSlugChange}
+              filter="slug"
+              placeholder="cantina-bella-vista"
+              helperText="Identificador único para a URL pública do restaurante"
+            />
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1">CNPJ</label>
-                <input
-                  type="text"
-                  value={formData.cnpj}
-                  onChange={(e) => setFormData({ ...formData, cnpj: e.target.value })}
-                  placeholder="00.000.000/0001-00"
-                  className="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-3 py-2 text-xs text-neutral-900 dark:text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-400 dark:focus:ring-neutral-600"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1">Telefone / WhatsApp</label>
-                <input
-                  type="text"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="(11) 99999-9999"
-                  className="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-3 py-2 text-xs text-neutral-900 dark:text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-400 dark:focus:ring-neutral-600"
-                />
-              </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Input
+                label="CNPJ"
+                name="cnpj"
+                value={formData.cnpj}
+                onChange={(e) => setFormData((prev) => ({ ...prev, cnpj: e.target.value }))}
+                filter="cnpj"
+                placeholder="00.000.000/0001-00"
+              />
+              <Input
+                label="Telefone / WhatsApp"
+                name="phone"
+                value={formData.phone}
+                onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
+                filter="phone"
+                placeholder="(11) 99999-9999"
+              />
             </div>
           </div>
 
           {/* Dados do Dono / Administrador */}
-          <div className="pt-3 border-t border-neutral-200 dark:border-neutral-800 space-y-3">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-neutral-800 dark:text-neutral-200 uppercase tracking-wider">
-              <User className="w-3.5 h-3.5" />
-              <span>Acesso do Dono / Administrador da Loja</span>
+          <div className="pt-3.5 border-t border-[#e4ded4] dark:border-[#2e2e38] space-y-3.5">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-stone-800 dark:text-stone-200 uppercase tracking-wider">
+              <User className="w-3.5 h-3.5 text-orange-500" />
+              <span>Acesso do Dono / Administrador</span>
             </div>
-            <p className="text-[11px] text-neutral-500 dark:text-neutral-400 -mt-1">
-              O dono usará este e-mail e senha para logar no painel administrativo do seu restaurante.
+            <p className="text-[11px] text-stone-500 dark:text-stone-400 -mt-1">
+              O proprietário usará este e-mail e senha para gerenciar o cardápio e os pedidos.
             </p>
 
-            <div>
-              <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">
-                Nome do Dono / Responsável
-              </label>
-              <input
-                type="text"
-                value={formData.adminName}
-                onChange={(e) => setFormData({ ...formData, adminName: e.target.value })}
-                placeholder="Ex: Marcos Silva"
-                className="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-3.5 py-2 text-xs sm:text-sm text-neutral-900 dark:text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-400 dark:focus:ring-neutral-600"
-              />
-            </div>
+            <Input
+              label="Nome do Dono / Responsável"
+              name="adminName"
+              value={formData.adminName}
+              onChange={(e) => setFormData((prev) => ({ ...prev, adminName: e.target.value }))}
+              filter="text"
+              placeholder="Ex: Marcos Silva"
+            />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">
-                  E-mail de Login do Dono *
-                </label>
-                <input
-                  type="email"
-                  required
-                  value={formData.adminEmail}
-                  onChange={(e) => setFormData({ ...formData, adminEmail: e.target.value })}
-                  placeholder="dono@restaurante.com"
-                  className="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-3 py-2 text-xs sm:text-sm text-neutral-900 dark:text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-400 dark:focus:ring-neutral-600"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">
-                  Senha Inicial *
-                </label>
-                <input
-                  type="password"
-                  required
-                  value={formData.adminPassword}
-                  onChange={(e) => setFormData({ ...formData, adminPassword: e.target.value })}
-                  placeholder="Mínimo 4 caracteres"
-                  className="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-3 py-2 text-xs sm:text-sm text-neutral-900 dark:text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-400 dark:focus:ring-neutral-600"
-                />
-              </div>
+              <Input
+                label="E-mail de Login do Dono *"
+                name="adminEmail"
+                type="email"
+                required
+                value={formData.adminEmail}
+                onChange={(e) => setFormData((prev) => ({ ...prev, adminEmail: e.target.value }))}
+                filter="email"
+                placeholder="dono@restaurante.com"
+              />
+              <Input
+                label="Senha Inicial *"
+                name="adminPassword"
+                type="password"
+                required
+                value={formData.adminPassword}
+                onChange={(e) => setFormData((prev) => ({ ...prev, adminPassword: e.target.value }))}
+                placeholder="Mínimo 4 caracteres"
+              />
             </div>
           </div>
 
           {/* Botões de Ação */}
-          <div className="flex justify-end gap-3 pt-3 border-t border-neutral-200 dark:border-neutral-800">
-            <button
+          <div className="flex justify-end gap-3 pt-3 border-t border-[#e4ded4] dark:border-[#2e2e38]">
+            <Button
               type="button"
+              variant="secondary"
               onClick={onClose}
-              className="px-4 py-2 border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-300 rounded-xl text-xs sm:text-sm font-medium transition cursor-pointer"
+              disabled={isSubmitting}
             >
               Cancelar
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
-              disabled={isSubmitting}
-              className="px-5 py-2 bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-neutral-100 dark:hover:bg-neutral-200 dark:text-neutral-900 rounded-xl text-xs sm:text-sm font-bold transition shadow-sm disabled:opacity-50 cursor-pointer"
+              variant="primary"
+              loading={isSubmitting}
             >
-              {isSubmitting ? 'Cadastrando...' : 'Criar Estabelecimento'}
-            </button>
+              Criar Estabelecimento
+            </Button>
           </div>
         </form>
       </div>
