@@ -35,7 +35,7 @@ export default function KDS() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 p-4 sm:p-6 flex flex-col font-sans select-none transition-colors">
+    <div className="min-h-screen bg-[#f7f4ee] dark:bg-[#121215] text-[#1c1917] dark:text-[#ececf0] p-4 sm:p-6 flex flex-col font-sans select-none transition-colors">
       
       {/* Top Bar e Filtros com Botão Voltar */}
       <KDSHeader

@@ -100,7 +100,7 @@ export default function MenuPage() {
   };
 
   return (
-    <main className="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col selection:bg-orange-500/30">
+    <main className="min-h-screen bg-[#f7f4ee] dark:bg-[#121215] text-[#1c1917] dark:text-[#ececf0] flex flex-col selection:bg-orange-500/30 transition-colors">
       {/* 1. Topo Centralizado: Informações do Restaurante */}
       <RestaurantHeader
         slug={slug}

@@ -28,19 +28,20 @@ export default function Admin() {
   const Section = sections[active];
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex flex-col font-sans antialiased text-neutral-900 dark:text-neutral-100">
+    <div className="min-h-screen bg-[#f7f4ee] dark:bg-[#121215] flex flex-col font-sans antialiased text-[#1c1917] dark:text-[#ececf0] transition-colors">
       {user?.isSuperAdmin && (
-        <div className="bg-neutral-100 dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800 px-4 py-2.5 flex items-center justify-between text-xs text-neutral-700 dark:text-neutral-300 select-none">
+        <div className="bg-[#ede8df] dark:bg-[#1a1a20] border-b border-[#e4ded4] dark:border-[#2e2e38] px-4 py-2.5 flex items-center justify-between text-xs text-stone-700 dark:text-stone-300 select-none">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <ShieldCheck className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
+            <ShieldCheck className="w-4 h-4 text-orange-500" />
             <span>
               Você está visualizando a loja em <strong>Modo Suporte Superadmin</strong>.
             </span>
           </div>
           <button
             onClick={exitImpersonate}
-            className="flex items-center gap-1.5 px-3 py-1 bg-white hover:bg-neutral-100 dark:bg-neutral-800 dark:hover:bg-neutral-750 text-neutral-800 dark:text-neutral-200 border border-neutral-200 dark:border-neutral-700 font-semibold rounded-lg transition active:scale-95 cursor-pointer shadow-sm text-xs"
+            type="button"
+            className="flex items-center gap-1.5 px-3 py-1 bg-white hover:bg-stone-100 dark:bg-[#26262e] dark:hover:bg-[#30303a] text-stone-800 dark:text-stone-200 border border-[#d8d2c4] dark:border-[#3e3e4a] font-semibold rounded-lg transition active:scale-95 cursor-pointer shadow-xs text-xs"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Voltar ao Superadmin</span>

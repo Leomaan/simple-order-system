@@ -15,7 +15,7 @@ export default function Waiter() {
   const Section = sections[active];
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex flex-col md:flex-row font-sans antialiased text-neutral-900 dark:text-neutral-100 transition-colors">
+    <div className="min-h-screen bg-[#f7f4ee] dark:bg-[#121215] flex flex-col md:flex-row font-sans antialiased text-[#1c1917] dark:text-[#ececf0] transition-colors">
       <Sidebar active={active} onNavigate={setActive} role={user?.role} />
       <main className="flex-1 overflow-y-auto">
         <Section />
