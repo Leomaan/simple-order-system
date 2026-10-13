@@ -39,14 +39,20 @@ export function useKDS() {
       }
     };
 
-    socket.on('order_created', handleNewItem);
-    socket.on('item_added', handleNewItem);
-    socket.on('item_status_changed', handleNewItem);
+    const events = [
+      'order:created',
+      'order_item:created',
+      'order_item:updated',
+      'item_status_changed',
+      'order_item:status_changed',
+      'order_created',
+      'item_added',
+    ];
+
+    events.forEach((evt) => socket.on(evt, handleNewItem));
 
     return () => {
-      socket.off('order_created', handleNewItem);
-      socket.off('item_added', handleNewItem);
-      socket.off('item_status_changed', handleNewItem);
+      events.forEach((evt) => socket.off(evt, handleNewItem));
     };
   }, [queryClient, audioEnabled]);
 
