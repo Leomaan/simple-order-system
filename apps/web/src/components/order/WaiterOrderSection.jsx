@@ -109,7 +109,9 @@ export default function WaiterOrderSection() {
         >
           <div className="flex-1 w-full">
             <Input
-              type="number"
+              type="text"
+              name="table"
+              filter="number"
               label="Número da mesa"
               value={table}
               onChange={(e) => setTable(e.target.value)}

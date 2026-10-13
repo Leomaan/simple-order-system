@@ -81,6 +81,8 @@ export default function SettingsSection() {
           <div className="max-w-md">
             <Input
               label="Nome do Estabelecimento"
+              name="restaurantName"
+              filter="text"
               value={restaurantName}
               onChange={(e) => setRestaurantName(e.target.value)}
               placeholder="Ex: Simple Order Pizzaria"

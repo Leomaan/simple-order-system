@@ -74,18 +74,18 @@ export default function CategoryManagerModal({ isOpen, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div 
-        className="bg-neutral-900 border border-neutral-800 text-neutral-100 rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        className="bg-white dark:bg-[#1a1a20] border border-[#e4ded4] dark:border-[#2e2e38] text-[#1c1917] dark:text-[#ececf0] rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div className="p-6 border-b border-neutral-800 flex items-center justify-between">
+        <div className="p-6 border-b border-[#e4ded4] dark:border-[#2e2e38] flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-orange-500/10 text-orange-500 flex items-center justify-center font-bold">
+            <div className="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-500 flex items-center justify-center font-bold">
               <Layers className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white tracking-tight">Gerenciar Categorias</h2>
-              <p className="text-xs text-neutral-400">Personalize os grupos de produtos do seu cardápio</p>
+              <h2 className="text-lg font-bold text-[#1c1917] dark:text-white tracking-tight">Gerenciar Categorias</h2>
+              <p className="text-xs text-stone-500 dark:text-stone-400">Personalize os grupos de produtos do seu cardápio</p>
             </div>
           </div>
           <button
@@ -93,7 +93,8 @@ export default function CategoryManagerModal({ isOpen, onClose }) {
               resetForm();
               onClose();
             }}
-            className="p-2 text-neutral-400 hover:text-white rounded-lg hover:bg-neutral-800 transition"
+            type="button"
+            className="p-2 text-stone-400 hover:text-stone-700 dark:hover:text-white rounded-lg hover:bg-stone-200/50 dark:hover:bg-[#26262e] transition"
           >
             <X className="w-5 h-5" />
           </button>
@@ -102,16 +103,16 @@ export default function CategoryManagerModal({ isOpen, onClose }) {
         {/* Modal Body */}
         <div className="p-6 overflow-y-auto space-y-6 flex-1">
           {/* Form */}
-          <form onSubmit={handleSubmit} className="p-4 rounded-xl bg-neutral-950/60 border border-neutral-800/80 space-y-4">
+          <form onSubmit={handleSubmit} className="p-4 rounded-xl bg-[#f7f4ee]/70 dark:bg-[#15151a] border border-[#e4ded4] dark:border-[#2e2e38] space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-neutral-300 uppercase tracking-wider">
+              <span className="text-xs font-semibold text-stone-700 dark:text-stone-300 uppercase tracking-wider">
                 {editingId ? 'Editar Categoria' : 'Nova Categoria'}
               </span>
               {editingId && (
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="text-xs text-neutral-400 hover:text-white underline cursor-pointer"
+                  className="text-xs text-stone-500 dark:text-stone-400 hover:text-orange-500 underline cursor-pointer"
                 >
                   Cancelar edição
                 </button>
@@ -122,6 +123,8 @@ export default function CategoryManagerModal({ isOpen, onClose }) {
               <div className="sm:col-span-2">
                 <Input
                   label="Nome da Categoria"
+                  name="name"
+                  filter="text"
                   placeholder="Ex: Cafés Especiais, Sobremesas..."
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -131,7 +134,9 @@ export default function CategoryManagerModal({ isOpen, onClose }) {
               <div>
                 <Input
                   label="Ordem (Índice)"
-                  type="number"
+                  name="orderIndex"
+                  filter="number"
+                  type="text"
                   placeholder="0"
                   value={orderIndex}
                   onChange={(e) => setOrderIndex(e.target.value)}

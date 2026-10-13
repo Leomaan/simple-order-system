@@ -179,6 +179,8 @@ export default function ProductSection() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
               label="Nome do produto"
+              name="name"
+              filter="text"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               required
@@ -186,9 +188,9 @@ export default function ProductSection() {
             />
             <Input
               label="Preço (R$)"
-              type="number"
-              step="0.01"
-              min="0"
+              name="price"
+              filter="decimal"
+              type="text"
               value={form.price}
               onChange={(e) => setForm({ ...form, price: e.target.value })}
               required
@@ -198,7 +200,7 @@ export default function ProductSection() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-2">
+              <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 uppercase tracking-wider mb-2">
                 Categoria
               </label>
               <select
@@ -212,7 +214,7 @@ export default function ProductSection() {
                     setForm({ ...form, categoryId: null, category: val });
                   }
                 }}
-                className="w-full bg-neutral-900 border border-neutral-800 text-white rounded-xl p-3 text-xs outline-none focus:border-orange-500 transition-colors"
+                className="w-full bg-[#fdfdfc] dark:bg-[#26262e] border border-[#d8d2c4] dark:border-[#3e3e4a] text-[#1c1917] dark:text-[#ececf0] rounded-xl p-3 text-xs outline-none focus:border-orange-500/80 focus:ring-2 focus:ring-orange-500/25 transition-all duration-200"
               >
                 {customCategories.length > 0 ? (
                   customCategories.map((cat) => (
@@ -306,7 +308,7 @@ export default function ProductSection() {
             placeholder="Buscar produto por nome..."
             value={searchQuery}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-neutral-900 border border-neutral-800 text-white rounded-xl py-2 pl-9 pr-8 text-xs outline-none focus:border-orange-500 transition-colors"
+            className="w-full bg-[#fdfdfc] dark:bg-[#26262e] border border-[#d8d2c4] dark:border-[#3e3e4a] text-[#1c1917] dark:text-[#ececf0] rounded-xl py-2 pl-9 pr-8 text-xs outline-none focus:border-orange-500/80 focus:ring-2 focus:ring-orange-500/25 transition-all"
           />
           <Search size={14} className="absolute left-3 top-2.5 text-neutral-500" />
           {searchQuery && (

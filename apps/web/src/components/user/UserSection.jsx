@@ -112,6 +112,8 @@ export default function UserSection() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
               label="Nome Completo"
+              name="name"
+              filter="text"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               required
@@ -121,6 +123,8 @@ export default function UserSection() {
             <Input
               label="E-mail"
               type="email"
+              name="email"
+              filter="email"
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
               required={!editing}
@@ -132,6 +136,7 @@ export default function UserSection() {
               <Input
                 label="Senha de Acesso"
                 type="password"
+                name="password"
                 value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
                 required
@@ -140,11 +145,11 @@ export default function UserSection() {
             )}
 
             <div className="flex flex-col gap-1.5 w-full">
-              <label className="text-neutral-450 text-xs font-bold uppercase tracking-wider select-none">Função / Cargo</label>
+              <label className="text-stone-700 dark:text-stone-300 text-xs font-semibold uppercase tracking-wider select-none">Função / Cargo</label>
               <select
                 value={form.role}
                 onChange={(e) => setForm({ ...form, role: e.target.value })}
-                className="w-full bg-neutral-900 border border-neutral-850 text-white rounded-xl py-2.5 px-4 text-sm outline-none focus:border-orange-500 transition-colors"
+                className="w-full bg-[#fdfdfc] dark:bg-[#26262e] border border-[#d8d2c4] dark:border-[#3e3e4a] text-[#1c1917] dark:text-[#ececf0] rounded-xl py-2.5 px-4 text-sm outline-none focus:border-orange-500/80 focus:ring-2 focus:ring-orange-500/25 transition-all duration-200"
               >
                 <option value="WAITER">Garçom</option>
                 <option value="ADMIN">Administrador</option>
