@@ -1,23 +1,28 @@
 require('dotenv').config();
 
+const useSsl = process.env.DB_SSL === 'true' || (process.env.DB_HOST && process.env.DB_HOST.includes('aivencloud.com'));
+const dialectOptions = useSsl ? { ssl: { rejectUnauthorized: false } } : {};
+
 module.exports = {
   development: {
     username: process.env.DB_USER || 'root',
     password: process.env.DB_PASS || '123456',
     database: process.env.DB_NAME || 'simple_order_system',
     host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 3307,
+    port: process.env.DB_PORT || 3306,
     dialect: 'mysql',
-    logging: process.env.DB_LOGGING === 'true' ? console.log : false
+    logging: process.env.DB_LOGGING === 'true' ? console.log : false,
+    dialectOptions
   },
   test: {
     username: process.env.DB_USER || 'root',
     password: process.env.DB_PASS || '123456',
     database: process.env.TEST_DB_NAME || 'simple_order_system_test',
     host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 3307,
+    port: process.env.DB_PORT || 3306,
     dialect: 'mysql',
-    logging: false
+    logging: false,
+    dialectOptions
   },
   production: {
     username: process.env.DB_USER,
@@ -26,6 +31,7 @@ module.exports = {
     host: process.env.DB_HOST,
     port: process.env.DB_PORT || 3306,
     dialect: 'mysql',
-    logging: process.env.DB_LOGGING === 'true' ? console.log : false
+    logging: process.env.DB_LOGGING === 'true' ? console.log : false,
+    dialectOptions
   }
 };

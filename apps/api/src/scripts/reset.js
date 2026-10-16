@@ -4,9 +4,13 @@ import { sequelize } from '../models/index.js';
 import User from '../models/user.js';
 
 const isProduction = process.env.NODE_ENV === 'production';
+const forceReset = process.argv.includes('--force') || process.env.ALLOW_RESET_PRODUCTION === 'true';
 
-if (isProduction) {
+if (isProduction && !forceReset) {
   console.error('ERRO CRÍTICO: Tentativa de resetar o banco em PRODUÇÃO bloqueada!');
+  console.error('Para confirmar o reset no banco de produção/hospedado, execute:');
+  console.error('  npm run db:reset -- --force');
+  console.error('  ou defina a variável ALLOW_RESET_PRODUCTION=true');
   process.exit(1);
 }
 
