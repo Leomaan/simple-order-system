@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useCompany } from '../../hooks/useCompany';
 import ThemeToggle from '../ui/ThemeToggle';
 import { 
   Package, 
@@ -19,6 +21,8 @@ import {
 
 export default function Sidebar({ active, onNavigate, role }) {
   const { logout, user } = useAuth();
+  const { exitImpersonate } = useCompany();
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
 
   // Admin items
@@ -123,6 +127,15 @@ export default function Sidebar({ active, onNavigate, role }) {
                   key={item.key}
                   type="button"
                   onClick={() => {
+                    if (item.key === 'superadmin_link') {
+                      exitImpersonate();
+                      return;
+                    }
+                    if (item.key === 'kds_link') {
+                      navigate('/kds');
+                      setIsOpen(false);
+                      return;
+                    }
                     if (item.isExternalRoute) {
                       window.location.href = item.isExternalRoute;
                       return;

@@ -23,12 +23,10 @@ export default function KDS() {
   } = useKDS();
 
   const handleBack = () => {
-    if (window.history.length > 1) {
-      navigate(-1);
+    if (user?.role === 'WAITER') {
+      navigate('/waiter');
     } else if (user?.isSuperAdmin && !user?.companyId) {
       navigate('/superadmin');
-    } else if (user?.role === 'WAITER') {
-      navigate('/waiter');
     } else {
       navigate('/admin');
     }
