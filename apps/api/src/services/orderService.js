@@ -11,8 +11,12 @@ import { formatOrderDto } from '../dto/orderDto.js';
 
 const VALID_STATUSES = ['OPEN', 'PAID', 'CLOSED'];
 
-export async function findAll(status, page, limit, onlyDeleted = false) {
+export async function findAll(status, page, limit, onlyDeleted = false, companyId = null) {
   const where = {};
+
+  if (companyId) {
+    where.companyId = companyId;
+  }
 
   if (status) {
     if (!VALID_STATUSES.includes(status))
@@ -62,52 +66,77 @@ export async function findAll(status, page, limit, onlyDeleted = false) {
   return orders.map(formatOrderDto);
 }
 
-export async function findById(id) {
-  const order = await Order.findByPk(id, {
-    attributes: ['id', 'table', 'status', 'paymentMethod', 'paymentId', 'paymentQrCode', 'paymentQrCodeCopy', 'paymentExpiresAt'],
+export async function findById(id, companyId = null) {
+  const queryOptions = {
+    attributes: ['id', 'table', 'status', 'companyId', 'paymentMethod', 'paymentId', 'paymentQrCode', 'paymentQrCodeCopy', 'paymentExpiresAt'],
     include: [
       {
         model: OrderItem,
-        attributes: ['id', 'quantity', 'unitPrice', 'totalPrice', 'ProductId'],
+        attributes: ['id', 'quantity', 'unitPrice', 'totalPrice', 'ProductId', 'stationId', 'status', 'notes'],
         include: [{ model: Product, attributes: ['id', 'name', 'price'] }],
       },
     ],
-  });
+  };
+
+  const order = companyId
+    ? await Order.findOne({ where: { id, companyId }, ...queryOptions })
+    : await Order.findByPk(id, queryOptions);
 
   if (!order) throw new AppError('order not found', 404);
 
   return formatOrderDto(order);
 }
 
-export async function createOrder(data, user = null) {
+export async function createOrder(data, user = null, companyId = null) {
   const { table } = data;
   if (!table) throw new AppError('table is required');
 
-  const openOrder = await Order.findOne({ where: { table, status: 'OPEN' } });
+  const targetCompanyId = companyId || user?.companyId || data.companyId || null;
+  const where = { table, status: 'OPEN' };
+  if (targetCompanyId) {
+    where.companyId = targetCompanyId;
+  }
+
+  const openOrder = await Order.findOne({ where });
   if (openOrder) throw new AppError('there is already an open order for this table');
 
-  const order = await Order.create(data);
+  const orderData = { ...data };
+  if (targetCompanyId) {
+    orderData.companyId = targetCompanyId;
+  }
+
+  const order = await Order.create(orderData);
 
   await log({
     user,
     action: 'CREATE_ORDER',
     entity: 'Order',
     entityId: order.id,
-    details: { table: order.table, order: order.id }
+    details: { table: order.table, order: order.id, companyId: order.companyId },
+    companyId: order.companyId,
   });
 
-  logger.info('Novo pedido criado', { context: 'order_service', orderId: order.id, table: order.table, total: order.total });
+  logger.info('Novo pedido criado', { context: 'order_service', orderId: order.id, table: order.table, total: order.total, companyId: order.companyId });
   const formattedOrder = formatOrderDto(order);
-  emitEvent('order:created', formattedOrder);
+  const companyRoom = order.companyId ? `company:${order.companyId}` : null;
+  if (companyRoom) {
+    emitEvent('order:created', formattedOrder, companyRoom);
+  } else {
+    emitEvent('order:created', formattedOrder);
+  }
 
   return formattedOrder;
 }
 
-export async function updateOrder(id, data, user = null) {
+export async function updateOrder(id, data, user = null, companyId = null) {
   if (!data || Object.keys(data).length === 0)
     throw new AppError('no data provided');
 
-  const order = await Order.findByPk(id, { include: [OrderItem] });
+  const targetCompanyId = companyId || user?.companyId || null;
+  const order = targetCompanyId
+    ? await Order.findOne({ where: { id, companyId: targetCompanyId }, include: [OrderItem] })
+    : await Order.findByPk(id, { include: [OrderItem] });
+
   if (!order) throw new AppError('order not found', 404);
 
   if (order.status !== 'OPEN') {
@@ -121,13 +150,16 @@ export async function updateOrder(id, data, user = null) {
   const { status, ...allowedUpdates } = data;
 
   if (allowedUpdates.table && allowedUpdates.table !== order.table) {
-    const existingOpenOrder = await Order.findOne({
-      where: {
-        table: allowedUpdates.table,
-        status: 'OPEN',
-        id: { [Op.ne]: order.id },
-      },
-    });
+    const tableWhere = {
+      table: allowedUpdates.table,
+      status: 'OPEN',
+      id: { [Op.ne]: order.id },
+    };
+    if (order.companyId) {
+      tableWhere.companyId = order.companyId;
+    }
+
+    const existingOpenOrder = await Order.findOne({ where: tableWhere });
 
     if (existingOpenOrder) {
       throw new AppError(`A mesa ${allowedUpdates.table} já possui outro pedido aberto (#${existingOpenOrder.id})`, 400);
@@ -142,20 +174,27 @@ export async function updateOrder(id, data, user = null) {
     action: 'UPDATE_ORDER',
     entity: 'Order',
     entityId: order.id,
-    details: { order: order.id, oldTable, newTable: order.table }
+    details: { order: order.id, oldTable, newTable: order.table, companyId: order.companyId },
+    companyId: order.companyId,
   });
 
-  logger.info('Pedido atualizado', { context: 'order_service', orderId: order.id, updatedBy: user?.userId || user?.id });
+  logger.info('Pedido atualizado', { context: 'order_service', orderId: order.id, updatedBy: user?.userId || user?.id, companyId: order.companyId });
   const formattedOrder = formatOrderDto(order);
-  emitEvent('order:updated', formattedOrder);
+  const companyRoom = order.companyId ? `company:${order.companyId}` : null;
+  if (companyRoom) {
+    emitEvent('order:updated', formattedOrder, companyRoom);
+  } else {
+    emitEvent('order:updated', formattedOrder);
+  }
 
   return formattedOrder;
 }
 
-export async function closeOrder(id, user = null) {
-  const order = await Order.findByPk(id, {
-    include: [OrderItem],
-  });
+export async function closeOrder(id, user = null, companyId = null) {
+  const targetCompanyId = companyId || user?.companyId || null;
+  const order = targetCompanyId
+    ? await Order.findOne({ where: { id, companyId: targetCompanyId }, include: [OrderItem] })
+    : await Order.findByPk(id, { include: [OrderItem] });
 
   if (!order) throw new AppError('order not found', 404);
   if (order.status === 'CLOSED') throw new AppError('order is already closed');
@@ -175,37 +214,51 @@ export async function closeOrder(id, user = null) {
     action: 'CLOSE_ORDER',
     entity: 'Order',
     entityId: order.id,
-    details: { table: order.table, order: order.id, total }
+    details: { table: order.table, order: order.id, total, companyId: order.companyId },
+    companyId: order.companyId,
   });
 
-  logger.info('Pedido encerrado', { context: 'order_service', orderId: order.id, table: order.table, total });
-  emitEvent('order:closed', formattedOrder);
+  logger.info('Pedido encerrado', { context: 'order_service', orderId: order.id, table: order.table, total, companyId: order.companyId });
+  const companyRoom = order.companyId ? `company:${order.companyId}` : null;
+  if (companyRoom) {
+    emitEvent('order:closed', formattedOrder, companyRoom);
+  } else {
+    emitEvent('order:closed', formattedOrder);
+  }
 
   return formattedOrder;
 }
 
-export async function reopenOrder(id, user = null) {
-  const order = await Order.findByPk(id, {
+export async function reopenOrder(id, user = null, companyId = null) {
+  const targetCompanyId = companyId || user?.companyId || null;
+  const queryOptions = {
     include: [
       {
         model: OrderItem,
         include: [Product]
       }
     ],
-  });
+  };
+
+  const order = targetCompanyId
+    ? await Order.findOne({ where: { id, companyId: targetCompanyId }, ...queryOptions })
+    : await Order.findByPk(id, queryOptions);
 
   if (!order) throw new AppError('order not found', 404);
   if (order.status === 'PAID') throw new AppError('Não é possível reabrir um pedido que já foi pago', 400);
   if (order.status === 'OPEN') throw new AppError('Este pedido já está aberto', 400);
 
-  // Check if another order is already open for this table
-  const existingOpenOrder = await Order.findOne({
-    where: {
-      table: order.table,
-      status: 'OPEN',
-      id: { [Op.ne]: order.id }
-    }
-  });
+  // Check if another order is already open for this table in this company
+  const tableWhere = {
+    table: order.table,
+    status: 'OPEN',
+    id: { [Op.ne]: order.id }
+  };
+  if (order.companyId) {
+    tableWhere.companyId = order.companyId;
+  }
+
+  const existingOpenOrder = await Order.findOne({ where: tableWhere });
 
   if (existingOpenOrder) {
     throw new AppError(`A mesa ${order.table} já possui outro pedido aberto (#${existingOpenOrder.id})`, 400);
@@ -226,21 +279,30 @@ export async function reopenOrder(id, user = null) {
     action: 'REOPEN_ORDER',
     entity: 'Order',
     entityId: order.id,
-    details: { table: order.table, order: order.id }
+    details: { table: order.table, order: order.id, companyId: order.companyId },
+    companyId: order.companyId,
   });
 
-  logger.info('Pedido reaberto com sucesso', { context: 'order_service', orderId: order.id, table: order.table });
+  logger.info('Pedido reaberto com sucesso', { context: 'order_service', orderId: order.id, table: order.table, companyId: order.companyId });
   const formattedOrder = formatOrderDto(order);
-  emitEvent('order:updated', formattedOrder);
+  const companyRoom = order.companyId ? `company:${order.companyId}` : null;
+  if (companyRoom) {
+    emitEvent('order:updated', formattedOrder, companyRoom);
+  } else {
+    emitEvent('order:updated', formattedOrder);
+  }
 
   return formattedOrder;
 }
 
-export async function deleteOrder(id, userOrRole) {
+export async function deleteOrder(id, userOrRole, companyId = null) {
   const userRole = typeof userOrRole === 'object' && userOrRole !== null ? userOrRole.role : userOrRole;
   const user = typeof userOrRole === 'object' && userOrRole !== null ? userOrRole : null;
 
-  const order = await Order.findByPk(id, { include: [OrderItem] });
+  const targetCompanyId = companyId || user?.companyId || null;
+  const order = targetCompanyId
+    ? await Order.findOne({ where: { id, companyId: targetCompanyId }, include: [OrderItem] })
+    : await Order.findByPk(id, { include: [OrderItem] });
 
   if (!order) throw new AppError('order not found', 404);
 
@@ -255,17 +317,27 @@ export async function deleteOrder(id, userOrRole) {
     action: 'DELETE_ORDER',
     entity: 'Order',
     entityId: order.id,
-    details: { table: order.table, order: order.id }
+    details: { table: order.table, order: order.id, companyId: order.companyId },
+    companyId: order.companyId,
   });
 
-  logger.warn('Pedido removido (Soft Delete)', { context: 'order_service', orderId: order.id, removedBy: user?.userId || user?.id });
-  emitEvent('order:deleted', { id: Number(id) });
+  logger.warn('Pedido removido (Soft Delete)', { context: 'order_service', orderId: order.id, removedBy: user?.userId || user?.id, companyId: order.companyId });
+  const companyRoom = order.companyId ? `company:${order.companyId}` : null;
+  if (companyRoom) {
+    emitEvent('order:deleted', { id: Number(id) }, companyRoom);
+  } else {
+    emitEvent('order:deleted', { id: Number(id) });
+  }
 
   return formatOrderDto(order);
 }
 
-export async function restoreOrder(id, user = null) {
-  const order = await Order.findOne({ where: { id }, paranoid: false, include: [OrderItem] });
+export async function restoreOrder(id, user = null, companyId = null) {
+  const targetCompanyId = companyId || user?.companyId || null;
+  const order = targetCompanyId
+    ? await Order.findOne({ where: { id, companyId: targetCompanyId }, paranoid: false, include: [OrderItem] })
+    : await Order.findByPk(id, { paranoid: false, include: [OrderItem] });
+
   if (!order) throw new AppError('order not found or not deleted', 404);
   await order.restore();
 
@@ -274,18 +346,28 @@ export async function restoreOrder(id, user = null) {
     action: 'RESTORE_ORDER',
     entity: 'Order',
     entityId: order.id,
-    details: { table: order.table, order: order.id }
+    details: { table: order.table, order: order.id, companyId: order.companyId },
+    companyId: order.companyId,
   });
 
-  logger.info('Pedido restaurado', { context: 'order_service', orderId: order.id, restoredBy: user?.userId || user?.id });
+  logger.info('Pedido restaurado', { context: 'order_service', orderId: order.id, restoredBy: user?.userId || user?.id, companyId: order.companyId });
   const formattedOrder = formatOrderDto(order);
-  emitEvent('order:restored', formattedOrder);
+  const companyRoom = order.companyId ? `company:${order.companyId}` : null;
+  if (companyRoom) {
+    emitEvent('order:restored', formattedOrder, companyRoom);
+  } else {
+    emitEvent('order:restored', formattedOrder);
+  }
 
   return formattedOrder;
 }
 
-export async function permanentDeleteOrder(id, user = null) {
-  const order = await Order.findByPk(id, { paranoid: false, include: [OrderItem] });
+export async function permanentDeleteOrder(id, user = null, companyId = null) {
+  const targetCompanyId = companyId || user?.companyId || null;
+  const order = targetCompanyId
+    ? await Order.findOne({ where: { id, companyId: targetCompanyId }, paranoid: false, include: [OrderItem] })
+    : await Order.findByPk(id, { paranoid: false, include: [OrderItem] });
+
   if (!order) throw new AppError('order not found', 404);
   await order.destroy({ force: true });
 
@@ -294,11 +376,17 @@ export async function permanentDeleteOrder(id, user = null) {
     action: 'PERMANENT_DELETE_ORDER',
     entity: 'Order',
     entityId: order.id,
-    details: { table: order.table, order: order.id }
+    details: { table: order.table, order: order.id, companyId: order.companyId },
+    companyId: order.companyId,
   });
 
-  logger.warn('Pedido excluído permanentemente', { context: 'order_service', orderId: order.id, deletedBy: user?.userId || user?.id });
-  emitEvent('order:deleted', { id: Number(id) });
+  logger.warn('Pedido excluído permanentemente', { context: 'order_service', orderId: order.id, deletedBy: user?.userId || user?.id, companyId: order.companyId });
+  const companyRoom = order.companyId ? `company:${order.companyId}` : null;
+  if (companyRoom) {
+    emitEvent('order:deleted', { id: Number(id) }, companyRoom);
+  } else {
+    emitEvent('order:deleted', { id: Number(id) });
+  }
 
   return formatOrderDto(order);
 }

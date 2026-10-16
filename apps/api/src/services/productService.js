@@ -151,8 +151,9 @@ export async function createProduct(data, user = null, companyId = null) {
 
   logger.info('Novo produto cadastrado', { context: 'product_service', productId: product.id, name: product.name, companyId: targetCompanyId });
   const formattedProduct = formatProductDto(createdProduct || product);
-  emitEvent('product:created', formattedProduct);
-  notifyMenuUpdate('created', formattedProduct);
+  const companyRoom = targetCompanyId ? `company:${targetCompanyId}` : null;
+  emitEvent('product:created', formattedProduct, companyRoom);
+  notifyMenuUpdate('created', formattedProduct, targetCompanyId);
 
   return formattedProduct;
 }
@@ -211,10 +212,11 @@ export async function updateProduct(id, data, user = null, companyId = null) {
     details: { name: newValues.name, diff },
   });
 
-  logger.info('Produto atualizado', { context: 'product_service', productId: product.id, updatedBy: user?.userId || user?.id });
+  logger.info('Produto atualizado', { context: 'product_service', productId: product.id, updatedBy: user?.userId || user?.id, companyId: product.companyId });
   const formattedProduct = formatProductDto(updatedProduct);
-  emitEvent('product:updated', formattedProduct);
-  notifyMenuUpdate('updated', formattedProduct);
+  const companyRoom = product.companyId ? `company:${product.companyId}` : null;
+  emitEvent('product:updated', formattedProduct, companyRoom);
+  notifyMenuUpdate('updated', formattedProduct, product.companyId);
 
   return formattedProduct;
 }
@@ -232,12 +234,14 @@ export async function deleteProduct(id, user = null, companyId = null) {
     action: 'DELETE_PRODUCT',
     entity: 'Product',
     entityId: Number(id),
-    details: { name: product.name },
+    details: { name: product.name, companyId: product.companyId },
+    companyId: product.companyId,
   });
 
-  logger.warn('Produto removido (Soft Delete)', { context: 'product_service', productId: id });
-  emitEvent('product:deleted', { id: Number(id) });
-  notifyMenuUpdate('deleted', { id: Number(id) });
+  logger.warn('Produto removido (Soft Delete)', { context: 'product_service', productId: id, companyId: product.companyId });
+  const companyRoom = product.companyId ? `company:${product.companyId}` : null;
+  emitEvent('product:deleted', { id: Number(id) }, companyRoom);
+  notifyMenuUpdate('deleted', { id: Number(id) }, product.companyId);
 
   return formatProductDto(product);
 }
@@ -255,13 +259,15 @@ export async function restoreProduct(id, user = null, companyId = null) {
     action: 'RESTORE_PRODUCT',
     entity: 'Product',
     entityId: product.id,
-    details: { name: product.name },
+    details: { name: product.name, companyId: product.companyId },
+    companyId: product.companyId,
   });
 
-  logger.info('Produto restaurado', { context: 'product_service', productId: product.id });
+  logger.info('Produto restaurado', { context: 'product_service', productId: product.id, companyId: product.companyId });
   const formattedProduct = formatProductDto(product);
-  emitEvent('product:restored', formattedProduct);
-  notifyMenuUpdate('restored', formattedProduct);
+  const companyRoom = product.companyId ? `company:${product.companyId}` : null;
+  emitEvent('product:restored', formattedProduct, companyRoom);
+  notifyMenuUpdate('restored', formattedProduct, product.companyId);
 
   return formattedProduct;
 }
@@ -279,12 +285,14 @@ export async function permanentDeleteProduct(id, user = null, companyId = null) 
     action: 'PERMANENT_DELETE_PRODUCT',
     entity: 'Product',
     entityId: Number(id),
-    details: { name: product.name },
+    details: { name: product.name, companyId: product.companyId },
+    companyId: product.companyId,
   });
 
-  logger.warn('Produto excluído permanentemente', { context: 'product_service', productId: id });
-  emitEvent('product:deleted', { id: Number(id) });
-  notifyMenuUpdate('deleted', { id: Number(id) });
+  logger.warn('Produto excluído permanentemente', { context: 'product_service', productId: id, companyId: product.companyId });
+  const companyRoom = product.companyId ? `company:${product.companyId}` : null;
+  emitEvent('product:deleted', { id: Number(id) }, companyRoom);
+  notifyMenuUpdate('deleted', { id: Number(id) }, product.companyId);
 
   return formatProductDto(product);
 }

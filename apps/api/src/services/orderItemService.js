@@ -15,13 +15,15 @@ export async function findById(id) {
   return formatOrderItemDto(item);
 }
 
-export async function addItem(data, user = null) {
-  const { orderId, productId, quantity } = data;
+export async function addItem(data, user = null, companyId = null) {
+  const { orderId, productId, quantity, notes } = data;
 
   if (!orderId || !productId || !quantity)
     throw new AppError('no data provided');
   if (quantity <= 0)
     throw new AppError('invalid quantity');
+
+  const targetCompanyId = companyId || user?.companyId || null;
 
   const { item, created, itemCompleto } = await sequelize.transaction(async (t) => {
     // Busca concorrente do pedido e produto sob transação com trava de atualização no pedido
@@ -33,6 +35,19 @@ export async function addItem(data, user = null) {
     if (!order || !product) throw new AppError('order or product not found', 404);
     if (order.status !== 'OPEN') throw new AppError('order is not open');
     if (!product.available) throw new AppError('product not available');
+
+    // Validação de isolamento multi-tenant
+    if (targetCompanyId) {
+      if (order.companyId && order.companyId !== targetCompanyId) {
+        throw new AppError('acesso não autorizado a este pedido', 403);
+      }
+      if (product.companyId && product.companyId !== targetCompanyId) {
+        throw new AppError('produto não pertence a este estabelecimento', 400);
+      }
+    }
+    if (order.companyId && product.companyId && order.companyId !== product.companyId) {
+      throw new AppError('produto incompatível com o estabelecimento do pedido', 400);
+    }
 
     // Busca se o item já existe para aquela mesa/pedido sob trava de atualização
     const existing = await OrderItem.findOne({
@@ -46,6 +61,8 @@ export async function addItem(data, user = null) {
       await existing.update({
         quantity: newQty,
         totalPrice: product.price * newQty,
+        stationId: product.stationId || existing.stationId,
+        notes: notes !== undefined ? notes : existing.notes,
       }, { transaction: t });
       return { 
         item: existing, 
@@ -60,6 +77,8 @@ export async function addItem(data, user = null) {
       quantity,
       unitPrice: product.price,
       totalPrice: product.price * quantity,
+      stationId: product.stationId || null,
+      notes: notes || null,
     }, { transaction: t });
 
     return { 
@@ -79,7 +98,10 @@ export async function addItem(data, user = null) {
       order: itemCompleto.OrderId,
       product: itemCompleto.Product?.name,
       quantity,
+      stationId: item.stationId,
+      companyId: itemCompleto.Order?.companyId,
     },
+    companyId: itemCompleto.Order?.companyId,
   });
 
   logger.info('Item adicionado ao pedido', {
@@ -87,10 +109,13 @@ export async function addItem(data, user = null) {
     orderId: itemCompleto.OrderId,
     itemId: item.id,
     quantity,
+    stationId: item.stationId,
+    companyId: itemCompleto.Order?.companyId,
   });
 
   const formattedItem = formatOrderItemDto(item);
-  emitEvent('order_item:created', { orderId: itemCompleto.OrderId, item: formattedItem });
+  const companyRoom = itemCompleto.Order?.companyId ? `company:${itemCompleto.Order.companyId}` : null;
+  emitEvent('order_item:created', { orderId: itemCompleto.OrderId, item: formattedItem }, companyRoom);
 
   return { item: formattedItem, created };
 }
@@ -136,7 +161,8 @@ export async function changeQuantity(id, quantity, user = null) {
   });
 
   const formattedItem = formatOrderItemDto(orderItem);
-  emitEvent('order_item:updated', { orderId: orderItem.OrderId, item: formattedItem });
+  const companyRoom = orderItem.Order?.companyId ? `company:${orderItem.Order.companyId}` : null;
+  emitEvent('order_item:updated', { orderId: orderItem.OrderId, item: formattedItem }, companyRoom);
 
   return formattedItem;
 }
@@ -170,7 +196,8 @@ export async function removeItem(id, user = null) {
     orderId: orderItem.Order?.id,
   });
 
-  emitEvent('order_item:deleted', { orderId: orderItem.Order?.id, itemId: Number(id) });
+  const companyRoom = orderItem.Order?.companyId ? `company:${orderItem.Order.companyId}` : null;
+  emitEvent('order_item:deleted', { orderId: orderItem.Order?.id, itemId: Number(id) }, companyRoom);
 
   return { success: true };
 }
@@ -196,7 +223,7 @@ export async function updateStatus(id, newStatus, user = null) {
   };
 
   emitEvent('item_status_changed', payload, companyRoom);
-  emitEvent('order_item:status_changed', payload);
+  emitEvent('order_item:status_changed', payload, companyRoom);
 
   return orderItem;
 }
@@ -239,7 +266,7 @@ export async function claimDelivery(id, user) {
 
     // Notifica em broadcast imediato para bloquear o prato nos outros celulares
     emitEvent('delivery_claimed', payload, companyRoom);
-    emitEvent('order_item:status_changed', payload);
+    emitEvent('order_item:status_changed', payload, companyRoom);
 
     return item;
   });

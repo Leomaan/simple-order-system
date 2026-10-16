@@ -2,18 +2,18 @@ import { asyncHandler } from '../middleware/asyncHandler.js';
 import * as reportService from '../services/reportService.js';
 
 export const getSalesToday = asyncHandler(async (req, res) => {
-  const data = await reportService.salesToday();
+  const data = await reportService.salesToday(req.companyId);
   res.status(200).json({ success: true, data });
 });
 
 export const getRevenueByPeriod = asyncHandler(async (req, res) => {
   const { from, to } = req.query;
-  const data = await reportService.revenueByPeriod(from, to);
+  const data = await reportService.revenueByPeriod(from, to, req.companyId);
   res.status(200).json({ success: true, data });
 });
 
 export const getOrdersByPeriod = asyncHandler(async (req, res) => {
   const { from, to, status } = req.query;
-  const data = await reportService.ordersByPeriod(from, to, status);
+  const data = await reportService.ordersByPeriod(from, to, status, req.companyId);
   res.status(200).json({ success: true, data });
 });

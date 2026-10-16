@@ -4,17 +4,20 @@ import OrderItem from '../models/orderItem.js';
 import { AppError } from '../middleware/appError.js';
 import { formatReportSalesDto } from '../dto/reportDto.js';
 
-export async function salesToday() {
+export async function salesToday(companyId = null) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
 
+  const where = {
+    status: 'PAID',
+    updatedAt: { [Op.between]: [today, tomorrow] },
+  };
+  if (companyId) where.companyId = companyId;
+
   const result = await Order.findOne({
-    where: {
-      status: 'PAID',
-      updatedAt: { [Op.between]: [today, tomorrow] },
-    },
+    where,
     attributes: [
       [fn('COUNT', fn('DISTINCT', col('Order.id'))), 'totalOrders'],
       [fn('COALESCE', fn('SUM', col('OrderItems.totalPrice')), 0), 'totalRevenue'],
@@ -38,7 +41,7 @@ export async function salesToday() {
   });
 }
 
-export async function revenueByPeriod(from, to) {
+export async function revenueByPeriod(from, to, companyId = null) {
   if (!from || !to) throw new AppError('from e to são obrigatórios');
 
   const [fromYear, fromMonth, fromDay] = from.split('-').map(Number);
@@ -49,11 +52,14 @@ export async function revenueByPeriod(from, to) {
 
   if (fromDate > toDate) throw new AppError('from deve ser anterior a to');
 
+  const where = {
+    status: 'PAID',
+    updatedAt: { [Op.between]: [fromDate, toDate] },
+  };
+  if (companyId) where.companyId = companyId;
+
   const result = await Order.findOne({
-    where: {
-      status: 'PAID',
-      updatedAt: { [Op.between]: [fromDate, toDate] },
-    },
+    where,
     attributes: [
       [fn('COUNT', fn('DISTINCT', col('Order.id'))), 'totalOrders'],
       [fn('COALESCE', fn('SUM', col('OrderItems.totalPrice')), 0), 'totalRevenue'],
@@ -76,7 +82,7 @@ export async function revenueByPeriod(from, to) {
   });
 }
 
-export async function ordersByPeriod(from, to, status) {
+export async function ordersByPeriod(from, to, status, companyId = null) {
   if (!from || !to) throw new AppError('from e to são obrigatórios');
 
   const [fromYear, fromMonth, fromDay] = from.split('-').map(Number);
@@ -90,6 +96,7 @@ export async function ordersByPeriod(from, to, status) {
   const where = {
     createdAt: { [Op.between]: [fromDate, toDate] },
   };
+  if (companyId) where.companyId = companyId;
 
   const VALID_STATUSES = ['OPEN', 'PAID', 'CLOSED'];
   if (status) {

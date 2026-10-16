@@ -9,7 +9,7 @@ import { emitEvent } from '../util/socket.js';
 import { formatPaymentDto } from '../dto/paymentDto.js';
 import { formatOrderDto } from '../dto/orderDto.js';
 
-export async function createPixPayment(orderId) {
+export async function createPixPayment(orderId, companyId = null) {
   const order = await Order.findByPk(orderId, {
     include: [
       {
@@ -20,6 +20,7 @@ export async function createPixPayment(orderId) {
   });
 
   if (!order) throw new AppError('Order not found', 404);
+  if (companyId && order.companyId && order.companyId !== companyId) throw new AppError('Order not found', 404);
   if (order.status !== 'CLOSED') throw new AppError('Only closed orders can be paid', 400);
   if (!order.OrderItems?.length) throw new AppError('Cannot pay for an empty order', 400);
 
@@ -55,7 +56,12 @@ export async function createPixPayment(orderId) {
       paymentExpiresAt: mockPayment.paymentExpiresAt
     });
 
-    emitEvent('order:updated', formatOrderDto(order));
+    const companyRoom = order.companyId ? `company:${order.companyId}` : null;
+    if (companyRoom) {
+      emitEvent('order:updated', formatOrderDto(order), companyRoom);
+    } else {
+      emitEvent('order:updated', formatOrderDto(order));
+    }
 
     return formatPaymentDto({
       orderId: order.id,
@@ -120,7 +126,12 @@ export async function createPixPayment(orderId) {
       paymentExpiresAt
     });
 
-    emitEvent('order:updated', formatOrderDto(order));
+    const companyRoom = order.companyId ? `company:${order.companyId}` : null;
+    if (companyRoom) {
+      emitEvent('order:updated', formatOrderDto(order), companyRoom);
+    } else {
+      emitEvent('order:updated', formatOrderDto(order));
+    }
 
     return formatPaymentDto({
       orderId: order.id,
@@ -195,9 +206,15 @@ export async function processWebhook(webhookPayload, user = { name: 'webhook_sys
             action: 'PAY_ORDER',
             entity: 'Order',
             entityId: order.id,
-            details: { table: order.table, order: order.id, paymentId, status: 'PAID', total }
+            details: { table: order.table, order: order.id, paymentId, status: 'PAID', total },
+            companyId: order.companyId
           });
-          emitEvent('order:updated', formatOrderDto(order));
+          const companyRoom = order.companyId ? `company:${order.companyId}` : null;
+          if (companyRoom) {
+            emitEvent('order:updated', formatOrderDto(order), companyRoom);
+          } else {
+            emitEvent('order:updated', formatOrderDto(order));
+          }
           return { success: true, orderId, status: 'PAID' };
         }
       }
@@ -213,9 +230,12 @@ export async function processWebhook(webhookPayload, user = { name: 'webhook_sys
 /**
  * Simulates approving a payment (useful for local development and testing)
  */
-export async function approveMockPayment(paymentId, user) {
+export async function approveMockPayment(paymentId, user, companyId = null) {
+  const where = { paymentId };
+  if (companyId) where.companyId = companyId;
+
   const order = await Order.findOne({
-    where: { paymentId },
+    where,
     include: [OrderItem]
   });
   if (!order) return { success: false, reason: 'Order with paymentId not found' };
@@ -228,21 +248,28 @@ export async function approveMockPayment(paymentId, user) {
       action: 'PAY_ORDER',
       entity: 'Order',
       entityId: order.id,
-      details: { table: order.table, order: order.id, paymentId, status: 'PAID_MOCK', total }
+      details: { table: order.table, order: order.id, paymentId, status: 'PAID_MOCK', total },
+      companyId: order.companyId || user?.companyId
     });
-    emitEvent('order:updated', formatOrderDto(order));
+    const companyRoom = order.companyId ? `company:${order.companyId}` : null;
+    if (companyRoom) {
+      emitEvent('order:updated', formatOrderDto(order), companyRoom);
+    } else {
+      emitEvent('order:updated', formatOrderDto(order));
+    }
     return { success: true, orderId: order.id, status: 'PAID' };
   }
 
   return { success: true, reason: 'Order already paid' };
 }
 
-export async function manualPayOrder(orderId, paymentMethod = 'CASH', user = null) {
+export async function manualPayOrder(orderId, paymentMethod = 'CASH', user = null, companyId = null) {
   const order = await Order.findByPk(orderId, {
     include: [OrderItem]
   });
 
   if (!order) throw new AppError('Order not found', 404);
+  if (companyId && order.companyId && order.companyId !== companyId) throw new AppError('Order not found', 404);
   if (order.status === 'PAID') throw new AppError('Order is already paid', 400);
   if (!order.OrderItems?.length) throw new AppError('Cannot pay for an empty order', 400);
 
@@ -259,22 +286,29 @@ export async function manualPayOrder(orderId, paymentMethod = 'CASH', user = nul
     action: 'PAY_ORDER',
     entity: 'Order',
     entityId: order.id,
-    details: { table: order.table, order: order.id, paymentMethod, status: 'PAID', total }
+    details: { table: order.table, order: order.id, paymentMethod, status: 'PAID', total },
+    companyId: order.companyId || user?.companyId
   });
 
-  logger.info('Pagamento manual registrado com sucesso', { context: 'payment_service', orderId: order.id, paymentMethod, total });
+  logger.info('Pagamento manual registrado com sucesso', { context: 'payment_service', orderId: order.id, paymentMethod, total, companyId: order.companyId });
   const formattedOrder = formatOrderDto(order);
-  emitEvent('order:updated', formattedOrder);
+  const companyRoom = order.companyId ? `company:${order.companyId}` : null;
+  if (companyRoom) {
+    emitEvent('order:updated', formattedOrder, companyRoom);
+  } else {
+    emitEvent('order:updated', formattedOrder);
+  }
 
   return formattedOrder;
 }
 
-export async function checkPaymentStatus(orderId, user = null) {
+export async function checkPaymentStatus(orderId, user = null, companyId = null) {
   const order = await Order.findByPk(orderId, {
     include: [OrderItem]
   });
 
   if (!order) throw new AppError('Order not found', 404);
+  if (companyId && order.companyId && order.companyId !== companyId) throw new AppError('Order not found', 404);
   if (order.status === 'PAID') return { success: true, status: 'PAID', message: 'Order is already paid' };
   if (!order.paymentId) throw new AppError('No payment initiated for this order', 400);
 
@@ -313,10 +347,16 @@ export async function checkPaymentStatus(orderId, user = null) {
         action: 'PAY_ORDER',
         entity: 'Order',
         entityId: order.id,
-        details: { table: order.table, order: order.id, paymentId: order.paymentId, status: 'PAID', total }
+        details: { table: order.table, order: order.id, paymentId: order.paymentId, status: 'PAID', total },
+        companyId: order.companyId
       });
       const formattedOrder = formatOrderDto(order);
-      emitEvent('order:updated', formattedOrder);
+      const companyRoom = order.companyId ? `company:${order.companyId}` : null;
+      if (companyRoom) {
+        emitEvent('order:updated', formattedOrder, companyRoom);
+      } else {
+        emitEvent('order:updated', formattedOrder);
+      }
       return { success: true, status: 'PAID', order: formattedOrder };
     }
 

@@ -2,7 +2,7 @@ import { asyncHandler } from '../middleware/asyncHandler.js';
 import * as orderItemService from '../services/orderItemService.js';
 
 export const create = asyncHandler(async (req, res) => {
-  const { item, created } = await orderItemService.addItem(req.body, req.user);
+  const { item, created } = await orderItemService.addItem(req.body, req.user, req.companyId);
   res.status(created ? 201 : 200).json({ success: true, data: item });
 });
 

@@ -9,8 +9,8 @@ export const generatePix = asyncHandler(async (req, res) => {
     return res.status(400).json({ success: false, message: 'orderId is required' });
   }
 
-  const paymentData = await paymentService.createPixPayment(orderId);
-  logger.info('PIX gerado com sucesso', { context: 'payment_controller', orderId });
+  const paymentData = await paymentService.createPixPayment(orderId, req.companyId);
+  logger.info('PIX gerado com sucesso', { context: 'payment_controller', orderId, companyId: req.companyId });
   res.status(200).json({ success: true, data: paymentData });
 });
 
@@ -46,7 +46,7 @@ export const simulatePaymentConfirmation = asyncHandler(async (req, res) => {
   }
 
   const user = req.user || { name: 'admin_simulator', role: 'ADMIN' };
-  const result = await paymentService.approveMockPayment(paymentId, user);
+  const result = await paymentService.approveMockPayment(paymentId, user, req.companyId);
 
   if (result.success) {
     res.status(200).json({ success: true, message: 'Payment simulated and approved successfully', data: result });
@@ -70,12 +70,12 @@ export const manualPayment = asyncHandler(async (req, res) => {
     return res.status(400).json({ success: false, message: `paymentMethod must be one of: ${validMethods.join(', ')}` });
   }
 
-  const result = await paymentService.manualPayOrder(orderId, method, req.user);
+  const result = await paymentService.manualPayOrder(orderId, method, req.user, req.companyId);
   res.status(200).json({ success: true, message: 'Pagamento registrado com sucesso', data: result });
 });
 
 export const checkStatus = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const result = await paymentService.checkPaymentStatus(id, req.user);
+  const result = await paymentService.checkPaymentStatus(id, req.user, req.companyId);
   res.status(200).json({ success: true, data: result });
 });
