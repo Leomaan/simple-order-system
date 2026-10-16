@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import * as companyService from '../services/companyService.js';
+import { ProductionStation } from '../models/index.js';
 
 export const listCompanies = asyncHandler(async (req, res) => {
   const companies = await companyService.listCompanies();
@@ -76,4 +77,19 @@ export const exitImpersonate = asyncHandler(async (req, res) => {
     success: true,
     data: { message: 'Modo suporte desativado com sucesso' },
   });
+});
+
+export const getCurrentCompanyStations = asyncHandler(async (req, res) => {
+  const companyId = req.companyId;
+  if (!companyId) {
+    return res.status(200).json({ success: true, data: [] });
+  }
+
+  const stations = await ProductionStation.findAll({
+    where: { companyId, active: true },
+    attributes: ['id', 'name', 'slug', 'color', 'active'],
+    order: [['id', 'ASC']],
+  });
+
+  res.status(200).json({ success: true, data: stations });
 });

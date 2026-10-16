@@ -3,23 +3,28 @@ import logger from '../util/logger.js';
 import { log } from './auditLogService.js';
 import { formatSettingsDto } from '../dto/settingsDto.js';
 
-export async function getSettings() {
-  let settings = await Settings.findOne();
+export async function getSettings(companyId = null) {
+  const where = {};
+  if (companyId) where.companyId = companyId;
+
+  let settings = await Settings.findOne({ where });
   if (!settings) {
     settings = await Settings.create({
       restaurantName: 'Simple Order Restaurant',
+      ...(companyId ? { companyId } : {}),
     });
   }
   return settings;
 }
 
-export async function getFormattedSettings() {
-  const settings = await getSettings();
+export async function getFormattedSettings(companyId = null) {
+  const settings = await getSettings(companyId);
   return formatSettingsDto(settings);
 }
 
-export async function updateSettings(data, user = null) {
-  const currentSettings = await getSettings();
+export async function updateSettings(data, user = null, companyId = null) {
+  const targetCompanyId = companyId || user?.companyId || null;
+  const currentSettings = await getSettings(targetCompanyId);
   const updateData = { ...data };
 
   const isMaskedOrInvalid = (str) => {

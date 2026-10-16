@@ -10,8 +10,11 @@ import { formatUserDto } from '../dto/userDto.js';
 
 const USER_DIFF_FIELDS = ['name', 'role', 'active'];
 
-export async function findAll(onlyDeleted = false, page, limit) {
+export async function findAll(onlyDeleted = false, page, limit, companyId = null) {
   const where = {};
+  if (companyId) {
+    where.companyId = companyId;
+  }
   const queryOptions = {
     attributes: ['id', 'name', 'email', 'role', 'active', 'isSuperAdmin', 'createdAt', 'deletedAt'],
     where,
@@ -43,16 +46,25 @@ export async function findAll(onlyDeleted = false, page, limit) {
   return users.map(formatUserDto);
 }
 
-export async function findById(id) {
-  const user = await User.findByPk(id, {
-    attributes: ['id', 'name', 'email', 'role', 'active', 'isSuperAdmin', 'createdAt'],
-  });
+export async function findById(id, companyId = null) {
+  let user;
+  if (companyId) {
+    user = await User.findOne({
+      where: { id, companyId },
+      attributes: ['id', 'name', 'email', 'role', 'active', 'isSuperAdmin', 'createdAt'],
+    });
+  } else {
+    user = await User.findByPk(id, {
+      attributes: ['id', 'name', 'email', 'role', 'active', 'isSuperAdmin', 'createdAt'],
+    });
+  }
   if (!user) throw new AppError('user not found', 404);
   return formatUserDto(user);
 }
 
-export async function createUser(data, currentUser = null) {
+export async function createUser(data, currentUser = null, companyId = null) {
   const { name, email, password, role } = data;
+  const targetCompanyId = companyId || currentUser?.companyId || null;
 
   // Buscar incluindo usuários deletados (soft delete)
   const exists = await User.findOne({ where: { email }, paranoid: false });
@@ -64,7 +76,7 @@ export async function createUser(data, currentUser = null) {
     // Se o usuário estava deletado logicamente, restauramos e atualizamos com os novos dados
     const hashed = await bcrypt.hash(password, 10);
     await exists.restore();
-    await exists.update({ name, password: hashed, role, active: true });
+    await exists.update({ name, password: hashed, role, active: true, ...(targetCompanyId ? { companyId: targetCompanyId } : {}) });
     
     const { password: _, ...userWithoutPassword } = exists.toJSON();
     
@@ -73,24 +85,26 @@ export async function createUser(data, currentUser = null) {
       action: 'RESTORE_AND_UPDATE_USER',
       entity: 'User',
       entityId: exists.id,
-      details: { name: exists.name, role: exists.role }
+      details: { name: exists.name, role: exists.role },
+      companyId: exists.companyId,
     });
 
     return formatUserDto(exists);
   }
 
   const hashed = await bcrypt.hash(password, 10);
-  const user = await User.create({ name, email, password: hashed, role });
+  const user = await User.create({ name, email, password: hashed, role, companyId: targetCompanyId });
 
   await log({
     user: currentUser,
     action: 'CREATE_USER',
     entity: 'User',
     entityId: user.id,
-    details: { name: user.name, role: user.role }
+    details: { name: user.name, role: user.role },
+    companyId: user.companyId,
   });
 
-  logger.info('Novo usuário cadastrado', { context: 'user_service', createdUserId: user.id, role: user.role });
+  logger.info('Novo usuário cadastrado', { context: 'user_service', createdUserId: user.id, role: user.role, companyId: user.companyId });
 
   return formatUserDto(user);
 }

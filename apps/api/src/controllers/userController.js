@@ -4,17 +4,17 @@ import * as userService from '../services/userService.js';
 export const getAll = asyncHandler(async (req, res) => {
   const onlyDeleted = req.query.onlyDeleted === 'true';
   const { page, limit } = req.query;
-  const users = await userService.findAll(onlyDeleted, page, limit);
+  const users = await userService.findAll(onlyDeleted, page, limit, req.companyId);
   res.status(200).json({ success: true, data: users });
 });
 
 export const getById = asyncHandler(async (req, res) => {
-  const user = await userService.findById(req.params.id);
+  const user = await userService.findById(req.params.id, req.companyId);
   res.status(200).json({ success: true, data: user });
 });
 
 export const create = asyncHandler(async (req, res) => {
-  const user = await userService.createUser(req.body, req.user);
+  const user = await userService.createUser(req.body, req.user, req.companyId);
   res.status(201).json({ success: true, data: user });
 });
 

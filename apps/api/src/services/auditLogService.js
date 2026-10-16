@@ -3,12 +3,13 @@ import AuditLog from '../models/auditLog.js';
 import logger from '../util/logger.js';
 import { formatAuditLogDto } from '../dto/auditLogDto.js';
 
-export async function log({ user, action, entity = null, entityId = null, details = null, ip = null }) {
+export async function log({ user, action, entity = null, entityId = null, details = null, ip = null, companyId = null }) {
   try {
     await AuditLog.create({
       userId:   user?.userId ?? null,
       userName: user?.name   ?? 'system',
       userRole: user?.role   ?? 'system',
+      companyId: companyId || user?.companyId || null,
       action,
       entity,
       entityId,
@@ -20,9 +21,10 @@ export async function log({ user, action, entity = null, entityId = null, detail
   }
 }
 
-export async function findAll({ userId, action, entity, from, to, page, limit } = {}) {
+export async function findAll({ userId, action, entity, from, to, page, limit, companyId = null } = {}) {
   const where = {};
 
+  if (companyId) where.companyId = companyId;
   if (userId)  where.userId = userId;
   if (action)  where.action = action;
   if (entity)  where.entity = entity;

@@ -13,8 +13,15 @@ export function authenticate(req, res, next) {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = decoded;
+    
     // Vincula o companyId diretamente no request para acesso prático nos controllers e queries
-    req.companyId = decoded.companyId || null;
+    // Para SuperAdmins operando lojas, aceita tanto o companyId do token de impersonação quanto o header x-company-id
+    const headerCompanyId = req.headers['x-company-id'] ? Number(req.headers['x-company-id']) : null;
+    if (decoded.isSuperAdmin && headerCompanyId) {
+      req.companyId = headerCompanyId;
+    } else {
+      req.companyId = decoded.companyId || null;
+    }
     next();
   } catch (err) {
     return next(new AppError('token inválido ou expirado', 401));

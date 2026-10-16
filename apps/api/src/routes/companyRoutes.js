@@ -1,13 +1,16 @@
 import { Router } from 'express';
 import * as companyController from '../controllers/companyController.js';
-import { requireSuperAdmin } from '../middleware/authenticate.js';
+import { requireSuperAdmin, requireCompanyUser } from '../middleware/authenticate.js';
 import { validate } from '../middleware/validate.js';
 import { validateId } from '../middleware/validateId.js';
 import { CreateCompanySchema, UpdateCompanySchema } from '@simple-order/schemas';
 
 const router = Router();
 
-// Todas as rotas de empresas são protegidas exclusivamente para SuperAdministradores
+// Rota para colaboradores e administradores obterem as estações de produção da sua empresa logada (KDS)
+router.get('/current/stations', requireCompanyUser, companyController.getCurrentCompanyStations);
+
+// Todas as rotas abaixo de empresas são protegidas exclusivamente para SuperAdministradores
 router.use(requireSuperAdmin);
 
 router.get('/', companyController.listCompanies);

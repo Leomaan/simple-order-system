@@ -3,6 +3,6 @@ import { findAll } from '../services/auditLogService.js';
 
 export const getAll = asyncHandler(async (req, res) => {
   const { userId, action, entity, from, to, page, limit } = req.query;
-  const data = await findAll({ userId, action, entity, from, to, page, limit });
+  const data = await findAll({ userId, action, entity, from, to, page, limit, companyId: req.companyId });
   res.status(200).json({ success: true, data });
 });

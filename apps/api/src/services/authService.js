@@ -9,11 +9,13 @@ import { log } from './auditLogService.js';
 function generateAccessToken(user) {
   return jwt.sign(
     { 
-      userId: user.id, 
+      userId: user.userId || user.id, 
       role: user.role, 
       name: user.name,
       companyId: user.companyId || null,
-      isSuperAdmin: !!user.isSuperAdmin
+      isSuperAdmin: !!user.isSuperAdmin,
+      impersonating: !!user.impersonating,
+      impersonatedCompany: user.impersonatedCompany || null,
     },
     process.env.JWT_SECRET,
     { expiresIn: '15m' }
@@ -56,7 +58,7 @@ export async function login(email, password, ip) {
   };
 }
 
-export async function refresh(token, impersonatedCompanyId = null) {
+export async function refresh(token, impersonationData = null) {
   if (!token) throw new AppError('refresh token não fornecido', 401);
 
   const stored = await RefreshToken.findOne({ where: { token }, include: [User] });
@@ -68,22 +70,43 @@ export async function refresh(token, impersonatedCompanyId = null) {
   }
   if (!stored.User.active) throw new AppError('usuário inativo', 401);
 
+  const impersonatedCompanyId = typeof impersonationData === 'object' && impersonationData !== null
+    ? impersonationData.companyId
+    : impersonationData;
+
+  const isImpersonating = Boolean(
+    stored.User.isSuperAdmin &&
+    impersonatedCompanyId &&
+    (typeof impersonationData === 'object' ? impersonationData.impersonating !== false : true)
+  );
+
   const effectiveCompanyId = (stored.User.isSuperAdmin && impersonatedCompanyId)
     ? impersonatedCompanyId
     : (stored.User.companyId || null);
 
+  const effectiveName = isImpersonating && impersonationData?.name
+    ? impersonationData.name
+    : stored.User.name;
+
   const userPayload = {
     ...(typeof stored.User.toJSON === 'function' ? stored.User.toJSON() : stored.User),
+    id: stored.User.id,
+    userId: stored.User.id,
+    name: effectiveName,
     companyId: effectiveCompanyId,
+    isSuperAdmin: !!stored.User.isSuperAdmin,
+    impersonating: isImpersonating,
+    impersonatedCompany: isImpersonating ? impersonationData?.impersonatedCompany : null,
   };
 
   const accessToken = generateAccessToken(userPayload);
   return { 
     accessToken, 
     role: stored.User.role, 
-    name: stored.User.name, 
+    name: effectiveName, 
     companyId: effectiveCompanyId,
-    isSuperAdmin: !!stored.User.isSuperAdmin
+    isSuperAdmin: !!stored.User.isSuperAdmin,
+    impersonating: isImpersonating,
   };
 }
 

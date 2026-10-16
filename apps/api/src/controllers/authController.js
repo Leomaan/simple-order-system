@@ -58,18 +58,33 @@ export const login = asyncHandler(async (req, res) => {
 
 export const refresh = asyncHandler(async (req, res) => {
   const token = req.cookies?.refreshToken || req.body?.refreshToken;
-  let impersonatedCompanyId = null;
+  let impersonationData = null;
   const currentAccessCookie = req.cookies?.accessToken;
+  const requestedCompanyId = req.headers['x-company-id'] ? Number(req.headers['x-company-id']) : (req.body?.companyId ? Number(req.body.companyId) : null);
+
   if (currentAccessCookie) {
     try {
       const decoded = jwt.verify(currentAccessCookie, process.env.JWT_SECRET, { ignoreExpiration: true });
-      if (decoded.isSuperAdmin && decoded.impersonating && decoded.companyId) {
-        impersonatedCompanyId = decoded.companyId;
+      if (decoded.isSuperAdmin && (decoded.impersonating || requestedCompanyId)) {
+        const effectiveCompanyId = requestedCompanyId || decoded.companyId;
+        if (effectiveCompanyId) {
+          impersonationData = {
+            companyId: effectiveCompanyId,
+            impersonating: true,
+            impersonatedCompany: decoded.impersonatedCompany || null,
+            name: decoded.name,
+          };
+        }
       }
     } catch {}
+  } else if (requestedCompanyId) {
+    impersonationData = {
+      companyId: requestedCompanyId,
+      impersonating: true,
+    };
   }
 
-  const result = await authService.refresh(token, impersonatedCompanyId);
+  const result = await authService.refresh(token, impersonationData);
 
   res.cookie('accessToken', result.accessToken, {
     ...cookieOptions,
@@ -92,6 +107,7 @@ export const refresh = asyncHandler(async (req, res) => {
       name: result.name,
       companyId: result.companyId,
       isSuperAdmin: result.isSuperAdmin,
+      impersonating: result.impersonating || false,
       csrfToken,
     },
   });
