@@ -2,8 +2,11 @@ import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tansta
 import { useState } from 'react';
 import api from '../config/api';
 import { useSocket } from '../context/SocketContext';
+import { useAuth } from '../context/AuthContext';
 
 export function useOrders(initialStatus = '') {
+  const { user } = useAuth();
+  const effectiveCompanyId = user?.companyId || (localStorage.getItem('companyId') ? Number(localStorage.getItem('companyId')) : null);
   const queryClient = useQueryClient();
   const { isConnected } = useSocket();
   const [statusFilter, setStatusFilter] = useState(initialStatus);
@@ -12,7 +15,7 @@ export function useOrders(initialStatus = '') {
 
   // Busca reativa de pedidos com cache de dados
   const { data, isLoading: loading, isFetching, error, refetch } = useQuery({
-    queryKey: ['orders', { status: statusFilter, page, limit }],
+    queryKey: ['orders', { companyId: effectiveCompanyId, status: statusFilter, page, limit }],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (statusFilter) params.append('status', statusFilter);
@@ -24,7 +27,6 @@ export function useOrders(initialStatus = '') {
     // Polling condicional: desativa requisições periódicas com socket conectado;
     // se o socket cair, ativa fallback de polling a cada 5s para manter as mesas sincronizadas
     refetchInterval: isConnected ? false : 5000,
-    placeholderData: keepPreviousData,
   });
 
   const orders = data?.orders || (Array.isArray(data) ? data : []);

@@ -1,8 +1,11 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import api from '../config/api';
 
 export function useProducts(initialCategory = '', options = {}) {
+  const { user } = useAuth();
+  const effectiveCompanyId = user?.companyId || (localStorage.getItem('companyId') ? Number(localStorage.getItem('companyId')) : null);
   const config = typeof initialCategory === 'object' && initialCategory !== null 
     ? initialCategory 
     : options;
@@ -25,9 +28,9 @@ export function useProducts(initialCategory = '', options = {}) {
     return () => clearTimeout(timer);
   }, [searchFilter]);
 
-  // Busca do cardápio de produtos com cache e transição suave (sem desmontar a lista)
+  // Busca do cardápio de produtos estritamente isolado pela empresa ativa
   const { data, isLoading: loading, isFetching, error } = useQuery({
-    queryKey: ['products', { category: categoryFilter, search: debouncedSearch, page: paginate ? page : undefined, limit: paginate ? limit : undefined }],
+    queryKey: ['products', { companyId: effectiveCompanyId, category: categoryFilter, search: debouncedSearch, page: paginate ? page : undefined, limit: paginate ? limit : undefined }],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (categoryFilter) params.append('category', categoryFilter);
@@ -39,7 +42,6 @@ export function useProducts(initialCategory = '', options = {}) {
       const res = await api.get(`/product?${params}`);
       return res.data.data;
     },
-    placeholderData: keepPreviousData,
   });
 
   const products = data?.products || (Array.isArray(data) ? data : []);

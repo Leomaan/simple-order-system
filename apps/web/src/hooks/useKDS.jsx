@@ -1,16 +1,19 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import api from '../config/api';
 import { socket } from '../config/socket';
 
 export function useKDS() {
+  const { user } = useAuth();
+  const effectiveCompanyId = user?.companyId || (localStorage.getItem('companyId') ? Number(localStorage.getItem('companyId')) : null);
   const queryClient = useQueryClient();
   const [selectedStation, setSelectedStation] = useState('ALL');
   const [audioEnabled, setAudioEnabled] = useState(false);
 
   // Busca estações de produção ativas da empresa
   const { data: stations = [] } = useQuery({
-    queryKey: ['kds-stations'],
+    queryKey: ['kds-stations', { companyId: effectiveCompanyId }],
     queryFn: async () => {
       const res = await api.get('/company/current/stations').catch(() => ({ data: { data: [] } }));
       return res.data.data;
@@ -19,7 +22,7 @@ export function useKDS() {
 
   // Busca pedidos ativos com itens em produção
   const { data: orders = [], isLoading } = useQuery({
-    queryKey: ['kds-active-orders'],
+    queryKey: ['kds-active-orders', { companyId: effectiveCompanyId }],
     queryFn: async () => {
       const res = await api.get('/order');
       return res.data.data.filter((o) => o.status === 'OPEN');

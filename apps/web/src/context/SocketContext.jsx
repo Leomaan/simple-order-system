@@ -15,15 +15,16 @@ export const SocketProvider = ({ children }) => {
 
   useEffect(() => {
     if (user) {
-      if (!socket.connected) {
-        socket.connect();
+      if (socket.connected) {
+        socket.disconnect();
       }
+      socket.connect();
     } else {
       if (socket.connected) {
         socket.disconnect();
       }
     }
-  }, [user]);
+  }, [user?.companyId, user?.role]);
 
   useEffect(() => {
     function onConnect() {

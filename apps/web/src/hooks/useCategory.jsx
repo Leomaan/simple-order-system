@@ -1,11 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '../context/AuthContext';
 import api from '../config/api';
 
 export function useCategory() {
+  const { user } = useAuth();
+  const effectiveCompanyId = user?.companyId || (localStorage.getItem('companyId') ? Number(localStorage.getItem('companyId')) : null);
   const queryClient = useQueryClient();
 
   const { data, isLoading: loading, error } = useQuery({
-    queryKey: ['categories'],
+    queryKey: ['categories', { companyId: effectiveCompanyId }],
     queryFn: async () => {
       const res = await api.get('/category');
       return res.data.data || [];

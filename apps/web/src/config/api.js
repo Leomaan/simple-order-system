@@ -15,9 +15,13 @@ const api = axios.create({
   withCredentials: true,
 });
 
-// Interceptor para injetar manualmente o token CSRF em requisições de escrita (CORS)
+// Interceptor para injetar manualmente o token CSRF e o x-company-id ativo
 api.interceptors.request.use(
   (config) => {
+    const companyId = localStorage.getItem('companyId');
+    if (companyId) {
+      config.headers['x-company-id'] = companyId;
+    }
     const method = config.method?.toLowerCase();
     if (['post', 'put', 'delete', 'patch'].includes(method)) {
       const csrfToken = localStorage.getItem('csrfToken');

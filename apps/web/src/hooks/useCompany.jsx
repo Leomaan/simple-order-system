@@ -50,6 +50,8 @@ export function useCompany() {
   const impersonate = async (companyId) => {
     try {
       await api.post(`/company/${companyId}/impersonate`);
+      queryClient.clear();
+      localStorage.setItem('companyId', String(companyId));
       window.location.href = '/admin';
     } catch (err) {
       alert(err.response?.data?.message || 'Erro ao acessar empresa');
@@ -71,6 +73,8 @@ export function useCompany() {
       try {
         await api.post('/company/exit-impersonate');
       } catch {}
+      queryClient.clear();
+      localStorage.removeItem('companyId');
       window.location.href = '/superadmin';
     },
   };
