@@ -7,7 +7,6 @@ import {
   Check, 
   QrCode, 
   MessageCircle,
-  ExternalLink 
 } from 'lucide-react';
 import { restaurantConfig } from '../../config/restaurantInfo.js';
 import ThemeToggle from '../ui/ThemeToggle.jsx';
@@ -33,25 +32,22 @@ export function RestaurantHeader({
         await navigator.share(shareData);
         return;
       } catch (err) {
-        // Se o usuário cancelou o compartilhamento nativo, não faz nada
         if (err.name === 'AbortError') return;
       }
     }
 
-    // Fallback: Copiar para área de transferência
     try {
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);
     } catch {
-      // Se clipboard falhar, abre o modal de QR code como fallback visual
       if (onOpenQrModal) onOpenQrModal();
     }
   };
 
   return (
     <header className="w-full max-w-4xl mx-auto px-4 pt-6 pb-4 sm:pt-8 sm:pb-6">
-      <div className="bg-neutral-900/70 border border-neutral-800/80 rounded-3xl p-5 sm:p-7 shadow-2xl backdrop-blur-md relative overflow-hidden">
+      <div className="bg-white/95 dark:bg-neutral-900/70 border border-[#e4ded4] dark:border-neutral-800/80 rounded-3xl p-5 sm:p-7 shadow-lg dark:shadow-2xl backdrop-blur-md relative overflow-hidden">
         {/* Glow decorativo de fundo */}
         <div className="absolute top-0 right-0 w-72 h-72 bg-orange-500/5 rounded-full blur-3xl pointer-events-none" />
 
@@ -63,34 +59,34 @@ export function RestaurantHeader({
               <span
                 className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${
                   config.isOpen
-                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                    : 'bg-rose-500/10 border-rose-500/30 text-rose-400'
+                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
+                    : 'bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400'
                 }`}
               >
                 <span
                   className={`w-2 h-2 rounded-full ${
-                    config.isOpen ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'
+                    config.isOpen ? 'bg-emerald-500 dark:bg-emerald-400 animate-pulse' : 'bg-rose-500 dark:bg-rose-400'
                   }`}
                 />
                 {config.isOpen ? config.statusOpenText : config.statusClosedText}
               </span>
 
               {/* Horário ao lado do status */}
-              <div className="flex items-center gap-1.5 text-xs text-neutral-400">
-                <Clock size={13} className="text-orange-400 shrink-0" />
+              <div className="flex items-center gap-1.5 text-xs text-stone-600 dark:text-neutral-400">
+                <Clock size={13} className="text-orange-500 dark:text-orange-400 shrink-0" />
                 <span>{config.hours}</span>
               </div>
             </div>
 
             {/* Nome do Restaurante */}
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight leading-tight">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#1c1917] dark:text-white tracking-tight leading-tight">
               {config.name}
             </h1>
 
             {/* Mesa (se aplicável) */}
             {slug && (
               <div className="mt-1 inline-block">
-                <span className="text-xs font-bold uppercase tracking-wider text-orange-400 bg-orange-500/10 px-2.5 py-0.5 rounded-lg border border-orange-500/20">
+                <span className="text-xs font-bold uppercase tracking-wider text-orange-600 dark:text-orange-400 bg-orange-500/10 px-2.5 py-0.5 rounded-lg border border-orange-500/20">
                   Mesa {slug.toUpperCase()}
                 </span>
               </div>
@@ -98,21 +94,21 @@ export function RestaurantHeader({
 
             {/* Descrição */}
             {config.description && (
-              <p className="text-xs sm:text-sm text-neutral-400 mt-2 leading-relaxed max-w-xl">
+              <p className="text-xs sm:text-sm text-stone-600 dark:text-neutral-400 mt-2 leading-relaxed max-w-xl">
                 {config.description}
               </p>
             )}
 
             {/* Linha de Endereço (abaixo do horário) */}
             {config.address && (
-              <div className="mt-3.5 flex items-center gap-2 text-xs sm:text-sm text-neutral-300">
-                <MapPin size={14} className="text-orange-400 shrink-0" />
+              <div className="mt-3.5 flex items-center gap-2 text-xs sm:text-sm text-stone-700 dark:text-neutral-300">
+                <MapPin size={14} className="text-orange-500 dark:text-orange-400 shrink-0" />
                 {config.mapsUrl ? (
                   <a
                     href={config.mapsUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="hover:text-orange-400 transition-colors underline-offset-2 hover:underline truncate"
+                    className="hover:text-orange-600 dark:hover:text-orange-400 transition-colors underline-offset-2 hover:underline truncate"
                   >
                     {config.address}
                   </a>
@@ -123,14 +119,14 @@ export function RestaurantHeader({
             )}
 
             {/* Telefone e Ações de Contato / Compartilhar */}
-            <div className="mt-4 pt-4 border-t border-neutral-800/80 flex flex-wrap items-center gap-3">
+            <div className="mt-4 pt-4 border-t border-[#e4ded4] dark:border-neutral-800/80 flex flex-wrap items-center gap-3">
               {/* Telefone / WhatsApp */}
               {config.phone && (
                 <a
                   href={`tel:${config.phoneRaw || config.phone}`}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-950/80 border border-neutral-800 hover:border-neutral-700 text-xs text-neutral-300 hover:text-white transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#f5f0e6] hover:bg-[#ebe4d6] dark:bg-neutral-950/80 border border-[#d8d2c4] dark:border-neutral-800 hover:border-[#c4bdb0] dark:hover:border-neutral-700 text-xs text-stone-700 dark:text-neutral-300 hover:text-[#1c1917] dark:hover:text-white transition-colors"
                 >
-                  <Phone size={13} className="text-orange-400" />
+                  <Phone size={13} className="text-orange-500 dark:text-orange-400" />
                   <span>{config.phone}</span>
                 </a>
               )}
@@ -140,10 +136,10 @@ export function RestaurantHeader({
                   href={`https://wa.me/${config.whatsapp}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-950/80 border border-neutral-800 hover:border-emerald-600/50 text-xs text-neutral-300 hover:text-emerald-400 transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#f5f0e6] hover:bg-[#ebe4d6] dark:bg-neutral-950/80 border border-[#d8d2c4] dark:border-neutral-800 hover:border-emerald-600/50 text-xs text-stone-700 dark:text-neutral-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
                   title="Falar no WhatsApp"
                 >
-                  <MessageCircle size={13} className="text-emerald-400" />
+                  <MessageCircle size={13} className="text-emerald-500 dark:text-emerald-400" />
                   <span>WhatsApp</span>
                 </a>
               )}
@@ -154,7 +150,7 @@ export function RestaurantHeader({
                 onClick={handleShare}
                 className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200 cursor-pointer ${
                   copied
-                    ? 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-400'
+                    ? 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-600 dark:text-emerald-400'
                     : 'bg-orange-500 hover:bg-orange-600 text-white shadow-sm shadow-orange-500/20'
                 }`}
                 title="Compartilhar este cardápio"
@@ -168,10 +164,10 @@ export function RestaurantHeader({
                 <button
                   type="button"
                   onClick={onOpenQrModal}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-950/80 border border-neutral-800 hover:border-neutral-700 text-xs text-neutral-300 hover:text-white transition-colors cursor-pointer"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#f5f0e6] hover:bg-[#ebe4d6] dark:bg-neutral-950/80 border border-[#d8d2c4] dark:border-neutral-800 hover:border-[#c4bdb0] dark:hover:border-neutral-700 text-xs text-stone-700 dark:text-neutral-300 hover:text-[#1c1917] dark:hover:text-white transition-colors cursor-pointer"
                   title="Abrir QR Code"
                 >
-                  <QrCode size={13} className="text-orange-400" />
+                  <QrCode size={13} className="text-orange-500 dark:text-orange-400" />
                   <span>QR Code</span>
                 </button>
               )}
@@ -184,7 +180,7 @@ export function RestaurantHeader({
           {/* Foto à Direita */}
           {config.photoUrl && (
             <div className="shrink-0 self-center sm:self-start">
-              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden border-2 border-neutral-800 shadow-xl bg-neutral-950 relative group">
+              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden border-2 border-[#e4ded4] dark:border-neutral-800 shadow-lg dark:shadow-xl bg-[#f5f0e6] dark:bg-neutral-950 relative group">
                 <img
                   src={config.photoUrl}
                   alt={config.name}

@@ -34,15 +34,15 @@ export const ProductCategorySection = memo(function ProductCategorySection({
       className="scroll-mt-24 pt-6 pb-2 first:pt-2"
     >
       {/* Título da Categoria */}
-      <div className="flex items-center gap-3 mb-4 pb-2 border-b border-neutral-800/80">
-        <div className="w-8 h-8 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-400">
+      <div className="flex items-center gap-3 mb-4 pb-2 border-b border-[#e4ded4] dark:border-neutral-800/80">
+        <div className="w-8 h-8 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-500 dark:text-orange-400">
           <Icon size={16} />
         </div>
         <div className="flex items-center gap-2">
-          <h2 className="text-lg sm:text-xl font-extrabold text-white tracking-tight">
+          <h2 className="text-lg sm:text-xl font-extrabold text-[#1c1917] dark:text-white tracking-tight">
             {title}
           </h2>
-          <span className="text-xs font-semibold text-neutral-400 bg-neutral-900 border border-neutral-800 px-2 py-0.5 rounded-full">
+          <span className="text-xs font-semibold text-stone-600 dark:text-neutral-400 bg-white dark:bg-neutral-900 border border-[#e4ded4] dark:border-neutral-800 px-2 py-0.5 rounded-full">
             {products.length} {products.length === 1 ? 'item' : 'itens'}
           </span>
         </div>

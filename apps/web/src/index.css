@@ -131,29 +131,65 @@
   }
 
   /* Suporte universal ao modo claro para compatibilidade de componentes legados */
-  html.light .bg-neutral-950 {
-    background-color: #f7f4ee !important;
+  html.light .bg-neutral-950,
+  html.light .bg-neutral-950\/90,
+  html.light .bg-neutral-950\/80,
+  html.light .bg-neutral-950\/70,
+  html.light .bg-neutral-950\/60,
+  html.light .bg-neutral-950\/40,
+  html.light .bg-neutral-950\/30 {
+    background-color: #ffffff !important;
   }
 
-  html.light .bg-neutral-900 {
+  html.light .bg-neutral-900,
+  html.light .bg-neutral-900\/90,
+  html.light .bg-neutral-900\/80,
+  html.light .bg-neutral-900\/70,
+  html.light .bg-neutral-900\/60,
+  html.light .bg-neutral-900\/50,
+  html.light .bg-neutral-900\/40,
+  html.light .bg-neutral-900\/30,
+  html.light .bg-neutral-900\/20,
+  html.light .bg-neutral-900\/10 {
     background-color: #ffffff !important;
   }
 
   html.light .bg-neutral-850,
-  html.light .bg-neutral-800 {
+  html.light .bg-neutral-800,
+  html.light .bg-neutral-800\/80,
+  html.light .bg-neutral-800\/60,
+  html.light .bg-neutral-800\/40 {
     background-color: #eee9df !important;
+  }
+
+  html.light .hover\:bg-neutral-900:hover,
+  html.light .hover\:bg-neutral-900\/40:hover,
+  html.light .hover\:bg-neutral-900\/30:hover {
+    background-color: #faf7f2 !important;
   }
 
   html.light .hover\:bg-neutral-800:hover,
   html.light .hover\:bg-neutral-800\/60:hover,
-  html.light .hover\:bg-neutral-800\/40:hover {
+  html.light .hover\:bg-neutral-800\/40:hover,
+  html.light .hover\:bg-neutral-700:hover {
     background-color: #e5dfd3 !important;
   }
 
+  html.light .border-neutral-900,
+  html.light .border-neutral-850,
+  html.light .border-neutral-850\/80,
   html.light .border-neutral-800,
+  html.light .border-neutral-800\/80,
+  html.light .border-neutral-800\/50,
   html.light .border-neutral-750,
   html.light .border-neutral-700 {
     border-color: #e4ded4 !important;
+  }
+
+  html.light .hover\:border-neutral-750:hover,
+  html.light .hover\:border-neutral-700:hover,
+  html.light .hover\:border-neutral-700\/80:hover {
+    border-color: #cfc7b8 !important;
   }
 
   html.light .divide-neutral-800 > :not([hidden]) ~ :not([hidden]) {
@@ -166,6 +202,7 @@
   html.light h3.text-white,
   html.light h4.text-white,
   html.light .font-bold.text-white,
+  html.light .font-extrabold.text-white,
   html.light .font-semibold.text-white,
   html.light td .text-white,
   html.light th.text-white {
@@ -180,17 +217,20 @@
     color: #292524 !important;
   }
 
-  html.light .text-neutral-300 {
+  html.light .text-neutral-300,
+  html.light .text-neutral-350 {
     color: #44403c !important;
   }
 
-  html.light .text-neutral-400 {
-    color: #78716c !important;
+  html.light .text-neutral-400,
+  html.light .text-neutral-450 {
+    color: #57534e !important;
   }
 
   html.light .text-neutral-500,
-  html.light .text-neutral-550 {
-    color: #a8a29e !important;
+  html.light .text-neutral-550,
+  html.light .text-neutral-600 {
+    color: #78716c !important;
   }
 }
 

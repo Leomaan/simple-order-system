@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { useCategory } from '../../hooks/useCategory';
-import { X, Plus, Edit2, Trash2, Layers, Check, AlertCircle } from 'lucide-react';
+import { X, Edit2, Trash2, Layers } from 'lucide-react';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import ErrorMessage from '../ui/ErrorMessage';
 import { formatErrorMessage } from '../util/errorUtil';
 
 export default function CategoryManagerModal({ isOpen, onClose }) {
-  const { categories, loading, createCategory, updateCategory, deleteCategory, isSaving, isDeleting } = useCategory();
+  const { categories, loading, createCategory, updateCategory, deleteCategory, isSaving } = useCategory();
   
   const [editingId, setEditingId] = useState(null);
   const [name, setName] = useState('');
@@ -160,16 +160,16 @@ export default function CategoryManagerModal({ isOpen, onClose }) {
 
           {/* List of categories */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+            <div className="flex items-center justify-between text-xs font-semibold text-stone-500 dark:text-neutral-400 uppercase tracking-wider">
               <span>Categorias Cadastradas ({categories.length})</span>
             </div>
 
             {loading ? (
-              <div className="py-8 text-center text-sm text-neutral-500 animate-pulse">
+              <div className="py-8 text-center text-sm text-stone-500 dark:text-neutral-500 animate-pulse">
                 Carregando categorias...
               </div>
             ) : categories.length === 0 ? (
-              <div className="p-6 rounded-xl border border-dashed border-neutral-800 text-center text-sm text-neutral-500">
+              <div className="p-6 rounded-xl border border-dashed border-[#d8d2c4] dark:border-neutral-800 text-center text-sm text-stone-500 dark:text-neutral-500">
                 Nenhuma categoria customizada cadastrada. Crie uma acima!
               </div>
             ) : (
@@ -177,15 +177,15 @@ export default function CategoryManagerModal({ isOpen, onClose }) {
                 {categories.map((cat) => (
                   <div
                     key={cat.id}
-                    className="flex items-center justify-between p-3.5 bg-neutral-950/40 border border-neutral-800 rounded-xl hover:border-neutral-700 transition"
+                    className="flex items-center justify-between p-3.5 bg-[#f7f4ee] dark:bg-neutral-950/40 border border-[#e4ded4] dark:border-neutral-800 rounded-xl hover:border-[#cfc7b8] dark:hover:border-neutral-700 transition"
                   >
                     <div className="flex items-center gap-3">
-                      <span className="w-6 h-6 rounded-md bg-neutral-800 text-neutral-400 text-xs font-mono flex items-center justify-center">
+                      <span className="w-6 h-6 rounded-md bg-[#eee9df] dark:bg-neutral-800 text-stone-600 dark:text-neutral-400 text-xs font-mono flex items-center justify-center">
                         {cat.orderIndex ?? 0}
                       </span>
                       <div>
-                        <p className="text-sm font-semibold text-white">{cat.name}</p>
-                        <p className="text-[11px] text-neutral-500 font-mono">slug: {cat.slug || cat.id}</p>
+                        <p className="text-sm font-semibold text-[#1c1917] dark:text-white">{cat.name}</p>
+                        <p className="text-[11px] text-stone-500 dark:text-neutral-500 font-mono">slug: {cat.slug || cat.id}</p>
                       </div>
                     </div>
 
@@ -193,7 +193,7 @@ export default function CategoryManagerModal({ isOpen, onClose }) {
                       <button
                         type="button"
                         onClick={() => startEdit(cat)}
-                        className="p-1.5 text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-lg transition"
+                        className="p-1.5 text-stone-500 hover:text-[#1c1917] hover:bg-[#eee9df] dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-800 rounded-lg transition"
                         title="Editar"
                       >
                         <Edit2 className="w-4 h-4" />
@@ -202,7 +202,7 @@ export default function CategoryManagerModal({ isOpen, onClose }) {
                         type="button"
                         onClick={() => handleDelete(cat.id)}
                         disabled={deletingId === cat.id}
-                        className="p-1.5 text-neutral-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition"
+                        className="p-1.5 text-stone-500 dark:text-neutral-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-500/10 rounded-lg transition"
                         title="Excluir"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -216,7 +216,7 @@ export default function CategoryManagerModal({ isOpen, onClose }) {
         </div>
 
         {/* Modal Footer */}
-        <div className="p-4 bg-neutral-950/40 border-t border-neutral-800 flex justify-end">
+        <div className="p-4 bg-[#f7f4ee] dark:bg-neutral-950/40 border-t border-[#e4ded4] dark:border-neutral-800 flex justify-end">
           <Button
             type="button"
             variant="secondary"

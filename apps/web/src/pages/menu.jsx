@@ -11,8 +11,6 @@ import { getMenuCanonicalUrl } from '../util/menuQrCode.js';
 import { useScrollSpy } from '../hooks/useScrollSpy.js';
 import { ShoppingBag } from 'lucide-react';
 
-const CATEGORIES = ['FOOD', 'DRINK', 'SNACK', 'DESSERT', 'SIDE'];
-
 export default function MenuPage() {
   const { slug } = useParams();
   const [searchParams] = useSearchParams();
@@ -124,22 +122,22 @@ export default function MenuPage() {
         {loading ? (
           /* Esqueletos de carregamento no formato horizontal */
           <div className="flex flex-col gap-4 animate-pulse">
-            <div className="h-7 w-48 bg-neutral-900/80 rounded-xl mb-2" />
+            <div className="h-7 w-48 bg-[#e5dfd3] dark:bg-neutral-900/80 rounded-xl mb-2" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
               {[...Array(6)].map((_, i) => (
                 <div
                   key={i}
-                  className="w-full h-28 bg-neutral-900/60 rounded-2xl border border-neutral-800/50 p-4 flex items-center justify-between gap-4"
+                  className="w-full h-28 bg-white dark:bg-neutral-900/60 rounded-2xl border border-[#e4ded4] dark:border-neutral-800/50 p-4 flex items-center justify-between gap-4"
                 >
                   <div className="flex items-center gap-4 flex-1 min-w-0">
-                    <div className="w-20 h-20 bg-neutral-800/60 rounded-xl shrink-0" />
+                    <div className="w-20 h-20 bg-[#eee9df] dark:bg-neutral-800/60 rounded-xl shrink-0" />
                     <div className="flex flex-col gap-2 flex-1 min-w-0">
-                      <div className="h-4 bg-neutral-800/80 rounded-md w-3/4" />
-                      <div className="h-3 bg-neutral-800/40 rounded-md w-full" />
-                      <div className="h-3 bg-neutral-800/40 rounded-md w-1/2" />
+                      <div className="h-4 bg-[#e5dfd3] dark:bg-neutral-800/80 rounded-md w-3/4" />
+                      <div className="h-3 bg-[#eee9df] dark:bg-neutral-800/40 rounded-md w-full" />
+                      <div className="h-3 bg-[#eee9df] dark:bg-neutral-800/40 rounded-md w-1/2" />
                     </div>
                   </div>
-                  <div className="w-16 h-5 bg-neutral-800/80 rounded-md shrink-0" />
+                  <div className="w-16 h-5 bg-[#e5dfd3] dark:bg-neutral-800/80 rounded-md shrink-0" />
                 </div>
               ))}
             </div>
@@ -147,7 +145,7 @@ export default function MenuPage() {
         ) : error ? (
           /* Estado de Erro */
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <p className="text-neutral-400 text-sm mb-4">
+            <p className="text-stone-600 dark:text-neutral-400 text-sm mb-4">
               Não foi possível carregar o cardápio no momento.
             </p>
             <button
@@ -160,11 +158,11 @@ export default function MenuPage() {
           </div>
         ) : products.length === 0 ? (
           /* Estado de Nenhum Produto Encontrado (busca ou vazio) */
-          <div className="flex flex-col items-center justify-center py-20 text-center bg-neutral-900/20 rounded-3xl border border-dashed border-neutral-800 p-8">
-            <p className="text-neutral-300 font-medium mb-1">
+          <div className="flex flex-col items-center justify-center py-20 text-center bg-white dark:bg-neutral-900/20 rounded-3xl border border-dashed border-[#d8d2c4] dark:border-neutral-800 p-8">
+            <p className="text-[#1c1917] dark:text-neutral-300 font-medium mb-1">
               Nenhum produto encontrado
             </p>
-            <p className="text-neutral-500 text-xs mb-4">
+            <p className="text-stone-500 dark:text-neutral-500 text-xs mb-4">
               {search
                 ? `Não encontramos itens que correspondam a "${search}".`
                 : 'Não há itens disponíveis no momento.'}
@@ -173,7 +171,7 @@ export default function MenuPage() {
               <button
                 type="button"
                 onClick={() => setSearch('')}
-                className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 rounded-xl text-xs font-semibold transition cursor-pointer"
+                className="px-4 py-2 bg-[#eee9df] hover:bg-[#e5dfd3] text-[#1c1917] dark:bg-neutral-800 dark:hover:bg-neutral-700 dark:text-neutral-200 rounded-xl text-xs font-semibold transition cursor-pointer"
               >
                 Limpar busca
               </button>
@@ -199,7 +197,7 @@ export default function MenuPage() {
         <aside aria-label="Ações do carrinho" className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-[92%] max-w-md animate-in slide-in-from-bottom-5">
           <button
             onClick={() => setIsCartOpen(true)}
-            className="w-full py-4 px-5 bg-orange-600 hover:bg-orange-500 text-white font-extrabold rounded-2xl flex items-center justify-between shadow-2xl shadow-orange-600/40 border border-orange-400/30 active:scale-98 transition"
+            className="w-full py-4 px-5 bg-orange-600 hover:bg-orange-500 text-white font-extrabold rounded-2xl flex items-center justify-between shadow-2xl shadow-orange-600/40 border border-orange-400/30 active:scale-98 transition cursor-pointer"
           >
             <div className="flex items-center gap-2.5">
               <span className="w-7 h-7 rounded-xl bg-black/20 flex items-center justify-center text-xs font-black">
@@ -219,7 +217,7 @@ export default function MenuPage() {
       )}
 
       {/* Rodapé sutil */}
-      <footer className="mt-auto border-t border-neutral-900 py-6 text-center text-xs text-neutral-600 pb-24 sm:pb-6">
+      <footer className="mt-auto border-t border-[#e4ded4] dark:border-neutral-900 py-6 text-center text-xs text-stone-500 dark:text-neutral-600 pb-24 sm:pb-6">
         <p>{company?.name || 'Simple Order'} • Cardápio Digital</p>
       </footer>
 

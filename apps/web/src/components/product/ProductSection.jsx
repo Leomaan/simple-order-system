@@ -133,14 +133,14 @@ export default function ProductSection() {
       )}
       <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 md:mb-8">
         <div>
-          <h2 className="text-2xl font-bold text-white tracking-tight">Cardápio & Produtos</h2>
-          <p className="text-neutral-500 text-sm">Gerencie os itens disponíveis para venda</p>
+          <h2 className="text-2xl font-bold text-[#1c1917] dark:text-white tracking-tight">Cardápio & Produtos</h2>
+          <p className="text-stone-500 dark:text-neutral-500 text-sm">Gerencie os itens disponíveis para venda</p>
         </div>
         <div className="flex items-center gap-2.5">
           <Button
             onClick={() => setIsCategoryModalOpen(true)}
             variant="secondary"
-            className="w-full sm:w-auto py-3 px-4 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 border border-neutral-750 hover:bg-neutral-800"
+            className="w-full sm:w-auto py-3 px-4 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 border border-[#d8d2c4] dark:border-neutral-750 hover:bg-[#eee9df] dark:hover:bg-neutral-800"
           >
             <Layers size={16} className="text-orange-500" />
             <span>Categorias</span>
@@ -161,16 +161,16 @@ export default function ProductSection() {
       {showForm && (
         <form
           onSubmit={handleSubmit}
-          className="glass-panel border border-neutral-800 rounded-2xl p-6 mb-8 flex flex-col gap-5 animate-in slide-in-from-top-4 duration-300"
+          className="glass-panel border border-[#e4ded4] dark:border-neutral-800 rounded-2xl p-6 mb-8 flex flex-col gap-5 animate-in slide-in-from-top-4 duration-300"
         >
-          <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
-            <h3 className="text-white font-bold text-base">
+          <div className="flex items-center justify-between border-b border-[#e4ded4] dark:border-neutral-800 pb-3">
+            <h3 className="text-[#1c1917] dark:text-white font-bold text-base">
               {editing ? "Editar Produto" : "Novo Produto"}
             </h3>
             <button
               type="button"
               onClick={closeForm}
-              className="text-neutral-500 hover:text-white text-xl"
+              className="text-stone-400 hover:text-[#1c1917] dark:text-neutral-500 dark:hover:text-white text-xl"
             >
               &times;
             </button>
@@ -250,19 +250,19 @@ export default function ProductSection() {
               placeholder="Ex: https://exemplo.com/foto-produto.jpg"
             />
             {form.imageUrl ? (
-              <div className="flex items-center gap-3 border border-neutral-800 rounded-xl p-2.5 bg-neutral-900/50">
+              <div className="flex items-center gap-3 border border-[#e4ded4] dark:border-neutral-800 rounded-xl p-2.5 bg-white dark:bg-neutral-900/50">
                 <img
                   src={form.imageUrl}
                   alt="Pré-visualização"
-                  className="w-10 h-10 rounded-lg object-cover border border-neutral-700 shrink-0 bg-neutral-950"
+                  className="w-10 h-10 rounded-lg object-cover border border-[#d8d2c4] dark:border-neutral-700 shrink-0 bg-[#f5f0e6] dark:bg-neutral-950"
                   onError={(e) => { e.currentTarget.style.display = 'none'; }}
                 />
-                <span className="text-xs text-neutral-400 font-medium truncate">
+                <span className="text-xs text-stone-600 dark:text-neutral-400 font-medium truncate">
                   Pré-visualização da imagem
                 </span>
               </div>
             ) : (
-              <p className="text-xs text-neutral-500 italic pb-2">
+              <p className="text-xs text-stone-500 dark:text-neutral-500 italic pb-2">
                 Cole a URL da imagem para exibi-la no cardápio público.
               </p>
             )}
@@ -276,7 +276,7 @@ export default function ProductSection() {
               onChange={(e) => setForm({ ...form, available: e.target.checked })}
               className="w-4 h-4 accent-orange-500 rounded cursor-pointer"
             />
-            <label htmlFor="available" className="text-xs font-semibold text-neutral-300 cursor-pointer select-none">
+            <label htmlFor="available" className="text-xs font-semibold text-stone-700 dark:text-neutral-300 cursor-pointer select-none">
               Produto disponível para venda imediata
             </label>
           </div>
@@ -310,12 +310,12 @@ export default function ProductSection() {
             onChange={(e) => setSearch(e.target.value)}
             className="w-full bg-[#fdfdfc] dark:bg-[#26262e] border border-[#d8d2c4] dark:border-[#3e3e4a] text-[#1c1917] dark:text-[#ececf0] rounded-xl py-2 pl-9 pr-8 text-xs outline-none focus:border-orange-500/80 focus:ring-2 focus:ring-orange-500/25 transition-all"
           />
-          <Search size={14} className="absolute left-3 top-2.5 text-neutral-500" />
+          <Search size={14} className="absolute left-3 top-2.5 text-stone-400 dark:text-neutral-500" />
           {searchQuery && (
             <button
               type="button"
               onClick={() => setSearch("")}
-              className="absolute right-2.5 top-2 text-neutral-500 hover:text-white p-0.5 rounded cursor-pointer"
+              className="absolute right-2.5 top-2 text-stone-400 hover:text-[#1c1917] dark:text-neutral-500 dark:hover:text-white p-0.5 rounded cursor-pointer"
             >
               <X size={13} />
             </button>
@@ -327,12 +327,12 @@ export default function ProductSection() {
       {loading ? (
         <div className="flex flex-col gap-2 w-full">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="h-14 bg-neutral-900/40 border border-neutral-800 rounded-xl animate-pulse w-full" />
+            <div key={i} className="h-14 bg-white dark:bg-neutral-900/40 border border-[#e4ded4] dark:border-neutral-800 rounded-xl animate-pulse w-full" />
           ))}
         </div>
       ) : sortedProducts.length === 0 ? (
-        <div className="text-center py-16 bg-neutral-900/10 rounded-2xl border border-dashed border-neutral-800 w-full">
-          <p className="text-neutral-500 font-medium">Nenhum produto cadastrado nesta categoria.</p>
+        <div className="text-center py-16 bg-white dark:bg-neutral-900/10 rounded-2xl border border-dashed border-[#d8d2c4] dark:border-neutral-800 w-full">
+          <p className="text-stone-500 dark:text-neutral-500 font-medium">Nenhum produto cadastrado nesta categoria.</p>
         </div>
       ) : (
         <div className="flex flex-col gap-2 w-full">
@@ -343,8 +343,8 @@ export default function ProductSection() {
                 key={p.id}
                 className={`w-full group rounded-xl border px-3.5 py-2.5 sm:px-4 sm:py-3 flex items-center justify-between gap-3 transition-all duration-150 ${
                   p.available
-                    ? 'border-neutral-850 bg-neutral-950/70 hover:border-neutral-750 hover:bg-neutral-900/40'
-                    : 'border-neutral-900 bg-neutral-950/30 opacity-60'
+                    ? 'border-[#e4ded4] bg-white hover:border-[#cfc7b8] hover:bg-[#faf8f4] dark:border-neutral-850 dark:bg-neutral-950/70 dark:hover:border-neutral-750 dark:hover:bg-neutral-900/40'
+                    : 'border-[#e4ded4] bg-white/60 dark:border-neutral-900 dark:bg-neutral-950/30 opacity-60'
                 }`}
               >
                 {/* Lado Esquerdo: Ícone + Info do Produto */}
@@ -353,27 +353,29 @@ export default function ProductSection() {
                     <img
                       src={p.imageUrl}
                       alt={p.name}
-                      className="w-9 h-9 rounded-xl object-cover border border-neutral-800 shrink-0 bg-neutral-900"
+                      className="w-9 h-9 rounded-xl object-cover border border-[#e4ded4] dark:border-neutral-800 shrink-0 bg-[#f5f0e6] dark:bg-neutral-900"
                       onError={(e) => { e.currentTarget.style.display = 'none'; }}
                     />
                   ) : (
                     <div className={`w-9 h-9 rounded-xl border flex items-center justify-center shrink-0 ${
-                      p.available ? 'bg-neutral-900 border-neutral-800 text-orange-400' : 'bg-neutral-950 border-neutral-900 text-neutral-600'
+                      p.available
+                        ? 'bg-[#f5f0e6] border-[#e4ded4] text-orange-500 dark:bg-neutral-900 dark:border-neutral-800 dark:text-orange-400'
+                        : 'bg-[#eee9df] border-[#e4ded4] text-stone-400 dark:bg-neutral-950 dark:border-neutral-900 dark:text-neutral-600'
                     }`}>
                       <IconComponent size={16} />
                     </div>
                   )}
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="text-white font-bold text-sm leading-tight truncate group-hover:text-orange-400 transition-colors">
+                      <h3 className="text-[#1c1917] dark:text-white font-bold text-sm leading-tight truncate group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
                         {p.name}
                       </h3>
-                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-neutral-900 text-neutral-400 border border-neutral-800 shrink-0">
-                        {categoryLabel[p.category]}
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-[#f5f0e6] text-stone-600 border border-[#e4ded4] dark:bg-neutral-900 dark:text-neutral-400 dark:border-neutral-800 shrink-0">
+                        {categoryLabel[p.category] || p.category}
                       </span>
                     </div>
                     {p.description && (
-                      <p className="text-neutral-500 text-xs truncate mt-0.5 max-w-md hidden sm:block">
+                      <p className="text-stone-500 dark:text-neutral-500 text-xs truncate mt-0.5 max-w-md hidden sm:block">
                         {p.description}
                       </p>
                     )}
@@ -382,7 +384,7 @@ export default function ProductSection() {
 
                 {/* Lado Direito: Preço + Status + Ações */}
                 <div className="flex items-center gap-3 sm:gap-4 shrink-0">
-                  <span className="text-sm sm:text-base font-extrabold text-white text-right sm:min-w-[85px]">
+                  <span className="text-sm sm:text-base font-extrabold text-[#1c1917] dark:text-white text-right sm:min-w-[85px]">
                     R$ {Number(p.price).toFixed(2)}
                   </span>
 
@@ -397,11 +399,11 @@ export default function ProductSection() {
                     }}
                     className={`text-[10px] font-bold uppercase tracking-wider py-1 px-2.5 rounded-lg border transition-all flex items-center gap-1.5 cursor-pointer select-none ${
                       p.available
-                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20"
-                        : "bg-rose-500/10 text-rose-400 border-rose-500/30 hover:bg-rose-500/20"
+                        ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20"
+                        : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30 hover:bg-rose-500/20"
                     }`}
                   >
-                    <span className={`w-1.5 h-1.5 rounded-full ${p.available ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'}`} />
+                    <span className={`w-1.5 h-1.5 rounded-full ${p.available ? 'bg-emerald-500 dark:bg-emerald-400 animate-pulse' : 'bg-rose-500 dark:bg-rose-400'}`} />
                     <span>{p.available ? "Disponível" : "Indisponível"}</span>
                   </button>
 
@@ -409,7 +411,7 @@ export default function ProductSection() {
                     <button
                       type="button"
                       onClick={() => openEdit(p)}
-                      className="p-1.5 rounded-lg border border-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-800/60 transition-colors cursor-pointer"
+                      className="p-1.5 rounded-lg border border-[#e4ded4] dark:border-neutral-800 text-stone-500 hover:text-[#1c1917] hover:bg-[#eee9df] dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-800/60 transition-colors cursor-pointer"
                       title="Editar produto"
                     >
                       <Edit2 size={13} />
@@ -417,7 +419,7 @@ export default function ProductSection() {
                     <button
                       type="button"
                       onClick={() => setDeleting(p.id)}
-                      className="p-1.5 rounded-lg border border-rose-500/20 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                      className="p-1.5 rounded-lg border border-rose-500/20 text-rose-500 dark:text-rose-400 hover:text-rose-600 dark:hover:text-rose-300 hover:bg-rose-500/10 transition-colors cursor-pointer"
                       title="Excluir produto"
                     >
                       <Trash2 size={13} />
@@ -432,9 +434,9 @@ export default function ProductSection() {
 
       {/* Paginação */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between border border-neutral-850 bg-neutral-900/10 rounded-2xl px-5 py-4 mt-6">
-          <p className="text-xs text-neutral-500 font-semibold select-none">
-            Mostrando página <span className="text-neutral-350">{currentPage}</span> de <span className="text-neutral-350">{totalPages}</span>
+        <div className="flex items-center justify-between border border-[#e4ded4] dark:border-neutral-850 bg-white dark:bg-neutral-900/10 rounded-2xl px-5 py-4 mt-6">
+          <p className="text-xs text-stone-500 dark:text-neutral-500 font-semibold select-none">
+            Mostrando página <span className="text-[#1c1917] dark:text-neutral-350">{currentPage}</span> de <span className="text-[#1c1917] dark:text-neutral-350">{totalPages}</span>
           </p>
           <div className="flex gap-2">
             <Button
@@ -464,7 +466,3 @@ export default function ProductSection() {
     </div>
   );
 }
-
-
-
-
