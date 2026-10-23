@@ -29,6 +29,15 @@ export const toggleCompanyStatus = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, data: company });
 });
 
+export const deleteCompany = asyncHandler(async (req, res) => {
+  const deleted = await companyService.deleteCompany(req.params.id);
+  res.status(200).json({
+    success: true,
+    message: `Empresa "${deleted.name}" excluída permanentemente com sucesso`,
+    data: deleted,
+  });
+});
+
 export const impersonateCompany = asyncHandler(async (req, res) => {
   const result = await companyService.impersonateCompany(req.params.id, req.user);
 
