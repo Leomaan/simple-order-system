@@ -3,6 +3,7 @@ import { useCompany } from '../hooks/useCompany';
 import { useAuth } from '../context/AuthContext';
 import CreateCompanyModal from '../components/superadmin/CreateCompanyModal';
 import CompanyTable from '../components/superadmin/CompanyTable';
+import ConfirmModal from '../components/ui/ConfirmModal';
 import ThemeToggle from '../components/ui/ThemeToggle';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
@@ -11,6 +12,7 @@ import { ShieldCheck, Plus, Search, LogOut } from 'lucide-react';
 export default function SuperAdmin() {
   const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [deletingCompany, setDeletingCompany] = useState(null);
   const { logout } = useAuth();
 
   const {
@@ -21,12 +23,25 @@ export default function SuperAdmin() {
     createCompany,
     isCreating,
     toggleStatus,
+    deleteCompany,
+    isDeleting,
     impersonate,
   } = useCompany();
 
   const handleCreateCompany = (payload) => {
     createCompany(payload, {
       onSuccess: () => setIsModalOpen(false),
+    });
+  };
+
+  const handleConfirmDelete = () => {
+    if (!deletingCompany) return;
+    deleteCompany(deletingCompany.id, {
+      onSuccess: () => setDeletingCompany(null),
+      onError: (err) => {
+        alert(err.response?.data?.message || 'Erro ao excluir empresa');
+        setDeletingCompany(null);
+      },
     });
   };
 
@@ -37,6 +52,18 @@ export default function SuperAdmin() {
 
   return (
     <div className="min-h-screen bg-[#f7f4ee] dark:bg-[#121215] text-[#1c1917] dark:text-[#ececf0] p-6 sm:p-10 font-sans transition-colors">
+      {deletingCompany && (
+        <ConfirmModal
+          title={`Excluir "${deletingCompany.name}"?`}
+          message={`Esta ação é permanente e removerá o estabelecimento "${deletingCompany.name}", seus produtos, pedidos, categorias e usuários vinculados. Deseja realmente excluir?`}
+          confirmLabel="Excluir Empresa"
+          confirmVariant="danger"
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setDeletingCompany(null)}
+          loading={isDeleting}
+        />
+      )}
+
       <div className="max-w-6xl mx-auto space-y-8">
         
         {/* Header */}
@@ -114,6 +141,7 @@ export default function SuperAdmin() {
               companies={filteredCompanies}
               onImpersonate={impersonate}
               onToggleStatus={toggleStatus}
+              onDelete={setDeletingCompany}
             />
           )}
         </div>

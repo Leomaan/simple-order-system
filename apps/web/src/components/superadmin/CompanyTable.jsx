@@ -1,7 +1,7 @@
 import React from 'react';
-import { Building2, ExternalLink, CheckCircle2, XCircle, UserCheck } from 'lucide-react';
+import { Building2, ExternalLink, CheckCircle2, XCircle, UserCheck, Trash2 } from 'lucide-react';
 
-export default function CompanyTable({ companies, onImpersonate, onToggleStatus }) {
+export default function CompanyTable({ companies, onImpersonate, onToggleStatus, onDelete }) {
   if (companies.length === 0) {
     return (
       <div className="p-12 text-center text-stone-500 dark:text-stone-400 text-sm">
@@ -113,12 +113,22 @@ export default function CompanyTable({ companies, onImpersonate, onToggleStatus 
                       onClick={() => onToggleStatus(company.id)}
                       className={`text-xs px-2.5 py-1.5 rounded-xl font-medium border transition cursor-pointer active:scale-95 ${
                         company.active
-                          ? 'border-[#d8d2c4] dark:border-[#3e3e4a] hover:border-red-500/40 hover:bg-red-500/5 text-stone-600 dark:text-stone-400 hover:text-red-500'
+                          ? 'border-[#d8d2c4] dark:border-[#3e3e4a] hover:border-amber-500/40 hover:bg-amber-500/5 text-stone-600 dark:text-stone-400 hover:text-amber-600 dark:hover:text-amber-400'
                           : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20'
                       }`}
                     >
                       {company.active ? 'Suspender' : 'Reativar'}
                     </button>
+                    {onDelete && (
+                      <button
+                        type="button"
+                        onClick={() => onDelete(company)}
+                        className="p-1.5 rounded-xl border border-red-500/20 text-red-500 dark:text-red-400 hover:bg-red-500/10 hover:border-red-500/40 transition cursor-pointer active:scale-95"
+                        title={`Excluir empresa ${company.name}`}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>

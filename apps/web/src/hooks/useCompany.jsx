@@ -46,6 +46,17 @@ export function useCompany() {
     },
   });
 
+  // Mutação para excluir empresa permanentemente
+  const deleteMutation = useMutation({
+    mutationFn: async (id) => {
+      const res = await api.delete(`/company/${id}`);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['superadmin-companies'] });
+    },
+  });
+
   // Acessar empresa como administrador (Modo Suporte)
   const impersonate = async (companyId) => {
     try {
@@ -68,6 +79,8 @@ export function useCompany() {
     isCreating: createMutation.isPending,
     toggleStatus: toggleStatusMutation.mutate,
     isToggling: toggleStatusMutation.isPending,
+    deleteCompany: deleteMutation.mutate,
+    isDeleting: deleteMutation.isPending,
     impersonate,
     exitImpersonate: async () => {
       try {
