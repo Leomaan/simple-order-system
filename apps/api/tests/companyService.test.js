@@ -8,25 +8,10 @@ import {
   deleteCompany,
   impersonateCompany,
 } from '../src/services/companyService.js';
-import {
-  sequelize,
-  Company,
-  ProductionStation,
-  Category,
-  Order,
-  OrderItem,
-  Product,
-  User,
-  RefreshToken,
-  AuditLog,
-  Settings,
-} from '../src/models/index.js';
+import { Company, ProductionStation, User } from '../src/models/index.js';
 import { AppError } from '../src/middleware/appError.js';
 
 vi.mock('../src/models/index.js', () => ({
-  sequelize: {
-    transaction: vi.fn((cb) => cb({})),
-  },
   Company: {
     findAll: vi.fn(),
     findByPk: vi.fn(),
@@ -35,36 +20,10 @@ vi.mock('../src/models/index.js', () => ({
   },
   ProductionStation: {
     bulkCreate: vi.fn(),
-    destroy: vi.fn(),
-  },
-  Category: {
-    destroy: vi.fn(),
-  },
-  Order: {
-    findAll: vi.fn(),
-    destroy: vi.fn(),
-  },
-  OrderItem: {
-    update: vi.fn(),
-    destroy: vi.fn(),
-  },
-  Product: {
-    destroy: vi.fn(),
   },
   User: {
-    findAll: vi.fn(),
     findOne: vi.fn(),
     create: vi.fn(),
-    destroy: vi.fn(),
-  },
-  RefreshToken: {
-    destroy: vi.fn(),
-  },
-  AuditLog: {
-    destroy: vi.fn(),
-  },
-  Settings: {
-    destroy: vi.fn(),
   },
 }));
 
@@ -178,26 +137,17 @@ describe('companyService', () => {
   });
 
   describe('deleteCompany', () => {
-    it('deve excluir permanentemente a empresa e seus registros vinculados', async () => {
+    it('deve excluir permanentemente a empresa via cascade do banco', async () => {
       const company = {
         id: 1,
         name: 'Pizzaria Bella',
         destroy: vi.fn().mockResolvedValue(true),
       };
       Company.findByPk.mockResolvedValue(company);
-      User.findAll.mockResolvedValue([{ id: 5 }]);
-      Order.findAll.mockResolvedValue([{ id: 12 }]);
 
       const result = await deleteCompany(1);
 
-      expect(RefreshToken.destroy).toHaveBeenCalled();
-      expect(OrderItem.destroy).toHaveBeenCalled();
-      expect(Order.destroy).toHaveBeenCalled();
-      expect(Product.destroy).toHaveBeenCalled();
-      expect(Category.destroy).toHaveBeenCalled();
-      expect(ProductionStation.destroy).toHaveBeenCalled();
-      expect(User.destroy).toHaveBeenCalled();
-      expect(company.destroy).toHaveBeenCalledWith(expect.objectContaining({ force: true }));
+      expect(company.destroy).toHaveBeenCalledWith({ force: true });
       expect(result).toEqual({ id: 1, name: 'Pizzaria Bella' });
     });
 

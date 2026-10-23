@@ -1,4 +1,4 @@
-import {sequelize, Company, ProductionStation, Category, Order, OrderItem, Product, User, RefreshToken, AuditLog, Settings,} from '../models/index.js';
+import { Company, ProductionStation, User } from '../models/index.js';
 import { AppError } from '../middleware/appError.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -142,57 +142,12 @@ export async function toggleCompanyStatus(id) {
 }
 
 export async function deleteCompany(id) {
-  const company = await Company.findByPk(id, { paranoid: false });
+  const company = await Company.findByPk(id);
   if (!company) {
     throw new AppError('Empresa não encontrada', 404);
   }
 
-  await sequelize.transaction(async (transaction) => {
-    const companyUsers = await User.findAll({
-      where: { companyId: company.id },
-      paranoid: false,
-      attributes: ['id'],
-      transaction,
-    });
-    const userIds = companyUsers.map((u) => u.id);
-
-    if (userIds.length > 0) {
-      await RefreshToken.destroy({
-        where: { UserId: userIds },
-        transaction,
-      });
-      await OrderItem.update(
-        { deliveredById: null },
-        { where: { deliveredById: userIds }, transaction }
-      );
-    }
-
-    const companyOrders = await Order.findAll({
-      where: { companyId: company.id },
-      paranoid: false,
-      attributes: ['id'],
-      transaction,
-    });
-    const orderIds = companyOrders.map((o) => o.id);
-
-    if (orderIds.length > 0) {
-      await OrderItem.destroy({
-        where: { OrderId: orderIds },
-        transaction,
-      });
-    }
-
-    await Order.destroy({ where: { companyId: company.id }, force: true, transaction });
-    await Product.destroy({ where: { companyId: company.id }, force: true, transaction });
-    await Category.destroy({ where: { companyId: company.id }, force: true, transaction });
-    await ProductionStation.destroy({ where: { companyId: company.id }, force: true, transaction });
-    await Settings.destroy({ where: { companyId: company.id }, force: true, transaction });
-    await AuditLog.destroy({ where: { companyId: company.id }, force: true, transaction });
-    await User.destroy({ where: { companyId: company.id }, force: true, transaction });
-
-    await company.destroy({ force: true, transaction });
-  });
-
+  await company.destroy({ force: true });
   return { id: company.id, name: company.name };
 }
 
