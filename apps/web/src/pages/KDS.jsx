@@ -12,14 +12,16 @@ export default function KDS() {
 
   const {
     stations,
+    stationCounts,
     isLoading,
     selectedStation,
     setSelectedStation,
     audioEnabled,
-    setAudioEnabled,
+    toggleAudio,
     activeItems,
     filteredItems,
     updateItemStatus,
+    claimItemDelivery,
   } = useKDS();
 
   const handleBack = () => {
@@ -38,10 +40,11 @@ export default function KDS() {
       {/* Top Bar e Filtros com Botão Voltar */}
       <KDSHeader
         audioEnabled={audioEnabled}
-        onToggleAudio={() => setAudioEnabled(!audioEnabled)}
+        onToggleAudio={toggleAudio}
         selectedStation={selectedStation}
         onSelectStation={setSelectedStation}
         stations={stations}
+        stationCounts={stationCounts}
         totalItemsCount={activeItems.length}
         onBack={handleBack}
       />
@@ -49,16 +52,16 @@ export default function KDS() {
       {/* Grid de Cards de Produção */}
       <div className="flex-1 pt-6 overflow-y-auto">
         {isLoading ? (
-          <div className="h-64 flex items-center justify-center text-neutral-500 text-sm">
+          <div className="h-64 flex items-center justify-center text-stone-500 text-sm">
             Carregando pedidos de produção...
           </div>
         ) : filteredItems.length === 0 ? (
-          <div className="h-96 flex flex-col items-center justify-center text-neutral-500 dark:text-neutral-400 gap-2">
-            <CheckCircle2 className="w-12 h-12 text-emerald-500/50" />
-            <p className="text-base font-semibold text-neutral-800 dark:text-neutral-200">
-              Nenhum item pendente de preparo!
+          <div className="h-96 flex flex-col items-center justify-center text-stone-500 dark:text-stone-400 gap-2">
+            <CheckCircle2 className="w-12 h-12 text-emerald-500/60" />
+            <p className="text-base font-semibold text-stone-800 dark:text-stone-200">
+              Nenhum item pendente nesta estação!
             </p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+            <p className="text-xs text-stone-500 dark:text-stone-400">
               Aguardando novos pedidos das mesas e garçons.
             </p>
           </div>
@@ -69,6 +72,7 @@ export default function KDS() {
                 key={item.id}
                 item={item}
                 onUpdateStatus={updateItemStatus}
+                onClaimDelivery={claimItemDelivery}
               />
             ))}
           </div>
