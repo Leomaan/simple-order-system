@@ -70,7 +70,7 @@ export async function createCompany(data, adminUserData = null) {
 
   const company = await Company.create(data);
 
-  // Cria automaticamente as duas estações de produção padrão
+  // Cria automaticamente as estações de produção padrão da empresa
   await ProductionStation.bulkCreate([
     {
       companyId: company.id,
@@ -84,6 +84,13 @@ export async function createCompany(data, adminUserData = null) {
       name: 'Bar / Copa',
       slug: 'bar',
       color: '#06b6d4', // Ciano
+      active: true,
+    },
+    {
+      companyId: company.id,
+      name: 'Pronta Entrega',
+      slug: 'pronta-entrega',
+      color: '#10b981', // Esmeralda
       active: true,
     },
   ]);

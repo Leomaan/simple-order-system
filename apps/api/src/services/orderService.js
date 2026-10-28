@@ -32,7 +32,7 @@ export async function findAll(status, page, limit, onlyDeleted = false, companyI
         include: [
           {
             model: Product,
-            attributes: ['id', 'name', 'price'], 
+            attributes: ['id', 'name', 'price', 'category', 'categoryId', 'stationId'], 
           },
         ],
       },
@@ -68,12 +68,12 @@ export async function findAll(status, page, limit, onlyDeleted = false, companyI
 
 export async function findById(id, companyId = null) {
   const queryOptions = {
-    attributes: ['id', 'table', 'status', 'companyId', 'paymentMethod', 'paymentId', 'paymentQrCode', 'paymentQrCodeCopy', 'paymentExpiresAt'],
+    attributes: ['id', 'table', 'status', 'companyId', 'paymentMethod', 'paymentId', 'paymentQrCode', 'paymentQrCodeCopy', 'paymentExpiresAt', 'createdAt', 'updatedAt'],
     include: [
       {
         model: OrderItem,
-        attributes: ['id', 'quantity', 'unitPrice', 'totalPrice', 'ProductId', 'stationId', 'status', 'notes'],
-        include: [{ model: Product, attributes: ['id', 'name', 'price'] }],
+        attributes: ['id', 'OrderId', 'quantity', 'unitPrice', 'totalPrice', 'ProductId', 'stationId', 'status', 'deliveredById', 'notes', 'createdAt', 'updatedAt'],
+        include: [{ model: Product, attributes: ['id', 'name', 'price', 'category', 'categoryId', 'stationId'] }],
       },
     ],
   };

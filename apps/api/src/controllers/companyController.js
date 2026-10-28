@@ -94,11 +94,33 @@ export const getCurrentCompanyStations = asyncHandler(async (req, res) => {
     return res.status(200).json({ success: true, data: [] });
   }
 
-  const stations = await ProductionStation.findAll({
+  const defaultStations = [
+    { name: 'Cozinha', slug: 'cozinha', color: '#f97316' },
+    { name: 'Bar / Copa', slug: 'bar', color: '#06b6d4' },
+    { name: 'Pronta Entrega', slug: 'pronta-entrega', color: '#10b981' },
+  ];
+
+  let stations = await ProductionStation.findAll({
     where: { companyId, active: true },
     attributes: ['id', 'name', 'slug', 'color', 'active'],
     order: [['id', 'ASC']],
   });
+
+  // Garante que as estações operacionais padrão existam no banco com ID relacional real
+  const existingSlugs = new Set(stations.map((s) => s.slug));
+  const missing = defaultStations.filter((d) => !existingSlugs.has(d.slug));
+
+  if (missing.length > 0) {
+    await ProductionStation.bulkCreate(
+      missing.map((d) => ({ ...d, companyId, active: true })),
+      { ignoreDuplicates: true }
+    );
+    stations = await ProductionStation.findAll({
+      where: { companyId, active: true },
+      attributes: ['id', 'name', 'slug', 'color', 'active'],
+      order: [['id', 'ASC']],
+    });
+  }
 
   res.status(200).json({ success: true, data: stations });
 });

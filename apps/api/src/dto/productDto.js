@@ -2,6 +2,7 @@ export function formatProductDto(product) {
   if (!product) return null;
 
   const raw = typeof product.toJSON === 'function' ? product.toJSON() : product;
+  const resolvedStationId = raw.stationId ?? raw.Category?.stationId ?? null;
 
   return {
     id: raw.id,
@@ -10,11 +11,12 @@ export function formatProductDto(product) {
     category: raw.Category?.name || raw.category,
     categoryId: raw.categoryId || null,
     companyId: raw.companyId || null,
-    stationId: raw.stationId || null,
+    stationId: resolvedStationId,
     Category: raw.Category ? {
       id: raw.Category.id,
       name: raw.Category.name,
       slug: raw.Category.slug,
+      stationId: raw.Category.stationId || null,
     } : null,
     description: raw.description || '',
     imageUrl: raw.imageUrl || null,
@@ -24,4 +26,3 @@ export function formatProductDto(product) {
     deletedAt: raw.deletedAt ? new Date(raw.deletedAt).toISOString() : null,
   };
 }
-
