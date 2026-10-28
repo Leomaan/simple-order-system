@@ -1,6 +1,8 @@
 import React, { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useProducts } from "../../hooks/useProduct";
 import { useCategory } from "../../hooks/useCategory";
+import api from "../../config/api";
 import ConfirmModal from "../ui/ConfirmModal";
 import CategoryFilter from "../ui/CategoryFilter";
 import CategoryManagerModal from "../category/CategoryManagerModal";
@@ -8,7 +10,7 @@ import Input from "../ui/Input";
 import Button from "../ui/Button";
 import ErrorMessage from "../ui/ErrorMessage";
 import { formatErrorMessage } from "../util/errorUtil";
-import { Utensils, Beer, Popcorn, CakeSlice, Soup, Search, Plus, X, Edit2, Trash2, Layers } from "lucide-react";
+import { Utensils, Beer, Popcorn, CakeSlice, Soup, Search, Plus, X, Edit2, Trash2, Layers, ChefHat } from "lucide-react";
 
 const CATEGORIES = ["FOOD", "DRINK", "SNACK", "DESSERT", "SIDE"];
 
@@ -28,7 +30,16 @@ const categoryIcon = {
   SIDE: Soup,
 };
 
-const emptyForm = { name: "", price: "", category: "FOOD", categoryId: null, description: "", imageUrl: "", available: true };
+const emptyForm = {
+  name: "",
+  price: "",
+  category: "FOOD",
+  categoryId: null,
+  stationId: null,
+  description: "",
+  imageUrl: "",
+  available: true,
+};
 
 export default function ProductSection() {
   const {
@@ -48,6 +59,15 @@ export default function ProductSection() {
     isDeleting,
   } = useProducts("");
   const { categories: customCategories } = useCategory();
+
+  const { data: stations = [] } = useQuery({
+    queryKey: ["kds-stations"],
+    queryFn: async () => {
+      const res = await api.get("/company/current/stations").catch(() => ({ data: { data: [] } }));
+      return res.data.data || [];
+    },
+  });
+
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -59,10 +79,12 @@ export default function ProductSection() {
 
   function openCreate() {
     setEditing(null);
+    const defaultCat = customCategories.length > 0 ? customCategories[0] : null;
     setForm({
       ...emptyForm,
-      category: customCategories.length > 0 ? customCategories[0].name : "FOOD",
-      categoryId: customCategories.length > 0 ? customCategories[0].id : null,
+      category: defaultCat ? defaultCat.name : "FOOD",
+      categoryId: defaultCat ? defaultCat.id : null,
+      stationId: defaultCat?.stationId || null,
     });
     setError("");
     setShowForm(true);
@@ -75,6 +97,7 @@ export default function ProductSection() {
       price: product.price,
       category: product.category,
       categoryId: product.categoryId || null,
+      stationId: product.stationId || null,
       description: product.description || "",
       imageUrl: product.imageUrl || "",
       available: product.available,
@@ -97,6 +120,7 @@ export default function ProductSection() {
       const data = { 
         ...form, 
         price: Number(form.price), 
+        stationId: form.stationId ? Number(form.stationId) : null,
         available: Boolean(form.available) 
       };
       if (editing) {
@@ -134,7 +158,7 @@ export default function ProductSection() {
       <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 md:mb-8">
         <div>
           <h2 className="text-2xl font-bold text-[#1c1917] dark:text-white tracking-tight">Cardápio & Produtos</h2>
-          <p className="text-stone-500 dark:text-neutral-500 text-sm">Gerencie os itens disponíveis para venda</p>
+          <p className="text-stone-500 dark:text-neutral-500 text-sm">Gerencie os itens disponíveis para venda e suas estações no KDS</p>
         </div>
         <div className="flex items-center gap-2.5">
           <Button
@@ -198,7 +222,7 @@ export default function ProductSection() {
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 uppercase tracking-wider mb-2">
                 Categoria
@@ -209,7 +233,12 @@ export default function ProductSection() {
                   const val = e.target.value;
                   const foundCustom = customCategories.find((c) => String(c.id) === val);
                   if (foundCustom) {
-                    setForm({ ...form, categoryId: foundCustom.id, category: foundCustom.name });
+                    setForm({
+                      ...form,
+                      categoryId: foundCustom.id,
+                      category: foundCustom.name,
+                      stationId: foundCustom.stationId || form.stationId,
+                    });
                   } else {
                     setForm({ ...form, categoryId: null, category: val });
                   }
@@ -233,11 +262,34 @@ export default function ProductSection() {
             </div>
 
             <div>
+              <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 uppercase tracking-wider mb-2">
+                Estação de Produção (KDS)
+              </label>
+              <select
+                value={form.stationId ? String(form.stationId) : ""}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    stationId: e.target.value ? Number(e.target.value) : null,
+                  })
+                }
+                className="w-full bg-[#fdfdfc] dark:bg-[#26262e] border border-[#d8d2c4] dark:border-[#3e3e4a] text-[#1c1917] dark:text-[#ececf0] rounded-xl p-3 text-xs outline-none focus:border-orange-500/80 focus:ring-2 focus:ring-orange-500/25 transition-all duration-200"
+              >
+                <option value="">Padrão da Categoria</option>
+                {stations.map((st) => (
+                  <option key={st.id} value={st.id}>
+                    {st.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
               <Input
                 label="Descrição (opcional)"
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
-                placeholder="Ex: Lata 350ml trincando de gelada"
+                placeholder="Ex: Lata 350ml gelada"
               />
             </div>
           </div>
@@ -338,6 +390,9 @@ export default function ProductSection() {
         <div className="flex flex-col gap-2 w-full">
           {sortedProducts.map((p) => {
             const IconComponent = categoryIcon[p.category] || Utensils;
+            const matchedStation = stations.find(
+              (s) => String(s.id) === String(p.stationId || p.Category?.stationId)
+            );
             return (
               <div
                 key={p.id}
@@ -373,6 +428,12 @@ export default function ProductSection() {
                       <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-[#f5f0e6] text-stone-600 border border-[#e4ded4] dark:bg-neutral-900 dark:text-neutral-400 dark:border-neutral-800 shrink-0">
                         {categoryLabel[p.category] || p.category}
                       </span>
+                      {matchedStation && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-orange-500/10 text-orange-700 dark:text-orange-300 border border-orange-500/20 shrink-0">
+                          <ChefHat size={11} />
+                          {matchedStation.name}
+                        </span>
+                      )}
                     </div>
                     {p.description && (
                       <p className="text-stone-500 dark:text-neutral-500 text-xs truncate mt-0.5 max-w-md hidden sm:block">
