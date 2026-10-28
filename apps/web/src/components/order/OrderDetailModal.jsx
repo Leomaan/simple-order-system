@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import api from '../../config/api';
 import { useOrderDetail } from '../../hooks/useOrderDetail';
+import { isReadyDeliveryItem } from '../../hooks/useKDS';
 import CategoryFilter from '../ui/CategoryFilter';
 import QuantityControl from '../ui/QuantityControl';
 import CloseOrderButton from './CloseOrderButton';
 import Button from '../ui/Button';
 import ErrorMessage from '../ui/ErrorMessage';
 import { formatErrorMessage } from '../util/errorUtil';
-import { Ticket, Plus, Copy, Check, Loader2, RefreshCw, RotateCcw, Banknote, CreditCard, CheckCircle2, Search, X } from 'lucide-react';
+import { Ticket, Plus, Copy, Check, Loader2, RefreshCw, RotateCcw, Banknote, CreditCard, Search, X } from 'lucide-react';
 
 export default function OrderDetailModal({ order, products, onClose, onUpdate }) {
   const {
@@ -17,7 +18,6 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
     changeQuantity,
     removeItem,
     fetchDetails,
-    isMutating,
   } = useOrderDetail(order.id);
 
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -188,7 +188,9 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
 
   const formatPrice = (val) => `R$ ${Number(val || 0).toFixed(2)}`;
   const currentStatus = orderDetails?.status || order.status;
-  const orderItems = orderDetails?.OrderItems || orderDetails?.items || [];  return (
+  const orderItems = orderDetails?.OrderItems || orderDetails?.items || [];
+
+  return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 md:px-4 animate-in fade-in duration-200">
       <div 
         className={`bg-neutral-900 p-4 md:p-6 w-full h-full max-h-screen md:h-auto md:max-h-[90vh] md:rounded-3xl border-none md:border border-neutral-800 overflow-y-auto shadow-2xl flex flex-col gap-5 md:gap-6 animate-in scale-in duration-200 transition-all ${
@@ -316,63 +318,124 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
                       </div>
 
                       {/* Status KDS & Ação de Entrega */}
-                      <div className="flex items-center justify-between pt-2 border-t border-neutral-850/60 text-xs">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-neutral-500 text-[11px]">Cozinha:</span>
-                          {item.status === 'READY' ? (
-                            <span className="px-2 py-0.5 rounded-md font-bold text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                              Pronto p/ Servir ✓
-                            </span>
-                          ) : item.status === 'PREPARING' ? (
-                            <span className="px-2 py-0.5 rounded-md font-bold text-[10px] bg-orange-500/10 text-orange-400 border border-orange-500/20">
-                              Em Preparação...
-                            </span>
-                          ) : item.status === 'DELIVERING' ? (
-                            <span className="px-2 py-0.5 rounded-md font-bold text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                              A Caminho da Mesa
-                            </span>
-                          ) : item.status === 'DELIVERED' ? (
-                            <span className="px-2 py-0.5 rounded-md font-bold text-[10px] bg-neutral-800 text-neutral-400">
-                              Entregue
-                            </span>
-                          ) : (
-                            <span className="px-2 py-0.5 rounded-md font-bold text-[10px] bg-neutral-900 text-neutral-400 border border-neutral-800">
-                              Na Fila
-                            </span>
-                          )}
-                        </div>
+                      {(() => {
+                        const itemStatus = item.status || 'QUEUED';
+                        const readyDelivery = isReadyDeliveryItem(item);
+                        return (
+                          <div className="flex items-center justify-between gap-2 pt-2 border-t border-neutral-850/60 text-xs flex-wrap">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-neutral-500 text-[11px]">Status:</span>
+                              {itemStatus === 'READY' ? (
+                                <span className="px-2 py-0.5 rounded-md font-bold text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                  Pronto p/ Servir ✓
+                                </span>
+                              ) : itemStatus === 'PREPARING' ? (
+                                <span className="px-2 py-0.5 rounded-md font-bold text-[10px] bg-orange-500/10 text-orange-400 border border-orange-500/20">
+                                  Em Preparação...
+                                </span>
+                              ) : itemStatus === 'DELIVERING' ? (
+                                <span className="px-2 py-0.5 rounded-md font-bold text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                                  A Caminho da Mesa 🚀
+                                </span>
+                              ) : itemStatus === 'DELIVERED' ? (
+                                <span className="px-2 py-0.5 rounded-md font-bold text-[10px] bg-neutral-800 text-neutral-400">
+                                  Entregue ✓
+                                </span>
+                              ) : readyDelivery ? (
+                                <span className="px-2 py-0.5 rounded-md font-bold text-[10px] bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                                  ⚡ Pronta Entrega
+                                </span>
+                              ) : (
+                                <span className="px-2 py-0.5 rounded-md font-bold text-[10px] bg-neutral-900 text-neutral-400 border border-neutral-800">
+                                  Na Fila
+                                </span>
+                              )}
+                            </div>
 
-                        {item.status === 'READY' && (
-                          <button
-                            onClick={async () => {
-                              try {
-                                await api.patch(`/order-item/${item.id}/claim-delivery`);
-                                fetchDetails();
-                              } catch (err) {
-                                alert(err.response?.data?.message || 'Erro ao assumir entrega');
-                              }
-                            }}
-                            className="px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-white font-bold rounded-lg text-[11px] transition"
-                          >
-                            Levar à Mesa ➔
-                          </button>
-                        )}
-                        {item.status === 'DELIVERING' && (
-                          <button
-                            onClick={async () => {
-                              try {
-                                await api.patch(`/order-item/${item.id}/status`, { status: 'DELIVERED' });
-                                fetchDetails();
-                              } catch (err) {
-                                alert(err.response?.data?.message || 'Erro ao confirmar entrega');
-                              }
-                            }}
-                            className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-[11px] transition shadow"
-                          >
-                            Confirmar Entrega ✓
-                          </button>
-                        )}
-                      </div>
+                            <div className="flex items-center gap-1.5">
+                              {(itemStatus === 'QUEUED' || itemStatus === 'PENDING') && readyDelivery && (
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    try {
+                                      await api.patch(`/order-item/${item.id}/status`, {
+                                        status: 'DELIVERED',
+                                        orderId: order.id,
+                                      });
+                                      fetchDetails();
+                                      onUpdate?.();
+                                    } catch (err) {
+                                      setError(formatErrorMessage(err));
+                                    }
+                                  }}
+                                  className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-stone-50 font-bold rounded-lg text-[11px] transition cursor-pointer shadow-xs"
+                                >
+                                  Entregar Agora ✓
+                                </button>
+                              )}
+
+                              {itemStatus === 'READY' && (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={async () => {
+                                      try {
+                                        await api.patch(`/order-item/${item.id}/claim-delivery`);
+                                        fetchDetails();
+                                        onUpdate?.();
+                                      } catch (err) {
+                                        setError(formatErrorMessage(err));
+                                      }
+                                    }}
+                                    className="px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-stone-950 font-bold rounded-lg text-[11px] transition cursor-pointer"
+                                  >
+                                    Assumir Entrega 🚀
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={async () => {
+                                      try {
+                                        await api.patch(`/order-item/${item.id}/status`, {
+                                          status: 'DELIVERED',
+                                          orderId: order.id,
+                                        });
+                                        fetchDetails();
+                                        onUpdate?.();
+                                      } catch (err) {
+                                        setError(formatErrorMessage(err));
+                                      }
+                                    }}
+                                    className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-stone-50 font-bold rounded-lg text-[11px] transition cursor-pointer shadow-xs"
+                                  >
+                                    Entregue ✓
+                                  </button>
+                                </>
+                              )}
+
+                              {itemStatus === 'DELIVERING' && (
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    try {
+                                      await api.patch(`/order-item/${item.id}/status`, {
+                                        status: 'DELIVERED',
+                                        orderId: order.id,
+                                      });
+                                      fetchDetails();
+                                      onUpdate?.();
+                                    } catch (err) {
+                                      setError(formatErrorMessage(err));
+                                    }
+                                  }}
+                                  className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-stone-50 font-bold rounded-lg text-[11px] transition shadow-xs cursor-pointer"
+                                >
+                                  Confirmar Entrega ✓
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   ))}
                 </div>

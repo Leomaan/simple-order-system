@@ -68,6 +68,7 @@ export const SocketProvider = ({ children }) => {
     socket.on('order_item:deleted', handleOrderChange);
     socket.on('order_item:status_changed', handleOrderChange);
     socket.on('item_status_changed', handleOrderChange);
+    socket.on('delivery_claimed', handleOrderChange);
 
     // Eventos de produtos em tempo real (Instantâneo)
     socket.on('product:created', handleProductChange);
@@ -89,6 +90,7 @@ export const SocketProvider = ({ children }) => {
       socket.off('order_item:deleted', handleOrderChange);
       socket.off('order_item:status_changed', handleOrderChange);
       socket.off('item_status_changed', handleOrderChange);
+      socket.off('delivery_claimed', handleOrderChange);
       socket.off('product:created', handleProductChange);
       socket.off('product:updated', handleProductChange);
       socket.off('product:deleted', handleProductChange);

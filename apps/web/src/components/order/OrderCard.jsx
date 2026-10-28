@@ -1,5 +1,6 @@
 import React from 'react';
 import { STATUS_MAP } from '../constants/orderConstants';
+import { isReadyDeliveryItem } from '../../hooks/useKDS';
 import { Edit2, Trash2 } from 'lucide-react';
 
 export default function OrderCard({ order, onClick, onEdit, onDelete }) {
@@ -8,6 +9,12 @@ export default function OrderCard({ order, onClick, onEdit, onDelete }) {
   const orderTotal = order.total !== undefined ? Number(order.total) : (orderItems.reduce((sum, item) => sum + Number(item.totalPrice), 0) || 0);
   const itemCount = orderItems.reduce((sum, item) => sum + Number(item.quantity), 0) || 0;
   const itemNames = orderItems.map((i) => i.Product?.name || i.product?.name || i.productName || 'Item').slice(0, 3).join(', ');
+
+  const readyToServeCount = orderItems.filter(
+    (i) =>
+      i.status === 'READY' ||
+      ((i.status === 'QUEUED' || i.status === 'PENDING' || !i.status) && isReadyDeliveryItem(i))
+  ).length;
 
   const isOpen = order.status === 'OPEN';
   const isClosed = order.status === 'CLOSED';
@@ -48,6 +55,11 @@ export default function OrderCard({ order, onClick, onEdit, onDelete }) {
             <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border shrink-0 ${status.color}`}>
               {status.label}
             </span>
+            {isOpen && readyToServeCount > 0 && (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md border bg-emerald-500/15 text-emerald-400 border-emerald-500/30 shrink-0">
+                ✓ {readyToServeCount} p/ servir
+              </span>
+            )}
           </div>
           <p className="text-neutral-500 text-xs truncate mt-0.5 max-w-md hidden sm:block">
             {itemCount > 0
