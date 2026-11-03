@@ -55,17 +55,30 @@ describe('addItem', () => {
     expect(result.created).toBe(true);                  
   });
 
-  it('deve somar a quantidade se item já existir', async () => {
+  it('deve somar a quantidade se item já existir na fila', async () => {
     Order.findByPk.mockResolvedValue({ id: 1, status: 'OPEN' });
     Product.findByPk.mockResolvedValue({ id: 1, price: 25.90, available: true });
 
-    const existing = { quantity: 2, update: vi.fn().mockResolvedValue(true) };
+    const existing = { quantity: 2, status: 'QUEUED', update: vi.fn().mockResolvedValue(true) };
     OrderItem.findOne.mockResolvedValue(existing);
 
     const result = await addItem({ orderId: 1, productId: 1, quantity: 3 });
 
     expect(existing.update).toHaveBeenCalledWith({ quantity: 5, totalPrice: 25.90 * 5 }, expect.any(Object));
     expect(result.created).toBe(false); 
+  });
+
+  it('deve criar novo item na fila do KDS se o item anterior do mesmo produto já foi entregue', async () => {
+    Order.findByPk.mockResolvedValue({ id: 1, status: 'OPEN' });
+    Product.findByPk.mockResolvedValue({ id: 1, price: 25.90, available: true });
+    OrderItem.findOne.mockResolvedValue(null);
+    OrderItem.create.mockResolvedValue({ id: 2, OrderId: 1, ProductId: 1, quantity: 1, status: 'QUEUED' });
+
+    const result = await addItem({ orderId: 1, productId: 1, quantity: 1 });
+
+    expect(OrderItem.create).toHaveBeenCalledOnce();
+    expect(result.created).toBe(true);
+    expect(result.item).toMatchObject({ id: 2, quantity: 1, status: 'QUEUED' });
   });
 
   it('deve lançar AppError se dados não forem fornecidos', async () => {
@@ -109,6 +122,45 @@ describe('changeQuantity', () => {
     await changeQuantity(1, 5);
 
     expect(orderItem.update).toHaveBeenCalledWith({ quantity: 5, totalPrice: 25.90 * 5 });
+  });
+
+  it('deve criar novo item QUEUED para o KDS ao adicionar +1 unidade em um item já entregue', async () => {
+    const deliveredItem = {
+      id: 1,
+      OrderId: 10,
+      ProductId: 5,
+      quantity: 1,
+      unitPrice: 25.90,
+      status: 'DELIVERED',
+      Order: { id: 10, status: 'OPEN', table: 4, companyId: 1 },
+      Product: { id: 5, name: 'X-Burger', price: 25.90, stationId: 2 },
+      update: vi.fn(),
+    };
+    OrderItem.findByPk.mockResolvedValue(deliveredItem);
+    OrderItem.findOne.mockResolvedValue(null);
+    OrderItem.create.mockResolvedValue({
+      id: 2,
+      OrderId: 10,
+      ProductId: 5,
+      quantity: 1,
+      unitPrice: 25.90,
+      totalPrice: 25.90,
+      stationId: 2,
+      status: 'QUEUED',
+    });
+
+    const result = await changeQuantity(1, 2);
+
+    expect(deliveredItem.update).not.toHaveBeenCalled();
+    expect(OrderItem.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        OrderId: 10,
+        ProductId: 5,
+        quantity: 1,
+        status: 'QUEUED',
+      })
+    );
+    expect(result).toMatchObject({ id: 2, quantity: 1, status: 'QUEUED' });
   });
 
   it('deve lançar AppError se quantidade for inválida', async () => {
@@ -173,7 +225,7 @@ describe('removeItem', () => {
     OrderItem.findByPk.mockResolvedValue({ Order: { status: 'PAID' } });
 
     await expect(removeItem(1)).rejects.toMatchObject({
-      message: 'cannot remove item from a paid order'
+      message: 'cannot change item of a paid order'.replace('change', 'remove').replace('of', 'from')
     });
   });
 });

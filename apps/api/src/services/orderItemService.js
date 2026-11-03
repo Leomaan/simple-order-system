@@ -1,3 +1,4 @@
+import { Op } from 'sequelize';
 import OrderItem from '../models/orderItem.js';
 import Order from '../models/order.js';
 import Product from '../models/product.js';
@@ -49,21 +50,34 @@ export async function addItem(data, user = null, companyId = null) {
       throw new AppError('produto incompatível com o estabelecimento do pedido', 400);
     }
 
-    // Busca se o item já existe para aquela mesa/pedido sob trava de atualização
+    // Busca apenas item que ainda esteja na fila (QUEUED/PENDING) para somar quantidade;
+    // caso o item anterior já esteja em preparo, pronto ou entregue, cria um novo lote para o KDS
     const existing = await OrderItem.findOne({
-      where: { OrderId: orderId, ProductId: productId },
+      where: {
+        OrderId: orderId,
+        ProductId: productId,
+        status: { [Op.in]: ['QUEUED', 'PENDING'] },
+      },
       transaction: t,
       lock: t.LOCK.UPDATE,
     });
 
-    if (existing) {
+    const canMergeExisting =
+      existing && (!existing.status || existing.status === 'QUEUED' || existing.status === 'PENDING');
+
+    if (canMergeExisting) {
       const newQty = existing.quantity + quantity;
-      await existing.update({
+      const updateData = {
         quantity: newQty,
         totalPrice: product.price * newQty,
-        stationId: product.stationId || existing.stationId,
-        notes: notes !== undefined ? notes : existing.notes,
-      }, { transaction: t });
+      };
+      if (product.stationId || existing.stationId) {
+        updateData.stationId = product.stationId || existing.stationId;
+      }
+      if (notes !== undefined || existing.notes !== undefined) {
+        updateData.notes = notes !== undefined ? notes : existing.notes;
+      }
+      await existing.update(updateData, { transaction: t });
       return { 
         item: existing, 
         created: false, 
@@ -78,6 +92,7 @@ export async function addItem(data, user = null, companyId = null) {
       unitPrice: product.price,
       totalPrice: product.price * quantity,
       stationId: product.stationId || null,
+      status: 'QUEUED',
       notes: notes || null,
     }, { transaction: t });
 
@@ -113,9 +128,17 @@ export async function addItem(data, user = null, companyId = null) {
     companyId: itemCompleto.Order?.companyId,
   });
 
-  const formattedItem = formatOrderItemDto(item);
+  const rawItem = typeof item.toJSON === 'function' ? item.toJSON() : item;
+  const formattedItem = formatOrderItemDto({
+    ...rawItem,
+    OrderId: rawItem.OrderId || itemCompleto.OrderId,
+    Product: rawItem.Product || itemCompleto.Product,
+  });
   const companyRoom = itemCompleto.Order?.companyId ? `company:${itemCompleto.Order.companyId}` : null;
   emitEvent('order_item:created', { orderId: itemCompleto.OrderId, item: formattedItem }, companyRoom);
+  if (!created) {
+    emitEvent('order_item:updated', { orderId: itemCompleto.OrderId, item: formattedItem }, companyRoom);
+  }
 
   return { item: formattedItem, created };
 }
@@ -133,6 +156,78 @@ export async function changeQuantity(id, quantity, user = null) {
     throw new AppError('cannot change item of a paid order');
 
   const oldQty = orderItem.quantity;
+  const isAlreadyProcessed =
+    orderItem.status && !['QUEUED', 'PENDING'].includes(orderItem.status);
+
+  // Se o item já foi iniciado/entregue no KDS e o garçom aumentou a quantidade (+1),
+  // preserva o item já processado e envia apenas a quantidade adicional para a fila do KDS
+  if (isAlreadyProcessed && oldQty && quantity > oldQty) {
+    const addedQty = quantity - oldQty;
+    const unitPrice = Number(orderItem.Product ? orderItem.Product.price : orderItem.unitPrice);
+    const targetOrderId = orderItem.OrderId || orderItem.Order?.id;
+    const targetProductId = orderItem.ProductId || orderItem.Product?.id;
+    const targetStationId = orderItem.stationId ?? orderItem.Product?.stationId ?? null;
+
+    let queuedItem = await OrderItem.findOne({
+      where: {
+        OrderId: targetOrderId,
+        ProductId: targetProductId,
+        status: { [Op.in]: ['QUEUED', 'PENDING'] },
+      },
+    });
+
+    if (
+      queuedItem &&
+      (!queuedItem.status || queuedItem.status === 'QUEUED' || queuedItem.status === 'PENDING')
+    ) {
+      const nextQueuedQty = queuedItem.quantity + addedQty;
+      await queuedItem.update({
+        quantity: nextQueuedQty,
+        totalPrice: unitPrice * nextQueuedQty,
+      });
+    } else {
+      queuedItem = await OrderItem.create({
+        OrderId: targetOrderId,
+        ProductId: targetProductId,
+        quantity: addedQty,
+        unitPrice,
+        totalPrice: unitPrice * addedQty,
+        stationId: targetStationId,
+        status: 'QUEUED',
+        notes: orderItem.notes || null,
+      });
+    }
+
+    await log({
+      user,
+      action: 'ADD_ORDER_ITEM',
+      entity: 'OrderItem',
+      entityId: queuedItem.id,
+      details: {
+        table: orderItem.Order?.table,
+        order: targetOrderId,
+        product: orderItem.Product?.name,
+        quantity: addedQty,
+        stationId: targetStationId,
+        companyId: orderItem.Order?.companyId,
+      },
+      companyId: orderItem.Order?.companyId,
+    });
+
+    const rawQueued = typeof queuedItem.toJSON === 'function' ? queuedItem.toJSON() : queuedItem;
+    const formattedQueued = formatOrderItemDto({
+      ...rawQueued,
+      OrderId: targetOrderId,
+      ProductId: targetProductId,
+      Product: orderItem.Product,
+    });
+    const companyRoom = orderItem.Order?.companyId ? `company:${orderItem.Order.companyId}` : null;
+    emitEvent('order_item:created', { orderId: targetOrderId, item: formattedQueued }, companyRoom);
+    emitEvent('order_item:updated', { orderId: targetOrderId, item: formattedQueued }, companyRoom);
+
+    return formattedQueued;
+  }
+
   await orderItem.update({
     quantity,
     totalPrice: orderItem.Product ? orderItem.Product.price * quantity : orderItem.totalPrice,
@@ -163,6 +258,9 @@ export async function changeQuantity(id, quantity, user = null) {
   const formattedItem = formatOrderItemDto(orderItem);
   const companyRoom = orderItem.Order?.companyId ? `company:${orderItem.Order.companyId}` : null;
   emitEvent('order_item:updated', { orderId: orderItem.OrderId, item: formattedItem }, companyRoom);
+  if (oldQty && quantity > oldQty) {
+    emitEvent('order_item:created', { orderId: orderItem.OrderId, item: formattedItem }, companyRoom);
+  }
 
   return formattedItem;
 }

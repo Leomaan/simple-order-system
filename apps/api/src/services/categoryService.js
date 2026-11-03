@@ -51,6 +51,13 @@ export async function updateCategory(companyId, id, data) {
     slug,
   });
 
+  if (data.stationId !== undefined) {
+    await Product.update(
+      { stationId: data.stationId },
+      { where: { categoryId: id, companyId } }
+    );
+  }
+
   return category;
 }
 
