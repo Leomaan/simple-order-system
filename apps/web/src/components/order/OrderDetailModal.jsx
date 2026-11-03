@@ -9,7 +9,7 @@ import CloseOrderButton from './CloseOrderButton';
 import Button from '../ui/Button';
 import ErrorMessage from '../ui/ErrorMessage';
 import { formatErrorMessage } from '../util/errorUtil';
-import { Ticket, Plus, Copy, Check, Loader2, RefreshCw, RotateCcw, Banknote, CreditCard, Search, X } from 'lucide-react';
+import { Ticket, Plus, Copy, Check, Loader2, RefreshCw, RotateCcw, Banknote, CreditCard, Search, X, Clock } from 'lucide-react';
 
 export default function OrderDetailModal({ order, products, onClose, onUpdate }) {
   const {
@@ -21,6 +21,7 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
     fetchDetails,
   } = useOrderDetail(order.id);
 
+  const [now, setNow] = useState(() => Date.now());
   const [selectedCategory, setSelectedCategory] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState('');
@@ -33,6 +34,14 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
   const [checkingStatus, setCheckingStatus] = useState(false);
   const [reopening, setReopening] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  // Cronômetro em tempo real para os itens em andamento na comanda do garçom
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const { data: stations = [] } = useQuery({
     queryKey: ['kds-stations', { companyId: order.companyId }],
@@ -207,46 +216,57 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
   const currentStatus = orderDetails?.status || order.status;
   const orderItems = orderDetails?.OrderItems || orderDetails?.items || [];
 
+  const formatElapsedItemTime = (itemCreatedAt) => {
+    const createdAtMs = new Date(itemCreatedAt || orderDetails?.createdAt || order.createdAt || now).getTime();
+    const elapsedSeconds = Math.max(0, Math.floor((now - createdAtMs) / 1000));
+    const hours = Math.floor(elapsedSeconds / 3600);
+    const minutes = Math.floor((elapsedSeconds % 3600) / 60);
+    const seconds = elapsedSeconds % 60;
+    return hours > 0
+      ? `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+      : `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  };
+
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 md:px-4 animate-in fade-in duration-200">
+    <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 md:px-4 animate-in fade-in duration-200">
       <div 
-        className={`bg-neutral-900 p-4 md:p-6 w-full h-full max-h-screen md:h-auto md:max-h-[90vh] md:rounded-3xl border-none md:border border-neutral-800 overflow-y-auto shadow-2xl flex flex-col gap-5 md:gap-6 animate-in scale-in duration-200 transition-all ${
+        className={`bg-white dark:bg-neutral-900 p-4 md:p-6 w-full h-full max-h-screen md:h-auto md:max-h-[90vh] md:rounded-3xl border-none md:border border-[#e4ded4] dark:border-neutral-800 overflow-y-auto shadow-2xl flex flex-col gap-5 md:gap-6 animate-in scale-in duration-200 transition-all ${
           currentStatus === 'OPEN' ? 'md:max-w-6xl' : 'md:max-w-lg'
         }`}
       >
         
         {/* Header */}
-        <header className="flex flex-col gap-3 border-b border-neutral-800 pb-4">
+        <header className="flex flex-col gap-3 border-b border-[#e4ded4] dark:border-neutral-800 pb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-400 font-black text-sm shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-600 dark:text-orange-400 font-black text-sm shrink-0">
                 {order.table}
               </div>
               <div>
-                <h3 className="text-white font-black text-xl tracking-tight leading-tight">Mesa {order.table}</h3>
-                <p className="text-neutral-500 text-xs font-semibold">Pedido #{order.id}</p>
+                <h3 className="text-[#1c1917] dark:text-white font-black text-xl tracking-tight leading-tight">Mesa {order.table}</h3>
+                <p className="text-stone-500 dark:text-neutral-500 text-xs font-semibold">Pedido #{order.id}</p>
               </div>
             </div>
 
             <div className="flex items-center gap-3">
               {currentStatus === 'OPEN' && (
-                <span className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold px-3 py-1 rounded-xl text-xs uppercase tracking-wider select-none animate-pulse">
-                  ● Aberto
+                <span className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 font-bold px-3 py-1 rounded-xl text-xs uppercase tracking-wider select-none">
+                  Aberto
                 </span>
               )}
               {currentStatus === 'CLOSED' && (
-                <span className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 font-bold px-3 py-1 rounded-xl text-xs uppercase tracking-wider select-none animate-pulse">
-                  ● Aguardando Pagamento
+                <span className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 font-bold px-3 py-1 rounded-xl text-xs uppercase tracking-wider select-none">
+                  Aguardando Pagamento
                 </span>
               )}
               {currentStatus === 'PAID' && (
-                <span className="flex items-center gap-1.5 bg-blue-500/10 border border-blue-500/20 text-blue-400 font-bold px-3 py-1 rounded-xl text-xs uppercase tracking-wider select-none">
+                <span className="flex items-center gap-1.5 bg-blue-500/10 border border-blue-500/20 text-blue-700 dark:text-blue-400 font-bold px-3 py-1 rounded-xl text-xs uppercase tracking-wider select-none">
                   Pago
                 </span>
               )}
               <button 
                 onClick={onClose} 
-                className="text-neutral-450 hover:text-white text-3xl leading-none transition-colors cursor-pointer select-none p-1"
+                className="text-stone-400 hover:text-[#1c1917] dark:text-neutral-450 dark:hover:text-white text-3xl leading-none transition-colors cursor-pointer select-none p-1"
               >
                 &times;
               </button>
@@ -254,21 +274,21 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
           </div>
 
           {/* Sub-barra destacada com data e hora */}
-          <div className="bg-neutral-950/80 border border-neutral-850/80 rounded-xl px-3.5 py-2 text-xs text-neutral-400">
-            <span className="font-medium">Aberto em: <strong className="text-white font-semibold">{new Date(orderDetails?.createdAt || order.createdAt).toLocaleString('pt-BR')}</strong></span>
+          <div className="bg-[#f7f4ee] dark:bg-neutral-950/80 border border-[#e4ded4] dark:border-neutral-850/80 rounded-xl px-3.5 py-2 text-xs text-stone-600 dark:text-neutral-400">
+            <span className="font-medium">Aberto em: <strong className="text-[#1c1917] dark:text-white font-semibold">{new Date(orderDetails?.createdAt || order.createdAt).toLocaleString('pt-BR')}</strong></span>
           </div>
         </header>
 
         {/* Tabs de navegação no mobile (Apenas se o pedido estiver aberto) */}
         {currentStatus === 'OPEN' && (
-          <div className="flex md:hidden border border-neutral-800 p-1 bg-neutral-950/60 rounded-2xl select-none shrink-0">
+          <div className="flex md:hidden border border-[#e4ded4] dark:border-neutral-800 p-1 bg-[#f7f4ee] dark:bg-neutral-950/60 rounded-2xl select-none shrink-0">
             <button
               type="button"
               onClick={() => setActiveTab('add')}
               className={`flex-1 py-3 text-center text-xs font-black uppercase tracking-wider rounded-xl transition-all duration-200 cursor-pointer ${
                 activeTab === 'add'
                   ? 'bg-orange-500 text-white shadow-md shadow-orange-500/10'
-                  : 'text-neutral-400 hover:text-neutral-200'
+                  : 'text-stone-600 hover:text-[#1c1917] dark:text-neutral-400 dark:hover:text-neutral-200'
               }`}
             >
               Adicionar Itens
@@ -279,7 +299,7 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
               className={`flex-1 py-3 text-center text-xs font-black uppercase tracking-wider rounded-xl transition-all duration-200 cursor-pointer relative ${
                 activeTab === 'items'
                   ? 'bg-orange-500 text-white shadow-md shadow-orange-500/10'
-                  : 'text-neutral-400 hover:text-neutral-200'
+                  : 'text-stone-600 hover:text-[#1c1917] dark:text-neutral-400 dark:hover:text-neutral-200'
               }`}
             >
               Ver Consumo ({orderItems.reduce((sum, item) => sum + item.quantity, 0)})
@@ -293,78 +313,86 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
           {/* Coluna da Esquerda: Consumo e Totais */}
           <div className={`${currentStatus === 'OPEN' ? 'md:col-span-5' : 'w-full'} ${currentStatus === 'OPEN' && activeTab !== 'items' ? 'hidden md:flex' : 'flex'} flex-col gap-5`}>
             <div>
-              <h4 className="text-white text-xs font-bold uppercase tracking-wider mb-3 flex items-center gap-1.5 select-none text-neutral-450">
+              <h4 className="text-stone-600 dark:text-neutral-450 text-xs font-bold uppercase tracking-wider mb-3 flex items-center gap-1.5 select-none">
                 <Ticket size={12} /> Itens Consumidos
               </h4>
               
               {loadingDetails ? (
-                <div className="flex items-center gap-2 text-neutral-500 py-6">
+                <div className="flex items-center gap-2 text-stone-500 dark:text-neutral-500 py-6">
                   <Loader2 size={16} className="animate-spin text-orange-500" />
                   <span className="text-sm">Carregando itens...</span>
                 </div>
               ) : orderItems.length === 0 ? (
-                <div className="text-center py-10 bg-neutral-950 border border-dashed border-neutral-850 rounded-2xl">
-                  <p className="text-neutral-550 text-sm font-medium">Nenhum item adicionado à mesa ainda.</p>
+                <div className="text-center py-10 bg-[#faf8f4] dark:bg-neutral-950 border border-dashed border-[#d8d2c4] dark:border-neutral-850 rounded-2xl">
+                  <p className="text-stone-500 dark:text-neutral-550 text-sm font-medium">Nenhum item adicionado à mesa ainda.</p>
                   {currentStatus === 'OPEN' && (
-                    <p className="text-neutral-600 text-xs mt-1">Toque nos produtos ao lado para adicionar</p>
+                    <p className="text-stone-400 dark:text-neutral-600 text-xs mt-1">Toque nos produtos ao lado para adicionar</p>
                   )}
                 </div>
               ) : (
                 <div className="flex flex-col gap-2 max-h-[50vh] md:max-h-[40vh] overflow-y-auto pr-1">
                   {orderItems.map((item) => (
-                    <div key={item.id} className="flex flex-col gap-2 bg-neutral-950/60 border border-neutral-850 rounded-xl px-4 py-3 hover:border-neutral-800 transition-colors">
+                    <div key={item.id} className="flex flex-col gap-2 bg-[#faf8f4] dark:bg-neutral-950/60 border border-[#e4ded4] dark:border-neutral-850 rounded-xl px-4 py-3 hover:border-[#cfc7b8] dark:hover:border-neutral-800 transition-colors">
                       <div className="flex items-center justify-between">
                         <div className="min-w-0">
-                          <p className="text-white text-sm font-semibold truncate">{item.Product?.name || item.product?.name || 'Item'}</p>
-                          <p className="text-neutral-550 text-[10px] uppercase tracking-wider mt-0.5">{formatPrice(item.unitPrice)} cada</p>
+                          <p className="text-[#1c1917] dark:text-white text-sm font-semibold truncate">{item.Product?.name || item.product?.name || 'Item'}</p>
+                          <p className="text-stone-500 dark:text-neutral-550 text-[10px] uppercase tracking-wider mt-0.5">{formatPrice(item.unitPrice)} cada</p>
                           {item.notes && (
-                            <p className="text-amber-400 text-xs mt-0.5">Obs: {item.notes}</p>
+                            <p className="text-amber-700 dark:text-amber-400 text-xs mt-0.5">Obs: {item.notes}</p>
                           )}
                         </div>
                         <div className="flex items-center gap-3">
-                          <span className="text-orange-400 text-sm font-bold whitespace-nowrap">{formatPrice(item.totalPrice)}</span>
+                          <span className="text-orange-600 dark:text-orange-400 text-sm font-bold whitespace-nowrap">{formatPrice(item.totalPrice)}</span>
                           {currentStatus === 'OPEN' ? (
                             <QuantityControl
                               quantity={item.quantity}
                               onChange={(qty) => handleChangeQty(item, qty)}
                             />
                           ) : (
-                            <span className="text-neutral-550 text-xs font-bold bg-neutral-900 border border-neutral-800 px-2.5 py-1 rounded-lg">{item.quantity}x</span>
+                            <span className="text-stone-600 dark:text-neutral-550 text-xs font-bold bg-white dark:bg-neutral-900 border border-[#e4ded4] dark:border-neutral-800 px-2.5 py-1 rounded-lg">{item.quantity}x</span>
                           )}
                         </div>
                       </div>
 
-                      {/* Status KDS & Ação de Entrega */}
+                      {/* Status KDS, Tempo em Tempo Real & Ação de Entrega */}
                       {(() => {
                         const itemStatus = item.status || 'QUEUED';
                         const readyDelivery = isReadyDeliveryItem(item, stations, dbCategories);
+                        const isActiveInFlow = itemStatus !== 'DELIVERED' && itemStatus !== 'CANCELLED';
                         return (
-                          <div className="flex items-center justify-between gap-2 pt-2 border-t border-neutral-850/60 text-xs flex-wrap">
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-neutral-500 text-[11px]">Status:</span>
+                          <div className="flex items-center justify-between gap-2 pt-2 border-t border-[#e4ded4] dark:border-neutral-850/60 text-xs flex-wrap">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-stone-500 dark:text-neutral-500 text-[11px]">Status:</span>
                               {itemStatus === 'READY' ? (
-                                <span className="px-2 py-0.5 rounded-md font-bold text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                                  Pronto p/ Servir
+                                <span className="px-2 py-0.5 rounded-md font-bold text-[10px] bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                                  Pronto p/ Entrega
                                 </span>
                               ) : itemStatus === 'PREPARING' ? (
-                                <span className="px-2 py-0.5 rounded-md font-bold text-[10px] bg-orange-500/10 text-orange-400 border border-orange-500/20">
+                                <span className="px-2 py-0.5 rounded-md font-bold text-[10px] bg-amber-500/15 text-amber-800 dark:text-orange-400 border border-amber-500/25">
                                   Em Preparo
                                 </span>
                               ) : itemStatus === 'DELIVERING' ? (
-                                <span className="px-2 py-0.5 rounded-md font-bold text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                                <span className="px-2 py-0.5 rounded-md font-bold text-[10px] bg-sky-500/15 text-sky-800 dark:text-blue-400 border border-sky-500/25">
                                   Em Transporte
                                 </span>
                               ) : itemStatus === 'DELIVERED' ? (
-                                <span className="px-2 py-0.5 rounded-md font-bold text-[10px] bg-neutral-800 text-neutral-400">
+                                <span className="px-2 py-0.5 rounded-md font-bold text-[10px] bg-stone-200/80 dark:bg-neutral-800 text-stone-600 dark:text-neutral-400">
                                   Entregue
                                 </span>
                               ) : readyDelivery ? (
-                                <span className="px-2 py-0.5 rounded-md font-bold text-[10px] bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                                <span className="px-2 py-0.5 rounded-md font-bold text-[10px] bg-emerald-500/10 text-emerald-700 dark:text-cyan-400 border border-emerald-500/25 dark:border-cyan-500/20">
                                   Pronta Entrega
                                 </span>
                               ) : (
-                                <span className="px-2 py-0.5 rounded-md font-bold text-[10px] bg-neutral-900 text-neutral-400 border border-neutral-800">
+                                <span className="px-2 py-0.5 rounded-md font-bold text-[10px] bg-stone-200/80 dark:bg-neutral-900 text-stone-700 dark:text-neutral-400 border border-stone-300 dark:border-neutral-800">
                                   Na Fila
+                                </span>
+                              )}
+
+                              {isActiveInFlow && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-semibold tabular-nums text-[10px] bg-white dark:bg-neutral-900 text-stone-600 dark:text-neutral-300 border border-[#e4ded4] dark:border-neutral-800">
+                                  <Clock size={10} />
+                                  <span>{formatElapsedItemTime(item.createdAt)}</span>
                                 </span>
                               )}
                             </div>
@@ -421,14 +449,14 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
 
             {/* Recibo Totais */}
             {orderDetails && (
-              <div className="bg-neutral-950/40 border border-neutral-850 rounded-2xl p-4 mt-2">
+              <div className="bg-[#f7f4ee] dark:bg-neutral-950/40 border border-[#e4ded4] dark:border-neutral-850 rounded-2xl p-4 mt-2">
                 <div className="flex justify-between items-center">
-                  <span className="text-neutral-400 text-sm font-semibold">Subtotal</span>
-                  <span className="text-neutral-350 font-bold text-sm">{formatPrice(orderDetails.total)}</span>
+                  <span className="text-stone-600 dark:text-neutral-400 text-sm font-semibold">Subtotal</span>
+                  <span className="text-stone-800 dark:text-neutral-350 font-bold text-sm">{formatPrice(orderDetails.total)}</span>
                 </div>
-                <div className="flex justify-between items-center pt-3 border-t border-neutral-850/60 mt-3">
-                  <span className="text-neutral-350 text-sm font-bold">Total da Conta</span>
-                  <span className="text-white font-black text-xl tracking-tight">{formatPrice(orderDetails.total)}</span>
+                <div className="flex justify-between items-center pt-3 border-t border-[#e4ded4] dark:border-neutral-850/60 mt-3">
+                  <span className="text-stone-800 dark:text-neutral-350 text-sm font-bold">Total da Conta</span>
+                  <span className="text-[#1c1917] dark:text-white font-black text-xl tracking-tight">{formatPrice(orderDetails.total)}</span>
                 </div>
 
                 {/* Botão de Fechamento */}
@@ -446,18 +474,18 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
 
             {/* Seção de Pagamento PIX e Métodos Alternativos */}
             {currentStatus === 'CLOSED' && orderDetails && (
-              <div className="mt-2 border-t border-neutral-850 pt-5 flex flex-col gap-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="mt-2 border-t border-[#e4ded4] dark:border-neutral-850 pt-5 flex flex-col gap-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
                 {/* Barra de Reabrir Mesa */}
-                <div className="flex items-center justify-between bg-neutral-950/80 border border-neutral-850 p-3 rounded-2xl">
+                <div className="flex items-center justify-between bg-[#f7f4ee] dark:bg-neutral-950/80 border border-[#e4ded4] dark:border-neutral-850 p-3 rounded-2xl">
                   <div className="flex flex-col">
-                    <span className="text-white text-xs font-bold">Conta Fechada</span>
-                    <span className="text-neutral-500 text-[11px]">Deseja lançar mais itens?</span>
+                    <span className="text-[#1c1917] dark:text-white text-xs font-bold">Conta Fechada</span>
+                    <span className="text-stone-500 dark:text-neutral-500 text-[11px]">Deseja lançar mais itens?</span>
                   </div>
                   <Button
                     variant="ghost"
                     onClick={handleReopen}
                     loading={reopening}
-                    className="text-xs py-1.5 px-3 border border-neutral-750 text-neutral-300 hover:text-white hover:border-neutral-600 flex items-center gap-1.5 font-semibold"
+                    className="text-xs py-1.5 px-3 border border-[#d8d2c4] dark:border-neutral-750 text-stone-700 dark:text-neutral-300 hover:text-[#1c1917] dark:hover:text-white hover:border-stone-400 dark:hover:border-neutral-600 flex items-center gap-1.5 font-semibold"
                   >
                     <RotateCcw size={13} />
                     <span>Reabrir Mesa</span>
@@ -465,7 +493,7 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
                 </div>
 
                 <div className="flex flex-col gap-3">
-                  <h4 className="text-white text-xs font-bold uppercase tracking-wider text-neutral-450 flex items-center gap-1.5">
+                  <h4 className="text-stone-600 dark:text-neutral-450 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
                     <span>Opção 1: Pagamento via PIX (Mercado Pago)</span>
                   </h4>
                   
@@ -481,7 +509,7 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
                   ) : (
                     <div className="flex flex-col gap-4 text-center">
                       {orderDetails.paymentQrCode && (
-                        <div className="bg-white p-3 rounded-2xl inline-block mx-auto shadow-md">
+                        <div className="bg-white p-3 rounded-2xl inline-block mx-auto shadow-md border border-[#e4ded4] dark:border-transparent">
                           <img 
                             src={orderDetails.paymentQrCode} 
                             alt="PIX QR Code" 
@@ -491,21 +519,21 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
                       )}
                       
                       <div className="text-left flex flex-col gap-2">
-                        <label className="text-neutral-550 text-[10px] uppercase font-bold tracking-wider">Código PIX Copia e Cola</label>
+                        <label className="text-stone-500 dark:text-neutral-550 text-[10px] uppercase font-bold tracking-wider">Código PIX Copia e Cola</label>
                         <div className="flex gap-2">
                           <input
                             type="text"
                             readOnly
                             value={orderDetails.paymentQrCodeCopy || ''}
-                            className="flex-1 bg-neutral-950 border border-neutral-850 text-neutral-300 rounded-xl px-3 py-2.5 text-xs outline-none truncate"
+                            className="flex-1 bg-[#f7f4ee] dark:bg-neutral-950 border border-[#d8d2c4] dark:border-neutral-850 text-stone-800 dark:text-neutral-300 rounded-xl px-3 py-2.5 text-xs outline-none truncate"
                           />
                           <button
                             type="button"
                             onClick={handleCopy}
                             className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                               copied 
-                                ? 'bg-green-500/15 border border-green-500/30 text-green-400' 
-                                : 'bg-neutral-850 border border-neutral-750 text-white hover:bg-neutral-800'
+                                ? 'bg-green-500/15 border border-green-500/30 text-green-700 dark:text-green-400' 
+                                : 'bg-[#ede8df] dark:bg-neutral-850 border border-[#d8d2c4] dark:border-neutral-750 text-[#1c1917] dark:text-white hover:bg-[#e4ded3] dark:hover:bg-neutral-800'
                             }`}
                           >
                             {copied ? <Check size={13} /> : <Copy size={13} />}
@@ -519,7 +547,7 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
                           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
                           <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
                         </span>
-                        <span className="text-orange-300 text-xs font-medium">Aguardando confirmação do pagamento...</span>
+                        <span className="text-orange-700 dark:text-orange-300 text-xs font-medium">Aguardando confirmação do pagamento...</span>
                       </div>
 
                       {/* Botão de Verificação Ativa */}
@@ -538,7 +566,7 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
                           onClick={handleSimulatePayment}
                           loading={simulatingConfirm}
                           variant="secondary"
-                          className="text-xs py-2 bg-neutral-950 border border-neutral-850 hover:bg-neutral-900 text-neutral-400 hover:text-white rounded-xl"
+                          className="text-xs py-2 bg-[#f7f4ee] dark:bg-neutral-950 border border-[#e4ded4] dark:border-neutral-850 hover:bg-[#ede8df] dark:hover:bg-neutral-900 text-stone-600 dark:text-neutral-400 hover:text-[#1c1917] dark:hover:text-white rounded-xl"
                         >
                           Simular Confirmação de Pagamento (Dev)
                         </Button>
@@ -548,8 +576,8 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
                 </div>
 
                 {/* Métodos Manuais / Alternativos */}
-                <div className="flex flex-col gap-2.5 pt-4 border-t border-neutral-850/60">
-                  <h4 className="text-white text-xs font-bold uppercase tracking-wider text-neutral-450">
+                <div className="flex flex-col gap-2.5 pt-4 border-t border-[#e4ded4] dark:border-neutral-850/60">
+                  <h4 className="text-stone-600 dark:text-neutral-450 text-xs font-bold uppercase tracking-wider">
                     Opção 2: Receber Manualmente
                   </h4>
                   <div className="grid grid-cols-2 gap-2.5">
@@ -557,18 +585,18 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
                       variant="secondary"
                       onClick={() => handleManualPayment('CASH')}
                       loading={processingManual === 'CASH'}
-                      className="py-3 text-xs font-bold uppercase tracking-wider bg-neutral-950 border border-neutral-850 hover:border-emerald-500/40 hover:text-emerald-400 flex items-center justify-center gap-2 rounded-xl"
+                      className="py-3 text-xs font-bold uppercase tracking-wider bg-[#faf8f4] dark:bg-neutral-950 border border-[#e4ded4] dark:border-neutral-850 hover:border-emerald-500/40 hover:text-emerald-600 dark:hover:text-emerald-400 flex items-center justify-center gap-2 rounded-xl"
                     >
-                      <Banknote size={15} className="text-emerald-400" />
+                      <Banknote size={15} className="text-emerald-600 dark:text-emerald-400" />
                       <span>Dinheiro</span>
                     </Button>
                     <Button
                       variant="secondary"
                       onClick={() => handleManualPayment('CARD')}
                       loading={processingManual === 'CARD'}
-                      className="py-3 text-xs font-bold uppercase tracking-wider bg-neutral-950 border border-neutral-850 hover:border-blue-500/40 hover:text-blue-400 flex items-center justify-center gap-2 rounded-xl"
+                      className="py-3 text-xs font-bold uppercase tracking-wider bg-[#faf8f4] dark:bg-neutral-950 border border-[#e4ded4] dark:border-neutral-850 hover:border-blue-500/40 hover:text-blue-600 dark:hover:text-blue-400 flex items-center justify-center gap-2 rounded-xl"
                     >
-                      <CreditCard size={15} className="text-blue-400" />
+                      <CreditCard size={15} className="text-blue-600 dark:text-blue-400" />
                       <span>Cartão</span>
                     </Button>
                   </div>
@@ -578,30 +606,30 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
 
             {/* Pedido Pago com Sucesso */}
             {currentStatus === 'PAID' && orderDetails && (
-              <div className="mt-2 border-t border-neutral-850 pt-5 flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="mt-2 border-t border-[#e4ded4] dark:border-neutral-850 pt-5 flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
                 <div className="bg-emerald-500/5 border border-emerald-500/15 rounded-2xl p-5 flex flex-col gap-2.5 text-center">
-                  <div className="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto text-lg font-black shadow-inner">
+                  <div className="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto text-lg font-black shadow-inner">
                     <Check size={18} />
                   </div>
-                  <h4 className="text-white font-bold text-sm tracking-tight">Pedido Pago com Sucesso!</h4>
-                  <p className="text-neutral-500 text-xs leading-relaxed">Mesa quitada e pronta para liberação/fechamento.</p>
+                  <h4 className="text-[#1c1917] dark:text-white font-bold text-sm tracking-tight">Pedido Pago com Sucesso!</h4>
+                  <p className="text-stone-500 dark:text-neutral-500 text-xs leading-relaxed">Mesa quitada e pronta para liberação/fechamento.</p>
                 </div>
-                <div className="bg-neutral-950 border border-neutral-850 rounded-2xl p-4 text-xs text-neutral-400 flex flex-col gap-2 text-left">
+                <div className="bg-[#f7f4ee] dark:bg-neutral-950 border border-[#e4ded4] dark:border-neutral-850 rounded-2xl p-4 text-xs text-stone-600 dark:text-neutral-400 flex flex-col gap-2 text-left">
                   <div>
-                    <span className="text-neutral-500 font-semibold">Forma de Pagamento: </span>
-                    <strong className="text-white font-semibold">
+                    <span className="text-stone-500 dark:text-neutral-500 font-semibold">Forma de Pagamento: </span>
+                    <strong className="text-[#1c1917] dark:text-white font-semibold">
                       {orderDetails.paymentMethod === 'PIX' ? 'PIX (Mercado Pago)' : orderDetails.paymentMethod === 'CARD' ? 'Cartão de Débito / Crédito' : orderDetails.paymentMethod === 'CASH' ? 'Dinheiro' : orderDetails.paymentMethod || 'PIX'}
                     </strong>
                   </div>
                   {orderDetails.paymentId && (
                     <div>
-                      <span className="text-neutral-500 font-semibold">Código de Transação: </span>
-                      <code className="bg-neutral-900 px-1.5 py-0.5 rounded text-neutral-300">{orderDetails.paymentId}</code>
+                      <span className="text-stone-500 dark:text-neutral-500 font-semibold">Código de Transação: </span>
+                      <code className="bg-white dark:bg-neutral-900 px-1.5 py-0.5 rounded text-stone-800 dark:text-neutral-300 border border-[#e4ded4] dark:border-transparent">{orderDetails.paymentId}</code>
                     </div>
                   )}
                   <div>
-                    <span className="text-neutral-500 font-semibold">Valor Total Pago: </span>
-                    <strong className="text-emerald-400 font-bold">{formatPrice(orderDetails.total)}</strong>
+                    <span className="text-stone-500 dark:text-neutral-500 font-semibold">Valor Total Pago: </span>
+                    <strong className="text-emerald-600 dark:text-emerald-400 font-bold">{formatPrice(orderDetails.total)}</strong>
                   </div>
                 </div>
               </div>
@@ -610,10 +638,10 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
 
           {/* Coluna da Direita: Adicionar Novos Consumos (Apenas Aberto) */}
           {currentStatus === 'OPEN' && (
-            <div className={`md:col-span-7 border-t md:border-t-0 md:border-l border-neutral-850 pt-6 md:pt-0 md:pl-6 ${activeTab !== 'add' ? 'hidden md:flex' : 'flex'} flex-col gap-3.5`}>
+            <div className={`md:col-span-7 border-t md:border-t-0 md:border-l border-[#e4ded4] dark:border-neutral-850 pt-6 md:pt-0 md:pl-6 ${activeTab !== 'add' ? 'hidden md:flex' : 'flex'} flex-col gap-3.5`}>
               <div className="flex items-center justify-between">
-                <h4 className="text-white text-xs font-bold uppercase tracking-wider text-neutral-450">Lançar Consumo</h4>
-                <span className="text-[11px] text-neutral-500 font-semibold">
+                <h4 className="text-stone-600 dark:text-neutral-450 text-xs font-bold uppercase tracking-wider">Lançar Consumo</h4>
+                <span className="text-[11px] text-stone-500 dark:text-neutral-500 font-semibold">
                   {availableProducts.length} {availableProducts.length === 1 ? 'produto' : 'produtos'}
                 </span>
               </div>
@@ -625,14 +653,14 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
                   placeholder="Buscar produto por nome..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-neutral-950 border border-neutral-850 text-white rounded-xl py-2 pl-9 pr-8 text-xs outline-none focus:border-orange-500 transition-colors"
+                  className="w-full bg-[#faf8f4] dark:bg-neutral-950 border border-[#d8d2c4] dark:border-neutral-850 text-[#1c1917] dark:text-white rounded-xl py-2 pl-9 pr-8 text-xs outline-none focus:border-orange-500 transition-colors"
                 />
-                <Search size={14} className="absolute left-3 top-2.5 text-neutral-500" />
+                <Search size={14} className="absolute left-3 top-2.5 text-stone-400 dark:text-neutral-500" />
                 {searchQuery && (
                   <button
                     type="button"
                     onClick={() => setSearchQuery('')}
-                    className="absolute right-2.5 top-2 text-neutral-500 hover:text-white p-0.5 rounded cursor-pointer"
+                    className="absolute right-2.5 top-2 text-stone-400 hover:text-[#1c1917] dark:text-neutral-500 dark:hover:text-white p-0.5 rounded cursor-pointer"
                   >
                     <X size={13} />
                   </button>
@@ -650,8 +678,8 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
 
               {/* Lista de Produtos: w-full ocupando a área toda, um embaixo do outro */}
               {availableProducts.length === 0 ? (
-                <div className="text-center py-12 bg-neutral-950 border border-dashed border-neutral-850 rounded-2xl w-full">
-                  <p className="text-neutral-550 text-xs font-medium">Nenhum produto encontrado.</p>
+                <div className="text-center py-12 bg-[#faf8f4] dark:bg-neutral-950 border border-dashed border-[#d8d2c4] dark:border-neutral-850 rounded-2xl w-full">
+                  <p className="text-stone-500 dark:text-neutral-550 text-xs font-medium">Nenhum produto encontrado.</p>
                 </div>
               ) : (
                 <div className="flex flex-col gap-2 w-full max-h-[50vh] md:max-h-[55vh] overflow-y-auto pr-1">
@@ -663,24 +691,24 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
                         onClick={() => canAdd && handleInstantAdd(p)}
                         className={`w-full rounded-xl border px-3.5 py-2.5 flex items-center justify-between gap-3 transition-all duration-150 ${
                           !p.available 
-                            ? 'border-neutral-900 bg-neutral-950/40 opacity-40 select-none cursor-not-allowed'
-                            : 'border-neutral-850 bg-neutral-950 hover:border-orange-500/40 hover:bg-neutral-900/40 cursor-pointer active:scale-[0.99]'
+                            ? 'border-[#e4ded4] bg-[#f5f0e6]/50 dark:border-neutral-900 dark:bg-neutral-950/40 opacity-40 select-none cursor-not-allowed'
+                            : 'border-[#e4ded4] bg-[#faf8f4] hover:border-orange-500/40 hover:bg-white dark:border-neutral-850 dark:bg-neutral-950 dark:hover:border-orange-500/40 dark:hover:bg-neutral-900/40 cursor-pointer active:scale-[0.99]'
                         }`}
                       >
                         {/* Lado Esquerdo: Nome + Categoria + Descrição */}
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
-                            <span className="text-white text-xs sm:text-sm font-bold truncate">
+                            <span className="text-[#1c1917] dark:text-white text-xs sm:text-sm font-bold truncate">
                               {p.name}
                             </span>
                             {p.category && (
-                              <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-neutral-900 text-neutral-400 border border-neutral-800 shrink-0">
+                              <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-white dark:bg-neutral-900 text-stone-600 dark:text-neutral-400 border border-[#e4ded4] dark:border-neutral-800 shrink-0">
                                 {p.category}
                               </span>
                             )}
                           </div>
                           {p.description && (
-                            <p className="text-neutral-500 text-[11px] truncate mt-0.5 max-w-sm hidden sm:block">
+                            <p className="text-stone-500 dark:text-neutral-500 text-[11px] truncate mt-0.5 max-w-sm hidden sm:block">
                               {p.description}
                             </p>
                           )}
@@ -688,7 +716,7 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
 
                         {/* Lado Direito: Preço + Botão Adicionar */}
                         <div className="flex items-center gap-3 shrink-0">
-                          <span className="text-orange-400 text-xs sm:text-sm font-extrabold whitespace-nowrap">
+                          <span className="text-orange-600 dark:text-orange-400 text-xs sm:text-sm font-extrabold whitespace-nowrap">
                             {formatPrice(p.price)}
                           </span>
 
@@ -700,13 +728,13 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
                                 e.stopPropagation();
                                 handleInstantAdd(p);
                               }}
-                              className="px-2.5 py-1.5 rounded-lg bg-neutral-900 border border-neutral-800 hover:border-orange-500 hover:bg-orange-500 hover:text-white text-orange-400 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
+                              className="px-2.5 py-1.5 rounded-lg bg-white dark:bg-neutral-900 border border-[#d8d2c4] dark:border-neutral-800 hover:border-orange-500 hover:bg-orange-500 hover:text-white text-orange-600 dark:text-orange-400 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
                             >
                               <Plus size={13} />
                               <span className="hidden sm:inline">Adicionar</span>
                             </button>
                           ) : (
-                            <span className="text-[9px] font-black uppercase tracking-wider bg-red-500/10 border border-red-500/20 text-red-400 px-2 py-1 rounded-md">
+                            <span className="text-[9px] font-black uppercase tracking-wider bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 px-2 py-1 rounded-md">
                               Sem Estoque
                             </span>
                           )}
@@ -723,7 +751,7 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
         <ErrorMessage message={error} />
 
         {/* Rodapé do Modal */}
-        <div className="flex justify-end pt-4 border-t border-neutral-800 shrink-0 mt-2">
+        <div className="flex justify-end pt-4 border-t border-[#e4ded4] dark:border-neutral-800 shrink-0 mt-2">
           <Button variant="secondary" onClick={onClose} className="w-full text-xs font-bold tracking-wider uppercase py-2.5">
             Fechar Detalhes
           </Button>

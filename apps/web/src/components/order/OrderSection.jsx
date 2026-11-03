@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import api from '../../config/api';
+import { useAuth } from '../../context/AuthContext';
 import { useOrders } from '../../hooks/useOrder';
 import { useProducts } from '../../hooks/useProduct';
 import ConfirmModal from '../ui/ConfirmModal';
@@ -12,6 +15,11 @@ import { formatErrorMessage } from '../util/errorUtil';
 import { Plus, X } from 'lucide-react';
 
 export default function OrderSection() {
+  const { user } = useAuth();
+  const effectiveCompanyId =
+    user?.companyId ||
+    (localStorage.getItem('companyId') ? Number(localStorage.getItem('companyId')) : null);
+
   const {
     orders,
     loading,
@@ -34,6 +42,22 @@ export default function OrderSection() {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [tableValue, setTableValue] = useState('');
   const [error, setError] = useState('');
+
+  const { data: stations = [] } = useQuery({
+    queryKey: ['kds-stations', { companyId: effectiveCompanyId }],
+    queryFn: async () => {
+      const res = await api.get('/company/current/stations').catch(() => ({ data: { data: [] } }));
+      return res.data.data || [];
+    },
+  });
+
+  const { data: dbCategories = [] } = useQuery({
+    queryKey: ['categories', { companyId: effectiveCompanyId }],
+    queryFn: async () => {
+      const res = await api.get('/category').catch(() => ({ data: { data: [] } }));
+      return res.data.data || [];
+    },
+  });
 
   const handleOpenForm = (order = null) => {
     setError('');
@@ -95,8 +119,8 @@ export default function OrderSection() {
       {/* Header */}
       <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 md:mb-8">
         <div>
-          <h2 className="text-2xl font-bold text-white tracking-tight">Painel de Pedidos</h2>
-          <p className="text-neutral-500 text-sm">Gerencie o fluxo de mesas e consumo em tempo real</p>
+          <h2 className="text-2xl font-bold text-[#1c1917] dark:text-white tracking-tight">Painel de Pedidos</h2>
+          <p className="text-stone-500 dark:text-neutral-500 text-sm">Gerencie o fluxo de mesas e consumo em tempo real</p>
         </div>
         <Button
           onClick={() => (showForm || editing ? (setShowForm(false), setEditing(null)) : handleOpenForm())}
@@ -112,7 +136,7 @@ export default function OrderSection() {
       {(showForm || editing) && (
         <form 
           onSubmit={handleSubmit} 
-          className="glass-panel border border-orange-500/20 rounded-2xl p-5 mb-8 flex flex-col gap-4 animate-in slide-in-from-top-4 duration-300"
+          className="bg-white dark:bg-neutral-900 border border-orange-500/25 rounded-2xl p-5 mb-8 flex flex-col gap-4 animate-in slide-in-from-top-4 duration-300 shadow-xs"
         >
           <div className="flex flex-col sm:flex-row sm:items-end gap-4 w-full">
             <div className="flex-1 w-full">
@@ -157,8 +181,8 @@ export default function OrderSection() {
             onClick={() => fetchOrders(s || undefined)}
             className={`text-[10px] uppercase tracking-wider font-bold px-4 py-2.5 rounded-xl border transition-all duration-200 cursor-pointer whitespace-nowrap active:scale-95 ${
               statusFilter === s 
-                ? 'bg-white border-white text-black shadow-lg shadow-white/5' 
-                : 'bg-neutral-900 border-neutral-800 text-neutral-400 hover:border-neutral-700 hover:text-neutral-200'
+                ? 'bg-[#1c1917] border-[#1c1917] text-white dark:bg-white dark:border-white dark:text-black shadow-sm' 
+                : 'bg-white border-[#e4ded4] text-stone-600 hover:border-[#cfc7b8] hover:text-[#1c1917] dark:bg-neutral-900 dark:border-neutral-800 dark:text-neutral-400 dark:hover:border-neutral-700 dark:hover:text-neutral-200'
             }`}
           >
             {s === '' ? 'Todos' : STATUS_MAP[s].label}
@@ -170,12 +194,12 @@ export default function OrderSection() {
       {loading ? (
         <div className="flex flex-col gap-2 w-full">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="h-14 bg-neutral-900/40 border border-neutral-800 rounded-xl animate-pulse w-full" />
+            <div key={i} className="h-14 bg-white dark:bg-neutral-900/40 border border-[#e4ded4] dark:border-neutral-800 rounded-xl animate-pulse w-full" />
           ))}
         </div>
       ) : orders.length === 0 ? (
-        <div className="text-center py-16 bg-neutral-900/10 rounded-2xl border border-dashed border-neutral-800 w-full">
-          <p className="text-neutral-550 font-medium">Nenhum pedido encontrado nesta categoria.</p>
+        <div className="text-center py-16 bg-white/60 dark:bg-neutral-900/10 rounded-2xl border border-dashed border-[#d8d2c4] dark:border-neutral-800 w-full">
+          <p className="text-stone-500 dark:text-neutral-550 font-medium">Nenhum pedido encontrado nesta categoria.</p>
         </div>
       ) : (
         <div className="flex flex-col gap-2 w-full">
@@ -183,6 +207,8 @@ export default function OrderSection() {
             <OrderCard 
               key={o.id} 
               order={o} 
+              stations={stations}
+              categories={dbCategories}
               onClick={setSelectedOrder} 
               onEdit={handleOpenForm}
               onDelete={setDeleting}
@@ -193,9 +219,9 @@ export default function OrderSection() {
 
       {/* Paginação */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between border border-neutral-850 bg-neutral-900/10 rounded-2xl px-5 py-4 mt-6">
-          <p className="text-xs text-neutral-500 font-semibold select-none">
-            Mostrando página <span className="text-neutral-350">{currentPage}</span> de <span className="text-neutral-350">{totalPages}</span>
+        <div className="flex items-center justify-between border border-[#e4ded4] dark:border-neutral-850 bg-white dark:bg-neutral-900/10 rounded-2xl px-5 py-4 mt-6">
+          <p className="text-xs text-stone-500 dark:text-neutral-500 font-semibold select-none">
+            Mostrando página <span className="text-[#1c1917] dark:text-neutral-350">{currentPage}</span> de <span className="text-[#1c1917] dark:text-neutral-350">{totalPages}</span>
           </p>
           <div className="flex gap-2">
             <Button
