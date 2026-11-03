@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import api from '../../config/api';
 import { useOrderDetail } from '../../hooks/useOrderDetail';
 import { isReadyDeliveryItem } from '../../hooks/useKDS';
@@ -32,6 +33,22 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
   const [checkingStatus, setCheckingStatus] = useState(false);
   const [reopening, setReopening] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  const { data: stations = [] } = useQuery({
+    queryKey: ['kds-stations', { companyId: order.companyId }],
+    queryFn: async () => {
+      const res = await api.get('/company/current/stations').catch(() => ({ data: { data: [] } }));
+      return res.data.data || [];
+    },
+  });
+
+  const { data: dbCategories = [] } = useQuery({
+    queryKey: ['categories', { companyId: order.companyId }],
+    queryFn: async () => {
+      const res = await api.get('/category').catch(() => ({ data: { data: [] } }));
+      return res.data.data || [];
+    },
+  });
 
   const categories = useMemo(() => 
     [...new Set(products.map(p => p.category).filter(Boolean))],
@@ -224,7 +241,7 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
               )}
               {currentStatus === 'PAID' && (
                 <span className="flex items-center gap-1.5 bg-blue-500/10 border border-blue-500/20 text-blue-400 font-bold px-3 py-1 rounded-xl text-xs uppercase tracking-wider select-none">
-                  ✓ Pago
+                  Pago
                 </span>
               )}
               <button 
@@ -320,30 +337,30 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
                       {/* Status KDS & Ação de Entrega */}
                       {(() => {
                         const itemStatus = item.status || 'QUEUED';
-                        const readyDelivery = isReadyDeliveryItem(item);
+                        const readyDelivery = isReadyDeliveryItem(item, stations, dbCategories);
                         return (
                           <div className="flex items-center justify-between gap-2 pt-2 border-t border-neutral-850/60 text-xs flex-wrap">
                             <div className="flex items-center gap-1.5">
                               <span className="text-neutral-500 text-[11px]">Status:</span>
                               {itemStatus === 'READY' ? (
                                 <span className="px-2 py-0.5 rounded-md font-bold text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                                  Pronto p/ Servir ✓
+                                  Pronto p/ Servir
                                 </span>
                               ) : itemStatus === 'PREPARING' ? (
                                 <span className="px-2 py-0.5 rounded-md font-bold text-[10px] bg-orange-500/10 text-orange-400 border border-orange-500/20">
-                                  Em Preparação...
+                                  Em Preparo
                                 </span>
                               ) : itemStatus === 'DELIVERING' ? (
                                 <span className="px-2 py-0.5 rounded-md font-bold text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                                  A Caminho da Mesa 🚀
+                                  Em Transporte
                                 </span>
                               ) : itemStatus === 'DELIVERED' ? (
                                 <span className="px-2 py-0.5 rounded-md font-bold text-[10px] bg-neutral-800 text-neutral-400">
-                                  Entregue ✓
+                                  Entregue
                                 </span>
                               ) : readyDelivery ? (
                                 <span className="px-2 py-0.5 rounded-md font-bold text-[10px] bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-                                  ⚡ Pronta Entrega
+                                  Pronta Entrega
                                 </span>
                               ) : (
                                 <span className="px-2 py-0.5 rounded-md font-bold text-[10px] bg-neutral-900 text-neutral-400 border border-neutral-800">
@@ -353,15 +370,13 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
                             </div>
 
                             <div className="flex items-center gap-1.5">
-                              {(itemStatus === 'QUEUED' || itemStatus === 'PENDING') && readyDelivery && (
+                              {(((itemStatus === 'QUEUED' || itemStatus === 'PENDING') && readyDelivery) ||
+                                itemStatus === 'READY') && (
                                 <button
                                   type="button"
                                   onClick={async () => {
                                     try {
-                                      await api.patch(`/order-item/${item.id}/status`, {
-                                        status: 'DELIVERED',
-                                        orderId: order.id,
-                                      });
+                                      await api.patch(`/order-item/${item.id}/claim-delivery`);
                                       fetchDetails();
                                       onUpdate?.();
                                     } catch (err) {
@@ -370,46 +385,8 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
                                   }}
                                   className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-stone-50 font-bold rounded-lg text-[11px] transition cursor-pointer shadow-xs"
                                 >
-                                  Entregar Agora ✓
+                                  Assumir Entrega
                                 </button>
-                              )}
-
-                              {itemStatus === 'READY' && (
-                                <>
-                                  <button
-                                    type="button"
-                                    onClick={async () => {
-                                      try {
-                                        await api.patch(`/order-item/${item.id}/claim-delivery`);
-                                        fetchDetails();
-                                        onUpdate?.();
-                                      } catch (err) {
-                                        setError(formatErrorMessage(err));
-                                      }
-                                    }}
-                                    className="px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-stone-950 font-bold rounded-lg text-[11px] transition cursor-pointer"
-                                  >
-                                    Assumir Entrega 🚀
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={async () => {
-                                      try {
-                                        await api.patch(`/order-item/${item.id}/status`, {
-                                          status: 'DELIVERED',
-                                          orderId: order.id,
-                                        });
-                                        fetchDetails();
-                                        onUpdate?.();
-                                      } catch (err) {
-                                        setError(formatErrorMessage(err));
-                                      }
-                                    }}
-                                    className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-stone-50 font-bold rounded-lg text-[11px] transition cursor-pointer shadow-xs"
-                                  >
-                                    Entregue ✓
-                                  </button>
-                                </>
                               )}
 
                               {itemStatus === 'DELIVERING' && (
@@ -427,9 +404,9 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
                                       setError(formatErrorMessage(err));
                                     }
                                   }}
-                                  className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-stone-50 font-bold rounded-lg text-[11px] transition shadow-xs cursor-pointer"
+                                  className="px-2.5 py-1 bg-sky-600 hover:bg-sky-500 text-stone-50 font-bold rounded-lg text-[11px] transition shadow-xs cursor-pointer"
                                 >
-                                  Confirmar Entrega ✓
+                                  Entregue na Mesa
                                 </button>
                               )}
                             </div>
@@ -563,7 +540,7 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
                           variant="secondary"
                           className="text-xs py-2 bg-neutral-950 border border-neutral-850 hover:bg-neutral-900 text-neutral-400 hover:text-white rounded-xl"
                         >
-                          ⚡ Simular Confirmação de Pagamento (Dev)
+                          Simular Confirmação de Pagamento (Dev)
                         </Button>
                       )}
                     </div>
@@ -603,7 +580,9 @@ export default function OrderDetailModal({ order, products, onClose, onUpdate })
             {currentStatus === 'PAID' && orderDetails && (
               <div className="mt-2 border-t border-neutral-850 pt-5 flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
                 <div className="bg-emerald-500/5 border border-emerald-500/15 rounded-2xl p-5 flex flex-col gap-2.5 text-center">
-                  <div className="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto text-lg font-black shadow-inner">✓</div>
+                  <div className="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto text-lg font-black shadow-inner">
+                    <Check size={18} />
+                  </div>
                   <h4 className="text-white font-bold text-sm tracking-tight">Pedido Pago com Sucesso!</h4>
                   <p className="text-neutral-500 text-xs leading-relaxed">Mesa quitada e pronta para liberação/fechamento.</p>
                 </div>

@@ -13,6 +13,10 @@ export const SocketProvider = ({ children }) => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
+  const effectiveCompanyId =
+    user?.companyId ||
+    (localStorage.getItem('companyId') ? Number(localStorage.getItem('companyId')) : null);
+
   useEffect(() => {
     if (user) {
       if (socket.connected) {
@@ -29,10 +33,17 @@ export const SocketProvider = ({ children }) => {
   useEffect(() => {
     function onConnect() {
       setIsConnected(true);
+      if (effectiveCompanyId) {
+        socket.emit('join_room', `company:${effectiveCompanyId}`);
+      }
     }
 
     function onDisconnect() {
       setIsConnected(false);
+    }
+
+    if (socket.connected && effectiveCompanyId) {
+      socket.emit('join_room', `company:${effectiveCompanyId}`);
     }
 
     // Invalidação automática do React Query ao receber eventos em tempo real
@@ -96,7 +107,7 @@ export const SocketProvider = ({ children }) => {
       socket.off('product:deleted', handleProductChange);
       socket.off('product:restored', handleProductChange);
     };
-  }, [queryClient]);
+  }, [queryClient, effectiveCompanyId]);
 
   return (
     <SocketContext.Provider value={{ socket, isConnected }}>

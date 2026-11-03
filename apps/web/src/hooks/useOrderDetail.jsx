@@ -39,7 +39,9 @@ export function useOrderDetail(orderId) {
         if (!old) return old;
         const items = [...(old.OrderItems || old.items || [])];
         const existingIdx = items.findIndex(
-          (i) => i.ProductId === product.id || i.Product?.id === product.id || i.Product?.name === product.name
+          (i) =>
+            (i.ProductId === product.id || i.Product?.id === product.id || i.Product?.name === product.name) &&
+            (!i.status || i.status === 'QUEUED' || i.status === 'PENDING')
         );
 
         if (existingIdx >= 0) {
@@ -58,7 +60,15 @@ export function useOrderDetail(orderId) {
             quantity,
             unitPrice: Number(product.price),
             totalPrice: Number(product.price) * quantity,
-            Product: { id: product.id, name: product.name, price: product.price },
+            status: 'QUEUED',
+            stationId: product.stationId || null,
+            Product: {
+              id: product.id,
+              name: product.name,
+              price: product.price,
+              category: product.category,
+              stationId: product.stationId || null,
+            },
           });
         }
 
@@ -75,9 +85,10 @@ export function useOrderDetail(orderId) {
       }
     },
     onSettled: () => {
-      // Sincroniza em background com o servidor
+      // Sincroniza em background com o servidor e com o KDS
       queryClient.invalidateQueries({ queryKey: ['order', orderId] });
       queryClient.invalidateQueries({ queryKey: ['orders'] });
+      queryClient.invalidateQueries({ queryKey: ['kds-active-orders'] });
     },
   });
 
@@ -105,12 +116,43 @@ export function useOrderDetail(orderId) {
           const idx = items.findIndex((i) => i.id === itemId);
           if (idx >= 0) {
             const item = items[idx];
-            const unitPrice = Number(item.unitPrice);
-            items[idx] = {
-              ...item,
-              quantity,
-              totalPrice: unitPrice * quantity,
-            };
+            const unitPrice = Number(item.unitPrice || item.Product?.price || 0);
+            const isAlreadyProcessed =
+              item.status && !['QUEUED', 'PENDING'].includes(item.status);
+
+            if (isAlreadyProcessed && quantity > item.quantity) {
+              const addedQty = quantity - item.quantity;
+              const targetProductId = item.ProductId || item.Product?.id;
+              const queuedIdx = items.findIndex(
+                (i) =>
+                  (i.ProductId === targetProductId || i.Product?.id === targetProductId) &&
+                  (!i.status || i.status === 'QUEUED' || i.status === 'PENDING')
+              );
+
+              if (queuedIdx >= 0) {
+                const queued = items[queuedIdx];
+                const nextQty = queued.quantity + addedQty;
+                items[queuedIdx] = {
+                  ...queued,
+                  quantity: nextQty,
+                  totalPrice: unitPrice * nextQty,
+                };
+              } else {
+                items.push({
+                  ...item,
+                  id: `temp-${Date.now()}`,
+                  quantity: addedQty,
+                  totalPrice: unitPrice * addedQty,
+                  status: 'QUEUED',
+                });
+              }
+            } else {
+              items[idx] = {
+                ...item,
+                quantity,
+                totalPrice: unitPrice * quantity,
+              };
+            }
           }
         }
 
@@ -128,6 +170,7 @@ export function useOrderDetail(orderId) {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['order', orderId] });
       queryClient.invalidateQueries({ queryKey: ['orders'] });
+      queryClient.invalidateQueries({ queryKey: ['kds-active-orders'] });
     },
   });
 
@@ -157,6 +200,7 @@ export function useOrderDetail(orderId) {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['order', orderId] });
       queryClient.invalidateQueries({ queryKey: ['orders'] });
+      queryClient.invalidateQueries({ queryKey: ['kds-active-orders'] });
     },
   });
 

@@ -10,11 +10,13 @@ export default function OrderCard({ order, onClick, onEdit, onDelete }) {
   const itemCount = orderItems.reduce((sum, item) => sum + Number(item.quantity), 0) || 0;
   const itemNames = orderItems.map((i) => i.Product?.name || i.product?.name || i.productName || 'Item').slice(0, 3).join(', ');
 
-  const readyToServeCount = orderItems.filter(
-    (i) =>
-      i.status === 'READY' ||
-      ((i.status === 'QUEUED' || i.status === 'PENDING' || !i.status) && isReadyDeliveryItem(i))
-  ).length;
+  const readyToServeCount = orderItems
+    .filter(
+      (i) =>
+        i.status === 'READY' ||
+        ((i.status === 'QUEUED' || i.status === 'PENDING' || !i.status) && isReadyDeliveryItem(i))
+    )
+    .reduce((sum, i) => sum + Number(i.quantity || 1), 0);
 
   const isOpen = order.status === 'OPEN';
   const isClosed = order.status === 'CLOSED';
@@ -57,7 +59,7 @@ export default function OrderCard({ order, onClick, onEdit, onDelete }) {
             </span>
             {isOpen && readyToServeCount > 0 && (
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-md border bg-emerald-500/15 text-emerald-400 border-emerald-500/30 shrink-0">
-                ✓ {readyToServeCount} p/ servir
+                {readyToServeCount} p/ servir
               </span>
             )}
           </div>
