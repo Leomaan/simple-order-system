@@ -91,6 +91,14 @@ export const refresh = asyncHandler(async (req, res) => {
     maxAge: 15 * 60 * 1000,
   });
 
+  // Rotação de Refresh Token (OWASP RTR): emite o novo token rotacionado
+  if (result.refreshToken) {
+    res.cookie('refreshToken', result.refreshToken, {
+      ...cookieOptions,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+  }
+
   // Renovar o token CSRF
   const csrfToken = crypto.randomBytes(32).toString('hex');
   res.cookie('XSRF-TOKEN', csrfToken, {
@@ -98,7 +106,7 @@ export const refresh = asyncHandler(async (req, res) => {
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 
-  logger.info('Token de acesso renovado com sucesso', { context: 'auth_controller', role: result.role });
+  logger.info('Token de acesso e refresh token renovados com sucesso', { context: 'auth_controller', role: result.role });
 
   res.status(200).json({
     success: true,

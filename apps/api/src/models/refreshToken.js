@@ -12,6 +12,14 @@ const RefreshToken = sequelize.define('RefreshToken', {
     type: DataTypes.DATE,
     allowNull: false,
   },
+  revokedAt: {
+    type: DataTypes.DATE,
+    allowNull: true,
+  },
+  replacedByToken: {
+    type: DataTypes.STRING(512),
+    allowNull: true,
+  },
 });
 
 RefreshToken.belongsTo(User, { foreignKey: 'UserId', onDelete: 'CASCADE' });

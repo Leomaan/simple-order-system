@@ -70,15 +70,57 @@ describe('login', () => {
 });
 
 describe('refresh', () => {
-  it('deve gerar novo accessToken com sucesso', async () => {
-    RefreshToken.findOne.mockResolvedValue({
+  it('deve rotacionar e gerar novo accessToken e novo refreshToken com sucesso', async () => {
+    const mockStoredToken = {
+      id: 10,
+      UserId: 1,
       expiresAt: new Date(Date.now() + 99999999),
+      revokedAt: null,
       User: { id: 1, active: true, role: 'ADMIN', name: 'Admin' },
-    });
+      update: vi.fn().mockResolvedValue(true),
+    };
+
+    RefreshToken.findOne.mockResolvedValue(mockStoredToken);
+    RefreshToken.create.mockResolvedValue(true);
 
     const result = await refresh('valid_token');
 
     expect(result).toHaveProperty('accessToken');
+    expect(result).toHaveProperty('refreshToken');
+    expect(RefreshToken.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        UserId: 1,
+        token: expect.any(String),
+      })
+    );
+    expect(mockStoredToken.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        revokedAt: expect.any(Date),
+        replacedByToken: expect.any(String),
+      })
+    );
+  });
+
+  it('deve detectar tentativa de reuso de token revogado e revogar todas as sessões do usuário (OWASP RTR)', async () => {
+    const compromisedToken = {
+      id: 10,
+      UserId: 1,
+      expiresAt: new Date(Date.now() + 99999999),
+      revokedAt: new Date(Date.now() - 5000), // Já foi revogado anteriormente
+      User: { id: 1, active: true, role: 'ADMIN', name: 'Admin' },
+    };
+
+    RefreshToken.findOne.mockResolvedValue(compromisedToken);
+    RefreshToken.destroy.mockResolvedValue(2);
+
+    await expect(refresh('token_ja_usado'))
+      .rejects.toMatchObject({
+        status: 401,
+        message: 'tentativa de reutilização de sessão detectada. Todas as sessões foram encerradas por segurança.',
+      });
+
+    // Garante que todas as sessões daquele usuário foram destruídas
+    expect(RefreshToken.destroy).toHaveBeenCalledWith({ where: { UserId: 1 } });
   });
 
   it('deve lançar AppError se refresh token não for fornecido', async () => {
@@ -96,6 +138,7 @@ describe('refresh', () => {
   it('deve lançar AppError se refresh token estiver expirado', async () => {
     RefreshToken.findOne.mockResolvedValue({
       expiresAt: new Date(Date.now() - 1000),
+      revokedAt: null,
       destroy: vi.fn(),
     });
 
@@ -106,6 +149,7 @@ describe('refresh', () => {
   it('deve lançar AppError se usuário estiver inativo', async () => {
     RefreshToken.findOne.mockResolvedValue({
       expiresAt: new Date(Date.now() + 99999999),
+      revokedAt: null,
       User: { active: false },
     });
 

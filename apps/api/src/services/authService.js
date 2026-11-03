@@ -5,6 +5,7 @@ import User from '../models/user.js';
 import RefreshToken from '../models/refreshToken.js';
 import { AppError } from '../middleware/appError.js';
 import { log } from './auditLogService.js';
+import logger from '../util/logger.js';
 
 function generateAccessToken(user) {
   return jwt.sign(
@@ -64,11 +65,42 @@ export async function refresh(token, impersonationData = null) {
   const stored = await RefreshToken.findOne({ where: { token }, include: [User] });
 
   if (!stored) throw new AppError('refresh token inválido', 401);
+
+  // DETECÇÃO DE REUSO (OWASP & RFC 6749):
+  // Se o token já foi consumido e revogado anteriormente, trata-se de tentativa de roubo/reuso.
+  // Invalida imediatamente toda a família de sessões deste usuário (Family Revocation).
+  if (stored.revokedAt) {
+    const targetUserId = stored.UserId || stored.User?.id;
+    if (targetUserId) {
+      await RefreshToken.destroy({ where: { UserId: targetUserId } });
+    }
+    logger.error('Alerta de segurança: Tentativa de reutilização de refresh token detectada! Todas as sessões do usuário foram revogadas.', {
+      context: 'auth_service',
+      userId: targetUserId,
+    });
+    throw new AppError('tentativa de reutilização de sessão detectada. Todas as sessões foram encerradas por segurança.', 401);
+  }
+
   if (new Date() > stored.expiresAt) {
-    await stored.destroy();
+    if (typeof stored.destroy === 'function') {
+      await stored.destroy();
+    }
     throw new AppError('refresh token expirado', 401);
   }
-  if (!stored.User.active) throw new AppError('usuário inativo', 401);
+
+  if (!stored.User?.active) throw new AppError('usuário inativo', 401);
+
+  // ROTAÇÃO DE TOKEN: Emite um novo refreshToken e marca o token anterior como revogado
+  const newRefreshToken = await generateRefreshToken(stored.User.id);
+  if (typeof stored.update === 'function') {
+    await stored.update({
+      revokedAt: new Date(),
+      replacedByToken: newRefreshToken,
+    });
+  } else {
+    stored.revokedAt = new Date();
+    stored.replacedByToken = newRefreshToken;
+  }
 
   const impersonatedCompanyId = typeof impersonationData === 'object' && impersonationData !== null
     ? impersonationData.companyId
@@ -102,6 +134,7 @@ export async function refresh(token, impersonationData = null) {
   const accessToken = generateAccessToken(userPayload);
   return { 
     accessToken, 
+    refreshToken: newRefreshToken,
     role: stored.User.role, 
     name: effectiveName, 
     companyId: effectiveCompanyId,

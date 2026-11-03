@@ -21,17 +21,18 @@ async function bootstrap() {
       logger.info('Banco conectado com sucesso (Produção)!');
     }
 
-    // Limpeza de refresh tokens expirados na inicialização
+    // Limpeza de refresh tokens expirados ou revogados na inicialização
     try {
       const deleted = await RefreshToken.destroy({
         where: {
-          expiresAt: {
-            [Op.lt]: new Date()
-          }
+          [Op.or]: [
+            { expiresAt: { [Op.lt]: new Date() } },
+            { revokedAt: { [Op.lt]: new Date(Date.now() - 24 * 60 * 60 * 1000) } }
+          ]
         }
       });
       if (deleted > 0) {
-        logger.info(`Limpeza: ${deleted} tokens de atualização expirados removidos.`);
+        logger.info(`Limpeza: ${deleted} tokens de atualização expirados/revogados removidos.`);
       }
     } catch (cleanErr) {
       logger.warn('Alerta: Falha ao limpar tokens expirados:', { error: cleanErr.message });
@@ -48,13 +49,12 @@ async function bootstrap() {
       logger.info('Encerrando servidor...');
       server.close(async () => {
         await sequelize.close();
-        logger.info('Servidor encerrado com sucesso!');
         process.exit(0);
       });
     });
 
-  } catch (err) {
-    console.error('Erro ao iniciar o servidor:', err.message);
+  } catch (error) {
+    logger.error('Erro fatal ao iniciar aplicação:', { error: error.message, stack: error.stack });
     process.exit(1);
   }
 }
