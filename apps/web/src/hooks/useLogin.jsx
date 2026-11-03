@@ -16,8 +16,8 @@ export function useLogin() {
     setLoading(true);
     try {
       const res = await api.post('/auth/login', { email, password });
-      const { role, name, csrfToken, isSuperAdmin, companyId } = res.data.data;
-      login({ role, name, csrfToken, isSuperAdmin, companyId }); 
+      const { role, name, isSuperAdmin, companyId } = res.data.data;
+      login({ role, name, isSuperAdmin, companyId }); 
 
       const defaultPath = isSuperAdmin ? '/superadmin' : (role === 'ADMIN' ? '/admin' : '/waiter');
       const from = location.state?.from?.pathname;

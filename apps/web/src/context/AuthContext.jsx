@@ -13,27 +13,24 @@ export function AuthProvider({ children }) {
     async function checkAuth() {
       try {
         const res = await api.post('/auth/refresh');
-        const { role, name, csrfToken, isSuperAdmin, companyId, impersonating } = res.data.data;
+        const { role, name, isSuperAdmin, companyId, impersonating } = res.data.data;
         setUser({ role, name, isSuperAdmin, companyId, impersonating: !!impersonating });
-        localStorage.setItem('role', role);
-        localStorage.setItem('name', name);
-        if (isSuperAdmin !== undefined) {
-          localStorage.setItem('isSuperAdmin', String(isSuperAdmin));
-        }
+
+        // Garante limpeza de chaves residuais de autenticação legadas
+        localStorage.removeItem('csrfToken');
+        localStorage.removeItem('token');
+        localStorage.removeItem('accessToken');
+
         if (companyId) {
           localStorage.setItem('companyId', String(companyId));
         } else {
           localStorage.removeItem('companyId');
         }
-        if (csrfToken) {
-          localStorage.setItem('csrfToken', csrfToken);
-        }
       } catch (err) {
-        localStorage.removeItem('role');
-        localStorage.removeItem('name');
-        localStorage.removeItem('isSuperAdmin');
         localStorage.removeItem('companyId');
         localStorage.removeItem('csrfToken');
+        localStorage.removeItem('token');
+        localStorage.removeItem('accessToken');
         setUser(null);
       } finally {
         setLoading(false);
@@ -52,20 +49,17 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
-  function login({ role, name, csrfToken, isSuperAdmin, companyId, impersonating }) {
-    localStorage.setItem('role', role);
-    localStorage.setItem('name', name);
-    if (isSuperAdmin !== undefined) {
-      localStorage.setItem('isSuperAdmin', String(isSuperAdmin));
-    }
+  function login({ role, name, isSuperAdmin, companyId, impersonating }) {
     if (companyId) {
       localStorage.setItem('companyId', String(companyId));
     } else {
       localStorage.removeItem('companyId');
     }
-    if (csrfToken) {
-      localStorage.setItem('csrfToken', csrfToken);
-    }
+    // Remove qualquer resquício legado de tokens no localStorage
+    localStorage.removeItem('csrfToken');
+    localStorage.removeItem('token');
+    localStorage.removeItem('accessToken');
+
     setUser({ role, name, isSuperAdmin, companyId, impersonating: !!impersonating });
   }
 
@@ -73,11 +67,13 @@ export function AuthProvider({ children }) {
     try {
       await api.post('/auth/logout', {});
     } catch {}
+    localStorage.removeItem('companyId');
+    localStorage.removeItem('csrfToken');
+    localStorage.removeItem('token');
+    localStorage.removeItem('accessToken');
     localStorage.removeItem('role');
     localStorage.removeItem('name');
     localStorage.removeItem('isSuperAdmin');
-    localStorage.removeItem('companyId');
-    localStorage.removeItem('csrfToken');
     queryClient.clear();
     setUser(null);
   }
