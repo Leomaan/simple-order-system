@@ -11,41 +11,70 @@ const LEGACY_CATEGORY_SLUG_MAP = {
   SIDE: 'cozinha',
   DRINK: 'pronta-entrega',
   DESSERT: 'pronta-entrega',
+  BEBIDAS: 'pronta-entrega',
+  BEBIDA: 'pronta-entrega',
+  SOBREMESAS: 'pronta-entrega',
+  SOBREMESA: 'pronta-entrega',
+  BAR: 'bar',
+  COPA: 'bar',
+  'PRONTA ENTREGA': 'pronta-entrega',
+  'PRONTA-ENTREGA': 'pronta-entrega',
 };
 
 /**
- * Verifica relacionalmente se o item pertence a uma estação de Pronta Entrega
- * (via stationSlug, stationId ou enum legado quando stationId ainda for nulo)
+ * Verifica relacionalmente se o item pertence a uma estação que não é a Cozinha
+ * (ex: Pronta Entrega, Bar/Copa, via stationSlug, stationId, Category ou enum legado quando stationId ainda for nulo)
  */
-export function isReadyDeliveryItem(itemOrProduct, stations = []) {
+export function isReadyDeliveryItem(itemOrProduct, stations = [], categories = []) {
   if (!itemOrProduct) return false;
 
   if (itemOrProduct.isReadyDelivery !== undefined) {
     return Boolean(itemOrProduct.isReadyDelivery);
   }
 
+  if (itemOrProduct.stationSlug) {
+    return itemOrProduct.stationSlug !== 'cozinha';
+  }
+
   const product = itemOrProduct.Product || itemOrProduct.product || itemOrProduct;
-  const stationId =
+
+  if (product?.Category?.ProductionStation?.slug) {
+    return product.Category.ProductionStation.slug !== 'cozinha';
+  }
+
+  let stationId =
     itemOrProduct.stationId ??
     product?.stationId ??
     product?.Category?.stationId ??
     null;
 
-  if (stationId && stations.length > 0) {
-    const matched = stations.find((s) => String(s.id) === String(stationId));
-    if (matched) {
-      return matched.slug === 'pronta-entrega';
+  if (stationId === null && categories.length > 0) {
+    const matchedCategory = categories.find(
+      (c) =>
+        (product?.categoryId && String(c.id) === String(product.categoryId)) ||
+        (product?.category &&
+          c.name?.trim().toLowerCase() === String(product.category).trim().toLowerCase())
+    );
+    if (matchedCategory) {
+      if (matchedCategory.ProductionStation?.slug) {
+        return matchedCategory.ProductionStation.slug !== 'cozinha';
+      }
+      stationId = matchedCategory.stationId ?? null;
     }
   }
 
-  if (itemOrProduct.stationSlug) {
-    return itemOrProduct.stationSlug === 'pronta-entrega';
+  if (stationId !== null && stationId !== undefined && stations.length > 0) {
+    const matched = stations.find((s) => String(s.id) === String(stationId));
+    if (matched) {
+      return matched.slug !== 'cozinha';
+    }
   }
 
-  // Fallback exclusivo para o enum legado caso o produto antigo não tenha stationId vinculado
-  if (!stationId) {
-    const legacyCode = String(product?.category || '').toUpperCase();
-    return LEGACY_CATEGORY_SLUG_MAP[legacyCode] === 'pronta-entrega';
+  // Fallback para o código/nome da categoria caso o produto antigo não tenha stationId resolvido
+  const legacyCode = String(product?.category || '').trim().toUpperCase();
+  const mappedSlug = LEGACY_CATEGORY_SLUG_MAP[legacyCode];
+  if (mappedSlug) {
+    return mappedSlug !== 'cozinha';
   }
 
   return false;
@@ -130,6 +159,15 @@ export function useKDS() {
     },
   });
 
+  // Busca categorias da empresa para resolver vínculo de estação por categoria quando necessário
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories', { companyId: effectiveCompanyId }],
+    queryFn: async () => {
+      const res = await api.get('/category').catch(() => ({ data: { data: [] } }));
+      return res.data.data || [];
+    },
+  });
+
   // Busca pedidos ativos com itens em produção
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ['kds-active-orders', { companyId: effectiveCompanyId }],
@@ -137,6 +175,8 @@ export function useKDS() {
       const res = await api.get('/order');
       return (res.data.data || []).filter((o) => o.status === 'OPEN');
     },
+    staleTime: 0,
+    refetchOnMount: 'always',
     refetchInterval: 10000,
   });
 
@@ -191,7 +231,7 @@ export function useKDS() {
     },
   });
 
-  // Assumir entrega do item (READY -> DELIVERING)
+  // Assumir entrega do item (QUEUED/READY -> DELIVERING)
   const claimDeliveryMutation = useMutation({
     mutationFn: async ({ itemId }) => {
       return await api.patch(`/order-item/${itemId}/claim-delivery`);
@@ -203,15 +243,28 @@ export function useKDS() {
     },
   });
 
-  // Resolução puramente relacional da estação do item (OrderItem.stationId -> Product.stationId -> Category.stationId)
+  // Resolução relacional da estação do item (OrderItem.stationId -> Product.stationId -> Category.stationId)
   const resolveItemStation = useCallback(
     (item) => {
       const product = item.Product || item.product;
-      const relationalStationId =
+      let relationalStationId =
         item.stationId ??
         product?.stationId ??
         product?.Category?.stationId ??
         null;
+
+      if (relationalStationId === null && categories.length > 0) {
+        const matchedCategory = categories.find(
+          (c) =>
+            (product?.categoryId && String(c.id) === String(product.categoryId)) ||
+            (product?.category &&
+              c.name?.trim().toLowerCase() === String(product.category).trim().toLowerCase())
+        );
+        if (matchedCategory) {
+          relationalStationId =
+            matchedCategory.stationId ?? matchedCategory.ProductionStation?.id ?? null;
+        }
+      }
 
       if (relationalStationId !== null && relationalStationId !== undefined) {
         const matched = stations.find((s) => String(s.id) === String(relationalStationId));
@@ -220,25 +273,28 @@ export function useKDS() {
             effectiveStationId: String(matched.id),
             stationName: matched.name,
             stationSlug: matched.slug,
-            isReadyDelivery: matched.slug === 'pronta-entrega',
+            isReadyDelivery: matched.slug !== 'cozinha',
           };
         }
       }
 
-      // Fallback apenas para itens legados criados antes do vínculo de stationId
-      const legacyCategory = String(product?.category || '').toUpperCase();
+      // Fallback para itens sem stationId vinculado diretamente
+      const legacyCategory = String(product?.category || '').trim().toUpperCase();
       const targetSlug = LEGACY_CATEGORY_SLUG_MAP[legacyCategory] || 'cozinha';
       const fallbackStation =
         stations.find((s) => s.slug === targetSlug) || stations[0] || null;
+      const resolvedSlug = fallbackStation?.slug || targetSlug;
 
       return {
         effectiveStationId: fallbackStation ? String(fallbackStation.id) : null,
-        stationName: fallbackStation?.name || 'Cozinha',
-        stationSlug: fallbackStation?.slug || targetSlug,
-        isReadyDelivery: (fallbackStation?.slug || targetSlug) === 'pronta-entrega',
+        stationName:
+          fallbackStation?.name ||
+          (resolvedSlug === 'pronta-entrega' ? 'Pronta Entrega' : 'Cozinha'),
+        stationSlug: resolvedSlug,
+        isReadyDelivery: resolvedSlug !== 'cozinha',
       };
     },
-    [stations]
+    [stations, categories]
   );
 
   // Agrupamento dos itens ativos
@@ -261,13 +317,16 @@ export function useKDS() {
       .filter((item) => item.status !== 'DELIVERED' && item.status !== 'CANCELLED');
   }, [orders, resolveItemStation]);
 
-  // Contagem de itens por estação para exibir nos filtros do KDSHeader
+  // Contagem de unidades de itens por estação para exibir nos filtros do KDSHeader
   const stationCounts = useMemo(() => {
-    const counts = { ALL: activeItems.length };
+    const sumQty = (list) =>
+      list.reduce((acc, item) => acc + Number(item.quantity || 1), 0);
+
+    const counts = { ALL: sumQty(activeItems) };
     stations.forEach((st) => {
-      counts[String(st.id)] = activeItems.filter(
-        (item) => String(item.effectiveStationId) === String(st.id)
-      ).length;
+      counts[String(st.id)] = sumQty(
+        activeItems.filter((item) => String(item.effectiveStationId) === String(st.id))
+      );
     });
     return counts;
   }, [activeItems, stations]);

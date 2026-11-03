@@ -1,5 +1,5 @@
-import React from 'react';
-import { Clock, Flame, Check, Zap, Truck } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Clock } from 'lucide-react';
 
 const STATUS_BADGE = {
   PENDING: {
@@ -25,14 +25,32 @@ const STATUS_BADGE = {
 };
 
 export default function KDSCard({ item, onUpdateStatus, onClaimDelivery }) {
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   const status = item.status || 'QUEUED';
   const orderId = item.OrderId || item.orderId;
-  const minutesWaiting = Math.max(
-    0,
-    Math.floor(
-      (Date.now() - new Date(item.createdAt || item.orderCreatedAt || Date.now()).getTime()) / 60000
-    )
+  const isNonKitchen = Boolean(
+    item.isReadyDelivery || (item.stationSlug && item.stationSlug !== 'cozinha')
   );
+
+  const createdAtMs = new Date(item.createdAt || item.orderCreatedAt || now).getTime();
+  const elapsedSeconds = Math.max(0, Math.floor((now - createdAtMs) / 1000));
+  const minutesWaiting = Math.floor(elapsedSeconds / 60);
+  const hours = Math.floor(elapsedSeconds / 3600);
+  const minutes = Math.floor((elapsedSeconds % 3600) / 60);
+  const seconds = elapsedSeconds % 60;
+  const formattedTime =
+    hours > 0
+      ? `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+      : `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
   const isDelayed = minutesWaiting >= 15 && status !== 'READY' && status !== 'DELIVERING';
   const badge = STATUS_BADGE[status] || STATUS_BADGE.QUEUED;
 
@@ -60,27 +78,27 @@ export default function KDSCard({ item, onUpdateStatus, onClaimDelivery }) {
             {item.stationName && (
               <span
                 className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${
-                  item.isReadyDelivery
+                  item.stationSlug === 'pronta-entrega'
                     ? 'bg-emerald-500/10 text-emerald-700 border-emerald-500/25 dark:text-emerald-300'
                     : item.stationSlug === 'bar'
                     ? 'bg-cyan-500/10 text-cyan-700 border-cyan-500/25 dark:text-cyan-300'
                     : 'bg-orange-500/10 text-orange-700 border-orange-500/25 dark:text-orange-300'
                 }`}
               >
-                {item.isReadyDelivery ? '⚡ Pronta Entrega' : item.stationName}
+                {item.stationName}
               </span>
             )}
           </div>
 
           <div
-            className={`flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-lg border ${
+            className={`flex items-center gap-1 text-xs font-semibold tabular-nums px-2 py-0.5 rounded-lg border ${
               isDelayed
                 ? 'bg-red-500/15 text-red-700 dark:text-red-300 border-red-500/30'
                 : 'bg-stone-100 dark:bg-neutral-800 text-stone-600 dark:text-stone-300 border-stone-200 dark:border-neutral-700'
             }`}
           >
             <Clock className="w-3.5 h-3.5" />
-            <span>{minutesWaiting}m</span>
+            <span>{formattedTime}</span>
           </div>
         </div>
 
@@ -113,43 +131,7 @@ export default function KDSCard({ item, onUpdateStatus, onClaimDelivery }) {
       {/* Ações Completas do Ciclo KDS (Cozinha & Expedição/Garçom) */}
       <div className="pt-3 border-t border-stone-200/80 dark:border-neutral-800 mt-4 flex flex-col gap-2">
         {(status === 'QUEUED' || status === 'PENDING') && (
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => onUpdateStatus(orderId, item.id, 'PREPARING')}
-              className="flex-1 py-2.5 px-3 bg-stone-900 hover:bg-stone-800 text-stone-50 dark:bg-stone-100 dark:hover:bg-stone-200 dark:text-stone-900 rounded-xl text-xs font-bold transition active:scale-95 cursor-pointer shadow-xs flex items-center justify-center gap-1.5"
-            >
-              <Flame className="w-3.5 h-3.5 text-orange-400 dark:text-orange-600" />
-              <span>Iniciar Preparo</span>
-            </button>
-
-            {item.isReadyDelivery && (
-              <button
-                type="button"
-                onClick={() => onUpdateStatus(orderId, item.id, 'DELIVERED')}
-                title="Despachar item de pronta entrega direto para a mesa"
-                className="py-2.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-stone-50 rounded-xl text-xs font-bold transition active:scale-95 cursor-pointer shadow-xs flex items-center justify-center gap-1"
-              >
-                <Zap className="w-3.5 h-3.5" />
-                <span>Entregar Já ✓</span>
-              </button>
-            )}
-          </div>
-        )}
-
-        {status === 'PREPARING' && (
-          <button
-            type="button"
-            onClick={() => onUpdateStatus(orderId, item.id, 'READY')}
-            className="w-full py-2.5 px-3 bg-amber-600 hover:bg-amber-500 text-stone-50 rounded-xl text-xs font-bold transition shadow-xs active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
-          >
-            <Check className="w-4 h-4" />
-            <span>Pronto p/ Entrega ✓</span>
-          </button>
-        )}
-
-        {status === 'READY' && (
-          <div className="flex gap-2">
+          isNonKitchen ? (
             <button
               type="button"
               onClick={() =>
@@ -157,29 +139,52 @@ export default function KDSCard({ item, onUpdateStatus, onClaimDelivery }) {
                   ? onClaimDelivery(item.id)
                   : onUpdateStatus(orderId, item.id, 'DELIVERING')
               }
-              className="flex-1 py-2.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-stone-50 rounded-xl text-xs font-bold transition shadow-xs active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
+              className="w-full py-2.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-stone-50 rounded-xl text-xs font-bold transition active:scale-95 cursor-pointer shadow-xs flex items-center justify-center"
             >
-              <span>Assumir Entrega 🚀</span>
+              Assumir Entrega
             </button>
+          ) : (
             <button
               type="button"
-              onClick={() => onUpdateStatus(orderId, item.id, 'DELIVERED')}
-              title="Confirmar entrega imediata na mesa"
-              className="py-2.5 px-3 bg-stone-900 hover:bg-stone-800 text-stone-50 dark:bg-stone-100 dark:hover:bg-stone-200 dark:text-stone-900 rounded-xl text-xs font-bold transition shadow-xs active:scale-95 cursor-pointer"
+              onClick={() => onUpdateStatus(orderId, item.id, 'PREPARING')}
+              className="w-full py-2.5 px-3 bg-stone-900 hover:bg-stone-800 text-stone-50 dark:bg-stone-100 dark:hover:bg-stone-200 dark:text-stone-900 rounded-xl text-xs font-bold transition active:scale-95 cursor-pointer shadow-xs flex items-center justify-center"
             >
-              ✓
+              Iniciar Preparo
             </button>
-          </div>
+          )
+        )}
+
+        {status === 'PREPARING' && (
+          <button
+            type="button"
+            onClick={() => onUpdateStatus(orderId, item.id, 'READY')}
+            className="w-full py-2.5 px-3 bg-amber-600 hover:bg-amber-500 text-stone-50 rounded-xl text-xs font-bold transition shadow-xs active:scale-95 cursor-pointer flex items-center justify-center"
+          >
+            Pronto p/ Entrega
+          </button>
+        )}
+
+        {status === 'READY' && (
+          <button
+            type="button"
+            onClick={() =>
+              onClaimDelivery
+                ? onClaimDelivery(item.id)
+                : onUpdateStatus(orderId, item.id, 'DELIVERING')
+            }
+            className="w-full py-2.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-stone-50 rounded-xl text-xs font-bold transition shadow-xs active:scale-95 cursor-pointer flex items-center justify-center"
+          >
+            Assumir Entrega
+          </button>
         )}
 
         {status === 'DELIVERING' && (
           <button
             type="button"
             onClick={() => onUpdateStatus(orderId, item.id, 'DELIVERED')}
-            className="w-full py-2.5 px-3 bg-sky-600 hover:bg-sky-500 text-stone-50 rounded-xl text-xs font-bold transition shadow-xs active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
+            className="w-full py-2.5 px-3 bg-sky-600 hover:bg-sky-500 text-stone-50 rounded-xl text-xs font-bold transition shadow-xs active:scale-95 cursor-pointer flex items-center justify-center"
           >
-            <Truck className="w-4 h-4" />
-            <span>Entregue na Mesa ✓</span>
+            Entregue na Mesa
           </button>
         )}
       </div>

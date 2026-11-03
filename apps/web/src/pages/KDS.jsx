@@ -45,7 +45,7 @@ export default function KDS() {
         onSelectStation={setSelectedStation}
         stations={stations}
         stationCounts={stationCounts}
-        totalItemsCount={activeItems.length}
+        totalItemsCount={stationCounts.ALL ?? activeItems.length}
         onBack={handleBack}
       />
 
