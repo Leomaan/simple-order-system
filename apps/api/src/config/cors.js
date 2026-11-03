@@ -1,7 +1,3 @@
-/**
- * Configuração centralizada e dinâmica de CORS.
- * Responsabilidade Única: Validar e permitir origens seguras (Vercel, Render, Localhost).
- */
 const isProduction = process.env.NODE_ENV === 'production';
 
 const allowedOrigins = (process.env.FRONTEND_URL || '')
@@ -37,7 +33,8 @@ export const corsOptions = {
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-XSRF-TOKEN', 'X-Requested-With', 'x-company-id'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-XSRF-TOKEN', 'x-xsrf-token', 'X-Requested-With', 'x-company-id'],
+  exposedHeaders: ['X-XSRF-TOKEN'],
 };
 
 export default corsOptions;

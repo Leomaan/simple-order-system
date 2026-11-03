@@ -41,6 +41,7 @@ export const login = asyncHandler(async (req, res) => {
     ...getCsrfCookieOptions(req),
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
+  res.setHeader('X-XSRF-TOKEN', csrfToken);
 
   logger.info('Login realizado com sucesso', { context: 'auth_controller', email: req.body.email, role: result.role, ip });
 
@@ -58,6 +59,7 @@ export const login = asyncHandler(async (req, res) => {
 
 export const refresh = asyncHandler(async (req, res) => {
   const token = req.cookies?.refreshToken || req.body?.refreshToken;
+
   let impersonationData = null;
   const currentAccessCookie = req.cookies?.accessToken;
   const requestedCompanyId = req.headers['x-company-id'] ? Number(req.headers['x-company-id']) : (req.body?.companyId ? Number(req.body.companyId) : null);
@@ -105,6 +107,7 @@ export const refresh = asyncHandler(async (req, res) => {
     ...getCsrfCookieOptions(req),
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
+  res.setHeader('X-XSRF-TOKEN', csrfToken);
 
   logger.info('Token de acesso e refresh token renovados com sucesso', { context: 'auth_controller', role: result.role });
 

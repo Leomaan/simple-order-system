@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import api from '../config/api';
+import api, { setCsrfToken } from '../config/api';
 
 const AuthContext = createContext(null);
 
@@ -13,7 +13,10 @@ export function AuthProvider({ children }) {
     async function checkAuth() {
       try {
         const res = await api.post('/auth/refresh');
-        const { role, name, isSuperAdmin, companyId, impersonating } = res.data.data;
+        const { role, name, isSuperAdmin, companyId, impersonating, csrfToken } = res.data.data;
+        if (csrfToken) {
+          setCsrfToken(csrfToken);
+        }
         setUser({ role, name, isSuperAdmin, companyId, impersonating: !!impersonating });
 
         // Garante limpeza de chaves residuais de autenticação legadas
@@ -27,6 +30,7 @@ export function AuthProvider({ children }) {
           localStorage.removeItem('companyId');
         }
       } catch (err) {
+        setCsrfToken(null);
         localStorage.removeItem('companyId');
         localStorage.removeItem('csrfToken');
         localStorage.removeItem('token');
@@ -49,7 +53,10 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
-  function login({ role, name, isSuperAdmin, companyId, impersonating }) {
+  function login({ role, name, isSuperAdmin, companyId, impersonating, csrfToken }) {
+    if (csrfToken) {
+      setCsrfToken(csrfToken);
+    }
     if (companyId) {
       localStorage.setItem('companyId', String(companyId));
     } else {
@@ -67,6 +74,7 @@ export function AuthProvider({ children }) {
     try {
       await api.post('/auth/logout', {});
     } catch {}
+    setCsrfToken(null);
     localStorage.removeItem('companyId');
     localStorage.removeItem('csrfToken');
     localStorage.removeItem('token');
