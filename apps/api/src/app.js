@@ -11,6 +11,7 @@ import { httpLogger } from './middleware/httpLogger.js';
 import { swaggerSpec } from './config/swagger.js';
 import swaggerUi from 'swagger-ui-express';
 import { csrfProtection } from './middleware/csrf.js';
+import { sanitizeInput } from './middleware/sanitizeInput.js';
 
 import productRoutes from './routes/productRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
@@ -51,7 +52,9 @@ app.use(httpLogger);
 
 app.use(cookieParser());
 app.use(csrfProtection);
-app.use(e.json());
+app.use(e.json({ limit: '100kb' }));
+app.use(e.urlencoded({ extended: true, limit: '100kb' }));
+app.use(sanitizeInput);
 
 if (process.env.NODE_ENV !== 'production' || process.env.ENABLE_SWAGGER === 'true') {
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
