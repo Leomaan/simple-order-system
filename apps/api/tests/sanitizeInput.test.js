@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { sanitizeString, sanitizeData, sanitizeInput } from '../src/middleware/sanitizeInput.js';
+import { sanitizeString, sanitizeInPlace, sanitizeInput } from '../src/middleware/sanitizeInput.js';
 
 describe('sanitizeInput middleware & utils', () => {
   describe('sanitizeString', () => {
@@ -38,8 +38,8 @@ describe('sanitizeInput middleware & utils', () => {
     });
   });
 
-  describe('sanitizeData (recursivo)', () => {
-    it('deve sanitizar objetos com múltiplos níveis', () => {
+  describe('sanitizeInPlace (recursivo)', () => {
+    it('deve sanitizar objetos com múltiplos níveis in-place', () => {
       const input = {
         name: '<b>Hambúrguer</b>',
         description: '<script>alert(1)</script>Delicioso',
@@ -50,9 +50,9 @@ describe('sanitizeInput middleware & utils', () => {
         },
       };
 
-      const result = sanitizeData(input);
+      sanitizeInPlace(input);
 
-      expect(result).toEqual({
+      expect(input).toEqual({
         name: 'Hambúrguer',
         description: 'Delicioso',
         price: 35.5,
@@ -65,15 +65,16 @@ describe('sanitizeInput middleware & utils', () => {
 
     it('deve sanitizar arrays de strings e de objetos', () => {
       const input = ['<script>xss</script>item 1', '<i>item 2</i>'];
-      expect(sanitizeData(input)).toEqual(['item 1', 'item 2']);
+      sanitizeInPlace(input);
+      expect(input).toEqual(['item 1', 'item 2']);
     });
 
     it('deve proteger contra prototype pollution descartando chaves perigosas', () => {
       const malicious = JSON.parse('{"__proto__": {"polluted": true}, "name": "Teste"}');
-      const sanitized = sanitizeData(malicious);
+      sanitizeInPlace(malicious);
 
-      expect(sanitized.__proto__.polluted).toBeUndefined();
-      expect(sanitized.name).toBe('Teste');
+      expect(malicious.__proto__.polluted).toBeUndefined();
+      expect(malicious.name).toBe('Teste');
     });
   });
 
@@ -103,6 +104,28 @@ describe('sanitizeInput middleware & utils', () => {
       expect(req.body.password).toBe('P@ss<word>'); // preservada
       expect(req.query.search).toBe('pizza');
       expect(req.params.id).toBe('123');
+    });
+
+    it('deve sanitizar req.query quando ela for uma propriedade getter-only do Express 5 sem lançar erro', () => {
+      const queryTarget = { search: '<b>pizza</b>' };
+      const req = {
+        body: {},
+        params: {},
+        get query() {
+          return queryTarget;
+        },
+        set query(_) {
+          throw new TypeError('Cannot set property query of #<IncomingMessage> which has only a getter');
+        },
+      };
+
+      const res = {};
+      let called = false;
+      const next = () => { called = true; };
+
+      expect(() => sanitizeInput(req, res, next)).not.toThrow();
+      expect(called).toBe(true);
+      expect(req.query.search).toBe('pizza');
     });
   });
 });

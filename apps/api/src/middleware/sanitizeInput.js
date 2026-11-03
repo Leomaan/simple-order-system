@@ -45,48 +45,54 @@ export function sanitizeString(val, key = '') {
 }
 
 /**
- * Percorre recursivamente objetos ou arrays aplicando sanitização sem sofrer prototype pollution.
+ * Sanitiza objetos ou arrays in-place (mutação direta nas chaves).
+ * Compatível com Express 5 onde req.query e req.params são propriedades getter-only.
  */
-export function sanitizeData(data) {
-  if (!data || typeof data !== 'object') {
-    return typeof data === 'string' ? sanitizeString(data) : data;
+export function sanitizeInPlace(obj) {
+  if (!obj || typeof obj !== 'object') return obj;
+
+  if (Array.isArray(obj)) {
+    for (let i = 0; i < obj.length; i++) {
+      if (typeof obj[i] === 'string') {
+        obj[i] = sanitizeString(obj[i]);
+      } else if (obj[i] !== null && typeof obj[i] === 'object') {
+        sanitizeInPlace(obj[i]);
+      }
+    }
+    return obj;
   }
 
-  if (Array.isArray(data)) {
-    return data.map((item) => sanitizeData(item));
-  }
-
-  const cleanObj = {};
-  for (const [key, value] of Object.entries(data)) {
+  for (const key of Object.keys(obj)) {
     // Bloqueia poluição de protótipo
     if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+      delete obj[key];
       continue;
     }
 
+    const value = obj[key];
     if (typeof value === 'string') {
-      cleanObj[key] = sanitizeString(value, key);
+      obj[key] = sanitizeString(value, key);
     } else if (value !== null && typeof value === 'object') {
-      cleanObj[key] = sanitizeData(value);
-    } else {
-      cleanObj[key] = value;
+      sanitizeInPlace(value);
     }
   }
 
-  return cleanObj;
+  return obj;
 }
 
 /**
  * Middleware Express para sanitização automática de body, query e params.
+ * Não reatribui req.query / req.params diretamente para suportar o Express 5.
  */
 export function sanitizeInput(req, res, next) {
   if (req.body && typeof req.body === 'object') {
-    req.body = sanitizeData(req.body);
+    sanitizeInPlace(req.body);
   }
   if (req.query && typeof req.query === 'object') {
-    req.query = sanitizeData(req.query);
+    sanitizeInPlace(req.query);
   }
   if (req.params && typeof req.params === 'object') {
-    req.params = sanitizeData(req.params);
+    sanitizeInPlace(req.params);
   }
   next();
 }
