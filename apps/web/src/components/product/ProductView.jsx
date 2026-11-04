@@ -40,7 +40,7 @@ export default function ProductView() {
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto animate-in fade-in duration-300">
       <header className="mb-6">
-        <h2 className="text-2xl font-bold text-[#1c1917] dark:text-white tracking-tight">Cardápio</h2>
+        <h2 className="text-2xl font-bold text-[#1c1917] dark:text-white tracking-tight">Consultar menu</h2>
         <p className="text-stone-500 dark:text-neutral-550 text-sm font-medium">Visualize os itens disponíveis no restaurante</p>
       </header>
 

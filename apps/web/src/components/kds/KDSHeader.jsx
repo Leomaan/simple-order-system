@@ -31,10 +31,10 @@ export default function KDSHeader({
         </div>
         <div>
           <h1 className="text-lg sm:text-xl font-bold tracking-tight text-stone-900 dark:text-stone-100">
-            Cozinha & Despacho (KDS)
+            Distribuição
           </h1>
           <p className="text-xs text-stone-500 dark:text-stone-400">
-            Acompanhamento e controle de produção e expedição em tempo real
+            Acompanhamento e expedição de pedidos em tempo real
           </p>
         </div>
       </div>

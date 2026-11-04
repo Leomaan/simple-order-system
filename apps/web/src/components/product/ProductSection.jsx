@@ -157,8 +157,8 @@ export default function ProductSection() {
       )}
       <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 md:mb-8">
         <div>
-          <h2 className="text-2xl font-bold text-[#1c1917] dark:text-white tracking-tight">Cardápio & Produtos</h2>
-          <p className="text-stone-500 dark:text-neutral-500 text-sm">Gerencie os itens disponíveis para venda e suas estações no KDS</p>
+          <h2 className="text-2xl font-bold text-[#1c1917] dark:text-white tracking-tight">Gerenciar menu</h2>
+          <p className="text-stone-500 dark:text-neutral-500 text-sm">Cadastre e organize os itens disponíveis para venda</p>
         </div>
         <div className="flex items-center gap-2.5">
           <Button

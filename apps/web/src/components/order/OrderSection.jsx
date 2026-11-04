@@ -119,8 +119,8 @@ export default function OrderSection() {
       {/* Header */}
       <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 md:mb-8">
         <div>
-          <h2 className="text-2xl font-bold text-[#1c1917] dark:text-white tracking-tight">Painel de Pedidos</h2>
-          <p className="text-stone-500 dark:text-neutral-500 text-sm">Gerencie o fluxo de mesas e consumo em tempo real</p>
+          <h2 className="text-2xl font-bold text-[#1c1917] dark:text-white tracking-tight">Pedidos</h2>
+          <p className="text-stone-500 dark:text-neutral-500 text-sm">Gerencie o fluxo de pedidos e consumo das mesas em tempo real</p>
         </div>
         <Button
           onClick={() => (showForm || editing ? (setShowForm(false), setEditing(null)) : handleOpenForm())}

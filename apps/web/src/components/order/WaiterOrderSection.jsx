@@ -112,8 +112,8 @@ export default function WaiterOrderSection() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 md:mb-8">
         <div>
-          <h2 className="text-2xl font-bold text-[#1c1917] dark:text-white tracking-tight">Mesas & Pedidos</h2>
-          <p className="text-stone-500 dark:text-neutral-500 text-sm">Abra novas mesas e gerencie consumos em tempo real</p>
+          <h2 className="text-2xl font-bold text-[#1c1917] dark:text-white tracking-tight">Pedidos</h2>
+          <p className="text-stone-500 dark:text-neutral-500 text-sm">Abra novos pedidos por mesa e gerencie consumos em tempo real</p>
         </div>
         <Button
           onClick={() => setShowForm(!showForm)}
@@ -121,7 +121,7 @@ export default function WaiterOrderSection() {
           className="w-full sm:w-auto py-3 px-5 text-xs font-bold uppercase tracking-wider shadow-lg shadow-orange-500/10 flex items-center justify-center gap-2"
         >
           {showForm ? <X size={16} /> : <Plus size={16} />}
-          <span>{showForm ? 'Cancelar' : 'Abrir mesa'}</span>
+          <span>{showForm ? 'Cancelar' : 'Novo pedido'}</span>
         </Button>
       </div>
 
