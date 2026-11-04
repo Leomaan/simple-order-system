@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import User from '../models/user.js';
 import RefreshToken from '../models/refreshToken.js';
+import Company from '../models/company.js';
 import { AppError } from '../middleware/appError.js';
 import { log } from './auditLogService.js';
 import logger from '../util/logger.js';
@@ -31,7 +32,10 @@ async function generateRefreshToken(userId) {
 }
 
 export async function login(email, password, ip) {
-  const user = await User.findOne({ where: { email } });
+  const user = await User.findOne({ 
+    where: { email },
+    include: [{ model: Company, attributes: ['id', 'name', 'slug', 'logoUrl'] }]
+  });
 
   if (!user || !user.active)
     throw new AppError('credenciais inválidas', 401);
@@ -49,12 +53,21 @@ export async function login(email, password, ip) {
     ip,
   });
 
+  const company = user.Company ? {
+    id: user.Company.id,
+    name: user.Company.name,
+    slug: user.Company.slug,
+    logoUrl: user.Company.logoUrl,
+  } : null;
+
   return { 
     accessToken, 
     refreshToken, 
     role: user.role, 
     name: user.name,
     companyId: user.companyId || null,
+    company,
+    companyName: company?.name || null,
     isSuperAdmin: !!user.isSuperAdmin
   };
 }
@@ -62,7 +75,13 @@ export async function login(email, password, ip) {
 export async function refresh(token, impersonationData = null) {
   if (!token) throw new AppError('refresh token não fornecido', 401);
 
-  const stored = await RefreshToken.findOne({ where: { token }, include: [User] });
+  const stored = await RefreshToken.findOne({ 
+    where: { token }, 
+    include: [{ 
+      model: User, 
+      include: [{ model: Company, attributes: ['id', 'name', 'slug', 'logoUrl'] }] 
+    }] 
+  });
 
   if (!stored) throw new AppError('refresh token inválido', 401);
 
@@ -132,12 +151,40 @@ export async function refresh(token, impersonationData = null) {
   };
 
   const accessToken = generateAccessToken(userPayload);
+
+  let currentCompany = stored.User?.Company ? {
+    id: stored.User.Company.id,
+    name: stored.User.Company.name,
+    slug: stored.User.Company.slug,
+    logoUrl: stored.User.Company.logoUrl,
+  } : null;
+
+  if (isImpersonating) {
+    if (impersonationData?.impersonatedCompany) {
+      currentCompany = impersonationData.impersonatedCompany;
+    } else if (effectiveCompanyId) {
+      try {
+        const comp = await Company.findByPk(effectiveCompanyId, { attributes: ['id', 'name', 'slug', 'logoUrl'] });
+        if (comp) {
+          currentCompany = {
+            id: comp.id,
+            name: comp.name,
+            slug: comp.slug,
+            logoUrl: comp.logoUrl,
+          };
+        }
+      } catch {}
+    }
+  }
+
   return { 
     accessToken, 
     refreshToken: newRefreshToken,
     role: stored.User.role, 
     name: effectiveName, 
     companyId: effectiveCompanyId,
+    company: currentCompany,
+    companyName: currentCompany?.name || null,
     isSuperAdmin: !!stored.User.isSuperAdmin,
     impersonating: isImpersonating,
   };

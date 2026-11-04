@@ -10,6 +10,9 @@ const router = Router();
 // Rota para colaboradores e administradores obterem as estações de produção da sua empresa logada (KDS)
 router.get('/current/stations', requireCompanyUser, companyController.getCurrentCompanyStations);
 
+// Rota para colaboradores e administradores obterem os dados da empresa ativa/logada
+router.get('/current', requireCompanyUser, companyController.getCurrentCompany);
+
 // Todas as rotas abaixo de empresas são protegidas exclusivamente para SuperAdministradores
 router.use(requireSuperAdmin);
 

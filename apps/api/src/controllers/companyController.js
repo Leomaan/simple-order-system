@@ -124,3 +124,27 @@ export const getCurrentCompanyStations = asyncHandler(async (req, res) => {
 
   res.status(200).json({ success: true, data: stations });
 });
+
+
+export const getCurrentCompany = asyncHandler(async (req, res) => {
+  const companyId = req.companyId || req.user?.companyId;
+  if (!companyId) {
+    return res.status(200).json({ success: true, data: null });
+  }
+
+  try {
+    const company = await companyService.getCompanyById(companyId);
+    return res.status(200).json({
+      success: true,
+      data: {
+        id: company.id,
+        name: company.name,
+        slug: company.slug,
+        logoUrl: company.logoUrl,
+        config: company.config,
+      },
+    });
+  } catch {
+    return res.status(200).json({ success: true, data: null });
+  }
+});

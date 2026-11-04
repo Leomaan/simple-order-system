@@ -51,6 +51,8 @@ export const login = asyncHandler(async (req, res) => {
       role: result.role, 
       name: result.name, 
       companyId: result.companyId,
+      company: result.company,
+      companyName: result.companyName,
       isSuperAdmin: result.isSuperAdmin,
       csrfToken 
     }, 
@@ -117,6 +119,8 @@ export const refresh = asyncHandler(async (req, res) => {
       role: result.role,
       name: result.name,
       companyId: result.companyId,
+      company: result.company,
+      companyName: result.companyName,
       isSuperAdmin: result.isSuperAdmin,
       impersonating: result.impersonating || false,
       csrfToken,
