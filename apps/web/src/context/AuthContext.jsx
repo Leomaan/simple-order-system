@@ -13,11 +13,20 @@ export function AuthProvider({ children }) {
     async function checkAuth() {
       try {
         const res = await api.post('/auth/refresh');
-        const { role, name, isSuperAdmin, companyId, impersonating, csrfToken } = res.data.data;
+        const { role, name, isSuperAdmin, companyId, company, companyName, impersonating, csrfToken } = res.data.data;
         if (csrfToken) {
           setCsrfToken(csrfToken);
         }
-        setUser({ role, name, isSuperAdmin, companyId, impersonating: !!impersonating });
+        const effectiveCompany = company || (companyName ? { name: companyName, id: companyId } : null);
+        setUser({ 
+          role, 
+          name, 
+          isSuperAdmin, 
+          companyId, 
+          company: effectiveCompany,
+          companyName: effectiveCompany?.name || companyName || null,
+          impersonating: !!impersonating 
+        });
 
         // Garante limpeza de chaves residuais de autenticação legadas
         localStorage.removeItem('csrfToken');
@@ -29,9 +38,16 @@ export function AuthProvider({ children }) {
         } else {
           localStorage.removeItem('companyId');
         }
+
+        if (effectiveCompany?.name) {
+          localStorage.setItem('companyName', effectiveCompany.name);
+        } else {
+          localStorage.removeItem('companyName');
+        }
       } catch (err) {
         setCsrfToken(null);
         localStorage.removeItem('companyId');
+        localStorage.removeItem('companyName');
         localStorage.removeItem('csrfToken');
         localStorage.removeItem('token');
         localStorage.removeItem('accessToken');
@@ -53,21 +69,35 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
-  function login({ role, name, isSuperAdmin, companyId, impersonating, csrfToken }) {
+  function login({ role, name, isSuperAdmin, companyId, company, companyName, impersonating, csrfToken }) {
     if (csrfToken) {
       setCsrfToken(csrfToken);
     }
+    const effectiveCompany = company || (companyName ? { name: companyName, id: companyId } : null);
     if (companyId) {
       localStorage.setItem('companyId', String(companyId));
     } else {
       localStorage.removeItem('companyId');
+    }
+    if (effectiveCompany?.name) {
+      localStorage.setItem('companyName', effectiveCompany.name);
+    } else {
+      localStorage.removeItem('companyName');
     }
     // Remove qualquer resquício legado de tokens no localStorage
     localStorage.removeItem('csrfToken');
     localStorage.removeItem('token');
     localStorage.removeItem('accessToken');
 
-    setUser({ role, name, isSuperAdmin, companyId, impersonating: !!impersonating });
+    setUser({ 
+      role, 
+      name, 
+      isSuperAdmin, 
+      companyId, 
+      company: effectiveCompany,
+      companyName: effectiveCompany?.name || companyName || null,
+      impersonating: !!impersonating 
+    });
   }
 
   async function logout() {
@@ -76,6 +106,7 @@ export function AuthProvider({ children }) {
     } catch {}
     setCsrfToken(null);
     localStorage.removeItem('companyId');
+    localStorage.removeItem('companyName');
     localStorage.removeItem('csrfToken');
     localStorage.removeItem('token');
     localStorage.removeItem('accessToken');
